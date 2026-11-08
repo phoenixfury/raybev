@@ -1,0 +1,258 @@
+{
+  "conventions": {
+    "extrinsic_matrix": "T_to_from; column vectors p_to = T_to_from @ p_from",
+    "lidar_frame": "CLIDAR",
+    "common_frame": "BASELINK",
+    "matrix_storage": "row-major JSON arrays",
+    "generic_camera_assumption": "ARC_* GENERIC_CAMERA_MODEL is validated initially with the OpenCV fisheye/equidistant equation; inspect overlays before model use."
+  },
+  "source": {
+    "extrinsics": "data/Custom/BAG_2026_09_30_10_10_54/__engineering__adcu__debug__ZMQ__Extrinsics/2026_09_30_13_22_52.bin",
+    "intrinsics": "data/Custom/BAG_2026_09_30_10_10_54/__engineering__adcu__debug__ZMQ__Intrinsics/2026_09_30_13_22_52.bin",
+    "lidar_extrinsics": "rounded matrix recovered from the shared predecessor conversation; the bag Extrinsics message omits CLIDAR"
+  },
+  "extrinsics": {
+    "ARC_F": {
+      "from": "ARC_F",
+      "to": "BASELINK",
+      "matrix": [
+        [
+          0.019501573942251785,
+          -0.13624278753607422,
+          0.9904835139759647,
+          3.290384393554569
+        ],
+        [
+          -0.9996775111773232,
+          -0.018773812652392943,
+          0.017100222361297938,
+          0.014561268579335767
+        ],
+        [
+          0.016265369964678648,
+          -0.9904975753644693,
+          -0.13656496965554207,
+          0.2338536515948909
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "ARC_R": {
+      "from": "ARC_R",
+      "to": "BASELINK",
+      "matrix": [
+        [
+          -0.017112154975979704,
+          0.4829018890814408,
+          -0.875507247070893,
+          -0.5999782076602074
+        ],
+        [
+          0.9995224790218453,
+          0.030794602380373775,
+          -0.002550763465950048,
+          0.044080002125717034
+        ],
+        [
+          0.0257291290583766,
+          -0.8751328230536267,
+          -0.48319825530737054,
+          0.3394855538380394
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "ARC_SL": {
+      "from": "ARC_SL",
+      "to": "BASELINK",
+      "matrix": [
+        [
+          0.9999903038939059,
+          0.0015101958680905807,
+          -0.004136596017750288,
+          1.9598565404321526
+        ],
+        [
+          0.003931045172267541,
+          -0.7294953130234935,
+          0.6839745135314688,
+          1.0043155782778
+        ],
+        [
+          -0.001984691922605993,
+          -0.6839841427878249,
+          -0.7294941764077194,
+          0.5811514365565407
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "ARC_SR": {
+      "from": "ARC_SR",
+      "to": "BASELINK",
+      "matrix": [
+        [
+          -0.9995214891278419,
+          0.0011617805873689836,
+          0.030910241628426732,
+          1.928814060238156
+        ],
+        [
+          -0.02107363634035938,
+          0.7059229601129846,
+          -0.7079750533999873,
+          -0.9670742928048218
+        ],
+        [
+          -0.022642760941528232,
+          -0.708287670830989,
+          -0.7055606853600592,
+          0.648451044541504
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    }
+  },
+  "intrinsics": {
+    "ARC_F": {
+      "frame": "ARC_F",
+      "camera_matrix": [
+        [
+          567.9215657917132,
+          0.0,
+          951.6098104057471
+        ],
+        [
+          0.0,
+          567.5510386873524,
+          773.2379928632492
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "distortion_coefficients": [
+        0.02079119127826115,
+        -0.011097024698838616,
+        0.002046193438189365,
+        -0.0005946995526313968
+      ],
+      "width": 1920,
+      "height": 1536,
+      "camera_model": "GENERIC_CAMERA_MODEL",
+      "projection_for_validation": "opencv_fisheye"
+    },
+    "ARC_R": {
+      "frame": "ARC_R",
+      "camera_matrix": [
+        [
+          566.7285298416673,
+          0.0,
+          952.9969042768362
+        ],
+        [
+          0.0,
+          567.1114316444842,
+          774.0472212036481
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "distortion_coefficients": [
+        0.021792600693267824,
+        -0.012907970149912093,
+        0.0029149242492726964,
+        -0.0007313529696310117
+      ],
+      "width": 1920,
+      "height": 1536,
+      "camera_model": "GENERIC_CAMERA_MODEL",
+      "projection_for_validation": "opencv_fisheye"
+    },
+    "ARC_SL": {
+      "frame": "ARC_SL",
+      "camera_matrix": [
+        [
+          567.152126028676,
+          0.0,
+          953.3957752008148
+        ],
+        [
+          0.0,
+          566.7696721764733,
+          773.9297377235729
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "distortion_coefficients": [
+        0.0216224313187581,
+        -0.01293891736336561,
+        0.002947410372303141,
+        -0.0007463373089804593
+      ],
+      "width": 1920,
+      "height": 1536,
+      "camera_model": "GENERIC_CAMERA_MODEL",
+      "projection_for_validation": "opencv_fisheye"
+    },
+    "ARC_SR": {
+      "frame": "ARC_SR",
+      "camera_matrix": [
+        [
+          566.9787106911446,
+          0.0,
+          953.9552494587662
+        ],
+        [
+          0.0,
+          567.1190032094257,
+          773.8820322009346
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "distortion_coefficients": [
+        0.0223831063201182,
+        -0.012591650675670647,
+        0.0026404279477126287,
+        -0.0006667463743009368
+      ],
+      "width": 1920,
+      "height": 1536,
+      "camera_model": "GENERIC_CAMERA_MODEL",
+      "projection_for_validation": "opencv_fisheye"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "image_encoder": {
+    "operators": [
+      "Add",
+      "Clip",
+      "Concat",
+      "Constant",
+      "Conv",
+      "Mul",
+      "Resize",
+      "Sigmoid",
+      "Slice"
+    ],
+    "max_absolute_errors": {
+      "feature": 6.210803985595703e-05,
+      "confidence": 2.086162567138672e-05
+    },
+    "bytes": 7293960,
+    "status": "ONNX checker and full-resolution real-input ORT parity passed"
+  },
+  "bev_detector": {
+    "operators": [
+      "Add",
+      "Clip",
+      "Concat",
+      "Constant",
+      "Conv",
+      "Resize"
+    ],
+    "max_absolute_errors": {
+      "heatmap": 3.337860107421875e-06,
+      "regression": 4.76837158203125e-07,
+      "quality": 4.246830940246582e-07
+    },
+    "bytes": 658020,
+    "status": "ONNX checker and full-resolution real-input ORT parity passed"
+  },
+  "calibration": "OpenCV fisheye; projection agreement verified against cv2 for four cameras",
+  "parameters": 1987118,
+  "unit_tests": "34 passed including ONNX Runtime subgraph tests",
+  "ddp_smoke": "Two-rank CPU forward/backward passed",
+  "real_optimizer_step": "Full-resolution real bus/truck training sample passed with official pretrained weights",
+  "trainer_integration": "Single-process and two-process CPU trainers passed training, validation and checkpointing on a 2-train/1-val real-data smoke subset",
+  "full_resolution_ORT_tolerance": {
+    "rtol": 0.0001,
+    "atol": 0.0001
+  },
+  "limitations": "No accuracy-training run, INT8 calibration, TIDL compilation or TDA4VH board measurement performed"
+}

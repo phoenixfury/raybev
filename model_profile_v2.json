@@ -1,0 +1,84 @@
+{
+  "cfg": {
+    "image_width": 800,
+    "image_height": 640,
+    "architecture_version": 2,
+    "feature_channels": 32,
+    "bev_channels": 64,
+    "head_channels": 32,
+    "mobile_width": 1.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "bev_resolution": 0.25,
+    "heights": [
+      0.4,
+      1.4,
+      2.4,
+      3.4
+    ],
+    "theta_max_degrees": 105.0,
+    "num_classes": 6,
+    "gaussian_overlap": 0.1,
+    "class_positive_weights": [
+      1.0,
+      1.5,
+      3.0,
+      2.0,
+      3.0,
+      2.0
+    ],
+    "regression_weights": [
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "quality_loss_weight": 0.5,
+    "yaw_norm_weight": 0.1,
+    "nms_iou_threshold": 0.25,
+    "max_detections": 150
+  },
+  "parameters": 1987118,
+  "convolution_MACs_per_four_camera_frame": {
+    "image_encoder": 11540992000,
+    "bev_detector": 2644402176
+  },
+  "total_convolution_GMACs": 14.185394176,
+  "output_shapes": [
+    [
+      1,
+      6,
+      384,
+      384
+    ],
+    [
+      1,
+      8,
+      384,
+      384
+    ],
+    [
+      1,
+      1,
+      384,
+      384
+    ]
+  ],
+  "transport_output_elements": 5898240,
+  "transport_output_MiB_by_dtype": {
+    "int8": 5.625,
+    "fp16": 11.25,
+    "fp32": 22.5
+  },
+  "fixed_geometry_MiB_fp32": 29.6640625,
+  "largest_conv_output_elements_batch_four_cameras": 49152000,
+  "host_CPU_reference_forward_seconds": 1.753973402999918,
+  "limits": "MAC count excludes transport, resize, elementwise operations and NMS. Tensor sizes are not peak memory. CPU timing is not TDA4VH latency.",
+  "TDA4VH_status": "requires matching TIDL SDK compile/offload report, INT8 accuracy evaluation and device latency/memory measurements"
+}

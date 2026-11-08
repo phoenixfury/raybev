@@ -1,0 +1,7 @@
+numpy>=1.24
+Pillow>=9.0
+torch>=2.0
+torchvision>=0.15
+tqdm>=4.64
+# Optional: tensorboard, mmengine and ocamcamera (for your original extension script).
+# For pytest: pip install pytest
