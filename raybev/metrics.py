@@ -111,6 +111,10 @@ def evaluate_detections(predictions,ground_truth,score_threshold=.3):
                       'AP_by_distance':thresholds,'ATE':e['ATE'],'ASE':e['ASE'],'AOE':e['AOE'],
                       'precision':true_pos/max(1,true_pos+false_pos),
                       'recall':true_pos/max(1,n),'TP':true_pos,'FP':false_pos,'FN':miss,
+                      'heading_matches':len(aoe),
+                      'axis_AOE':float(np.mean([min(a,math.pi-a) for a in aoe])) if aoe else None,
+                      'heading_flip_rate':float(np.mean([a>math.pi/2 for a in aoe])) if aoe else None,
+                      'heading_within15_rate':float(np.mean([a<math.pi/12 for a in aoe])) if aoe else None,
                       'status':'evaluated'}
     if not active:raise ValueError('No validation ground-truth objects for any class')
     mean_ap=float(np.mean(all_aps))

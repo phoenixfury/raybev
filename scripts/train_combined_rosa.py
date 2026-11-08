@@ -29,7 +29,7 @@ from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets,detection_loss,decode_detections
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.metrics import evaluate_detections
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config
 
 
 class BatchProgress:
@@ -109,7 +109,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v2_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v3_tasks_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -130,6 +130,8 @@ def main():
     train=RosaCombinedDataset(ann_file=args.train_ann,augment=not args.no_augmentation,**ds_args)
     val=RosaCombinedDataset(ann_file=args.val_ann,**ds_args)
     if not train or not val:raise ValueError('Empty train/val split')
+    cfg=fit_training_config(cfg,train.boxes)
+    print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
     print('Train boxes:',train.gt_counts,flush=True)
     print('Validation boxes:',val.gt_counts,flush=True)
     active=[k for k,n in val.gt_counts.items() if n>0]
@@ -141,7 +143,7 @@ def main():
         if row['metainfo'].get('temporal_split')!='val':raise ValueError('Non-val sample leaked into validation split')
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     pin=(device.type=='cuda')
-    training_data=train if args.no_balance else balanced_training_view(train,args.seed)
+    training_data=train if args.no_balance else balanced_training_view(train,args.seed,cfg)
     print(f'Range-filtered boxes train/val: {train.range_filtered_boxes}/{val.range_filtered_boxes}; balanced entries={len(training_data)}',flush=True)
     dl_train=DataLoader(training_data,batch_size=args.batch_size,shuffle=True,num_workers=args.workers,
                        collate_fn=collate_samples,pin_memory=pin,persistent_workers=args.workers>0)
@@ -178,6 +180,7 @@ def main():
           f'progress={args.progress}',flush=True)
     for epoch in range(start,args.epochs):
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
+        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
         train_progress=BatchProgress('train',epoch+1,args.epochs,len(dl_train),args.progress,args.log_every)
         for images,boxes,_ in dl_train:
@@ -193,12 +196,14 @@ def main():
             scaler.step(optimizer);scaler.update()
             if scaler.get_scale()>=old_scale:scheduler.step()
             train_total+=float(loss.item());train_heat+=float(parts['heatmap']);train_reg+=float(parts['regression'])
+            for key in train_aux:train_aux[key]+=float(parts[key])
             train_progress.update(len(images),{'loss':f'{train_total/(train_progress.index+1):.4f}',
                 'heat':f'{train_heat/(train_progress.index+1):.4f}',
                 'box':f'{train_reg/(train_progress.index+1):.4f}',
                 'lr':f'{optimizer.param_groups[0]["lr"]:.2e}'})
         train_progress.close()
         model.eval();val_total=0.;val_heat=0.;val_reg=0.;predictions=[];ground_truth=[]
+        val_aux={k:0. for k in train_aux}
         val_progress=BatchProgress('val',epoch+1,args.epochs,len(dl_val),args.progress,args.log_every)
         with torch.no_grad():
             for images,boxes,_ in dl_val:
@@ -206,6 +211,7 @@ def main():
                 targets=make_targets(boxes,cfg,device=device,return_class_ids=True)
                 output=model(images);loss,parts=detection_loss(output,targets,cfg=cfg)
                 val_total+=float(loss.item());val_heat+=float(parts['heatmap']);val_reg+=float(parts['regression'])
+                for key in val_aux:val_aux[key]+=float(parts[key])
                 det=decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                 predictions.extend([x.float().cpu().numpy() for x in det])
                 ground_truth.extend([x.float().cpu().numpy() for x in boxes])
@@ -232,6 +238,8 @@ def main():
              'train_loss':train_total/steps,'train_heatmap_loss':train_heat/steps,'train_regression_loss':train_reg/steps,
              'val_loss':val_total/vs,'val_heatmap_loss':val_heat/vs,'val_regression_loss':val_reg/vs,
              'seconds':time.monotonic()-t0,**metrics,'per_bag_metrics':per_bag}
+        for phase,values,denom in (('train',train_aux,steps),('val',val_aux,vs)):
+            row.update({f'{phase}_{key}_loss':value/denom for key,value in values.items()})
         with (out/'history.jsonl').open('a') as f:f.write(json.dumps(row,allow_nan=False)+'\n')
         flat={k:v for k,v in row.items() if k not in ('class_results','active_classes','excluded_classes','AP_distance_thresholds','per_bag_metrics')}
         for bag,bm in per_bag.items():
@@ -250,6 +258,8 @@ def main():
             flat[f'TP_{cname}']=cm.get('TP')
             flat[f'FP_{cname}']=cm.get('FP')
             flat[f'FN_{cname}']=cm.get('FN')
+            for key in ('heading_matches','axis_AOE','heading_flip_rate','heading_within15_rate'):
+                flat[f'{key}_{cname}']=cm.get(key)
             for th,ap in (cm['AP_by_distance'] or {}).items():flat[f'AP_{cname}_at_{th}m']=ap
         csvpath=out/'epochs.csv'
         with csvpath.open('a',newline='') as f:

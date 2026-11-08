@@ -24,6 +24,41 @@ def in_bev_range(boxes, cfg):
             (boxes[:,1] >= cfg.bev_y_min) & (boxes[:,1] < cfg.bev_y_max))
 
 
+def heading_targets(yaw,cfg):
+    """Nearest coarse direction and a local unit residual (within half a bin)."""
+    step=2*math.pi/cfg.heading_bins
+    bins=torch.remainder(torch.floor(torch.remainder(yaw+step/2,2*math.pi)/step).long(),cfg.heading_bins)
+    delta=yaw-bins.to(yaw.dtype)*step
+    return bins,torch.stack((delta.sin(),delta.cos()),dim=-1)
+
+
+def decode_heading(vectors,bin_logits,cfg):
+    """Decode radians and a separate bin confidence; never boost object scores."""
+    angle=torch.atan2(vectors[...,0],vectors[...,1])
+    confidence=torch.ones_like(angle)
+    if cfg.heading_bins:
+        if bin_logits is None:raise ValueError('Binned-heading config requires heading logits')
+        bins=bin_logits.argmax(dim=-1)
+        angle=angle+bins.to(angle.dtype)*(2*math.pi/cfg.heading_bins)
+        confidence=bin_logits.float().softmax(dim=-1).max(dim=-1).values
+    return torch.atan2(angle.sin(),angle.cos()),confidence
+
+
+def decode_sizes(log_sizes,class_ids,cfg):
+    if cfg.size_encoding=='class_relative':
+        log_sizes=log_sizes+log_sizes.new_tensor(cfg.class_size_priors)[class_ids].log()
+    return log_sizes.clamp(-3.,5.).exp()
+
+
+def _object_loss_weights(class_ids,cfg,reference):
+    weights=reference.new_tensor(cfg.class_regression_weights)[class_ids]
+    if cfg.class_balanced_losses:
+        counts=torch.bincount(class_ids,minlength=cfg.num_classes).to(reference.dtype)
+        present=(counts>0).sum().clamp(min=1)
+        weights=weights*class_ids.numel()/(present*counts[class_ids].clamp(min=1))
+    return weights
+
+
 def gaussian_radius(length_cells, width_cells, overlap=0.1):
     """CenterNet minimum-overlap radius using the full object footprint."""
     h,w = length_cells,width_cells
@@ -56,6 +91,7 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
     mask = torch.zeros((b,1,h,w),dtype=torch.bool)
     owners = torch.full((b,1,h,w),-1,dtype=torch.long) if return_class_ids else None
     best = torch.full((b,1,h,w),float('inf'))
+    log_priors=torch.tensor(cfg.class_size_priors).log() if cfg.size_encoding=='class_relative' else torch.zeros(cfg.num_classes,3)
     for batch, boxes in enumerate(batch_boxes):
         if isinstance(boxes,torch.Tensor):
             boxes = boxes.detach().cpu().tolist()
@@ -87,7 +123,7 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
             mask[batch,0,i,j] = True
             if owners is not None:owners[batch,0,i,j]=k
             regression[batch,:,i,j] = torch.tensor([
-                r-i,c-j,z,math.log(l),math.log(width),math.log(height),
+                r-i,c-j,z,math.log(l)-float(log_priors[k,0]),math.log(width)-float(log_priors[k,1]),math.log(height)-float(log_priors[k,2]),
                 math.sin(yaw),math.cos(yaw)],dtype=torch.float32)
     targets=(heat.to(device),regression.to(device),mask.to(device))
     return targets+(owners.to(device),) if return_class_ids else targets
@@ -105,9 +141,13 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     is_neg=~is_pos
     neg_w=(1-heat_target).pow(4)
     class_weights=p.new_tensor(cfg.class_positive_weights)[None,:,None,None]
-    pos_loss=-(torch.log(p) * (1-p).pow(2)*is_pos*class_weights).sum()
+    positive=-(torch.log(p) * (1-p).pow(2)*is_pos*class_weights)
     neg_loss=-(torch.log(1-p)*p.pow(2)*neg_w*is_neg).sum()
-    heat_loss=(pos_loss+neg_loss)/is_pos.sum().clamp(min=1)
+    if cfg.class_balanced_losses:
+        per_class_count=is_pos.sum(dim=(0,2,3))
+        pos_loss=(positive.sum(dim=(0,2,3))/per_class_count.clamp(min=1)).sum()/(per_class_count>0).sum().clamp(min=1)
+    else:pos_loss=positive.sum()/is_pos.sum().clamp(min=1)
+    heat_loss=pos_loss+neg_loss/is_pos.sum().clamp(min=1)
     # Select centers before normalizing yaw; no boolean branch for empty DDP ranks.
     pred=reg_pred.permute(0,2,3,1)[reg_mask[:,0]]
     truth=reg_target.permute(0,2,3,1)[reg_mask[:,0]]
@@ -116,29 +156,45 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         class_ids=targets[3][:,0][reg_mask[:,0]]
     else:
         center_classes=is_pos.permute(0,2,3,1)[reg_mask[:,0]]
-        if cfg.class_regression_weights!=(1.0,)*cfg.num_classes and bool((center_classes.sum(dim=1)!=1).any()):
+        class_aware=(cfg.class_balanced_losses or cfg.center_classification_weight>0 or
+                     tuple(cfg.class_regression_weights)!=(1.0,)*cfg.num_classes)
+        if class_aware and bool((center_classes.sum(dim=1)!=1).any()):
             raise ValueError('Ambiguous regression class; use make_targets(..., return_class_ids=True)')
         class_ids=center_classes.long().argmax(dim=1)
-    object_weights=pred.new_tensor(cfg.class_regression_weights)[class_ids]
+    object_weights=_object_loss_weights(class_ids,cfg,pred)
     norm=torch.linalg.vector_norm(pred[:,6:8],dim=1,keepdim=True)
-    unit_yaw=pred[:,6:8]/norm.clamp(min=.1)
-    normalized=torch.cat((pred[:,:6],unit_yaw),dim=1)
-    weighted=F.smooth_l1_loss(normalized,truth,reduction='none')*pred.new_tensor(cfg.regression_weights)
+    yaw_prediction=pred[:,6:8]/norm.clamp(min=.1) if cfg.normalize_yaw_loss else pred[:,6:8]
+    regression_prediction=torch.cat((pred[:,:6],yaw_prediction),dim=1)
+    heading_loss=reg_pred.sum()*0.
+    if cfg.heading_bins:
+        if len(output)<4:raise ValueError('Binned-heading loss requires heading logits')
+        heading_logits=output[3].float().permute(0,2,3,1)[reg_mask[:,0]]
+        bin_target,residual_target=heading_targets(torch.atan2(truth[:,6],truth[:,7]),cfg)
+        truth=torch.cat((truth[:,:6],residual_target),dim=1)
+        heading_loss=(F.cross_entropy(heading_logits,bin_target,reduction='none')*object_weights).sum()/count
+    weighted=F.smooth_l1_loss(regression_prediction,truth,reduction='none')*pred.new_tensor(cfg.regression_weights)
     # Divide by the unweighted object count: a single Bus retains its 4x
     # gradient instead of its weight cancelling in a weighted denominator.
     yaw_penalty=((norm[:,0]-1).square()*object_weights).sum()/count
     reg_loss=(weighted.sum(dim=1)*object_weights).sum()/count+cfg.yaw_norm_weight*yaw_penalty
     quality_loss=reg_pred.sum()*0.
-    if len(output)==3:
+    if len(output)>=3:
         # Detached localization quality: meter-space center and relative size error.
         xy_error=torch.linalg.vector_norm((pred[:,:2]-truth[:,:2])*cfg.bev_resolution,dim=1)
         size_error=(pred[:,3:6]-truth[:,3:6]).abs().mean(dim=1)
         quality_target=torch.exp(-xy_error-size_error).detach()
         quality=output[2].float()[:,0][reg_mask[:,0]]
         quality_loss=(F.binary_cross_entropy_with_logits(quality,quality_target,reduction='none')*object_weights).sum()/count
-    return heat_weight*heat_loss + regression_weight*reg_loss+cfg.quality_loss_weight*quality_loss, {
-        'heatmap': heat_loss.detach(), 'regression': reg_loss.detach(),
+    # Explicit foreground class competition without adding inference softmax.
+    center_logits=heat_logits.permute(0,2,3,1)[reg_mask[:,0]]
+    unique_center=(is_pos.permute(0,2,3,1)[reg_mask[:,0]].sum(dim=1)==1)
+    center_loss=(F.cross_entropy(center_logits,class_ids,reduction='none')*object_weights*unique_center).sum()/count
+    classification=heat_loss+cfg.center_classification_weight*center_loss
+    return heat_weight*classification + regression_weight*reg_loss+cfg.quality_loss_weight*quality_loss+cfg.heading_loss_weight*heading_loss, {
+        'heatmap': classification.detach(), 'regression': reg_loss.detach(),
         'quality':quality_loss.detach(),'yaw_norm':yaw_penalty.detach(),
+        'heading_bin':heading_loss.detach(),'center_classification':center_loss.detach(),
+        'size_regression':(weighted[:,3:6].sum(dim=1)*object_weights).sum().detach()/count,
     }
 
 
@@ -152,11 +208,18 @@ def detection_scores(output,cfg: ModelConfig):
     heat=heat_logits.float().sigmoid()
     score=heat
     valid=torch.isfinite(heat_logits)&torch.isfinite(reg).all(dim=1,keepdim=True)
-    if len(output)==3 and cfg.quality_score_power>0:
+    if len(output)>=3 and cfg.quality_score_power>0:
         quality_logits=output[2].float()
         score=score*quality_logits.sigmoid().pow(cfg.quality_score_power)
         valid=valid&torch.isfinite(quality_logits)
+    if cfg.heading_bins:
+        if len(output)<4:raise ValueError('Binned-heading config requires heading logits')
+        valid=valid&torch.isfinite(output[3]).all(dim=1,keepdim=True)
     score=torch.where(valid,score,torch.zeros_like(score))
+    if cfg.single_label:
+        winner=score.argmax(dim=1,keepdim=True)
+        selected=torch.zeros_like(score,dtype=torch.bool).scatter_(1,winner,True)
+        score=score*selected
     peak_map=score if cfg.score_peak_mode=='fused' else torch.where(valid,heat,torch.zeros_like(heat))
     return score*(peak_map==F.max_pool2d(peak_map,3,1,1))
 
@@ -187,8 +250,9 @@ def decode_detections(output, cfg: ModelConfig, score_threshold=0.30, topk=300,
         x=cfg.bev_x_max - (rows.to(pred.dtype)+.5+pred[:,0])*cfg.bev_resolution
         y=cfg.bev_y_max - (cols.to(pred.dtype)+.5+pred[:,1])*cfg.bev_resolution
         z=pred[:,2]
-        sizes=pred[:,3:6].clamp(-3.,5.).exp()
-        yaw=torch.atan2(pred[:,6],pred[:,7])
+        sizes=decode_sizes(pred[:,3:6],class_ids,cfg)
+        bins=output[3][bi,:,rows,cols].T.float() if cfg.heading_bins else None
+        yaw,_=decode_heading(pred[:,6:8],bins,cfg)
         detection=torch.cat([x[:,None],y[:,None],z[:,None],sizes,
                              yaw[:,None],class_ids.to(pred.dtype)[:,None],
                              scores[:,None]],dim=1)

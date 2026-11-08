@@ -1,9 +1,12 @@
 """Shared v2 training recipe; inference has no augmentation/sampling dependency."""
 import math
 import hashlib
+from dataclasses import replace
 from pathlib import Path
 import torch
 from torch.utils.data import Subset
+from .config import CLASSES,ModelConfig
+from .detection import in_bev_range
 
 
 def add_training_options(parser):
@@ -15,17 +18,52 @@ def add_training_options(parser):
     parser.add_argument('--no-augmentation',action='store_true')
 
 
-def balanced_training_view(dataset,seed=3407):
+def fit_training_config(cfg,batch_boxes):
+    """Fit dimension anchors ONLY from range-filtered training labels.
+
+    Never call this on validation/test data. Missing training classes retain
+    the explicitly configured fallback prior and are reported in the counts.
+    """
+    grouped=[[] for _ in CLASSES]
+    for boxes in batch_boxes:
+        boxes=torch.as_tensor(boxes,dtype=torch.float32).detach().cpu()
+        valid=in_bev_range(boxes,cfg)&torch.isfinite(boxes).all(dim=1)&(boxes[:,3:6]>0).all(dim=1)
+        boxes=boxes[valid]
+        if len(boxes) and ((boxes[:,7]<0)|(boxes[:,7]>=len(CLASSES))|(boxes[:,7]!=boxes[:,7].long())).any():
+            raise ValueError('Invalid training class IDs')
+        for ci in range(len(CLASSES)):
+            selected=boxes[boxes[:,7]==ci,3:6]
+            if len(selected):grouped[ci].append(selected)
+    counts=[];priors=[]
+    for ci,items in enumerate(grouped):
+        values=torch.cat(items) if items else torch.empty(0,3)
+        counts.append(len(values))
+        priors.append(tuple(torch.quantile(values,.5,dim=0).tolist()) if len(values) else tuple(cfg.class_size_priors[ci]))
+    if not sum(counts):raise ValueError('No valid training objects to fit the task recipe')
+    return replace(cfg,training_class_counts=tuple(counts),
+                   class_size_priors=tuple(priors) if cfg.size_encoding=='class_relative' else cfg.class_size_priors).validate()
+
+
+def balanced_training_view(dataset,seed=3407,cfg=None):
     """Bounded repeats based on class presence, keeping all background frames.
 
     Fractional repeats are rounded once with a seeded generator, at most three
     entries per original frame. DistributedSampler then shards these entries.
     """
-    present=torch.zeros(len(dataset),6,dtype=torch.bool)
+    cfg=cfg or ModelConfig()
+    present=torch.zeros(len(dataset),len(CLASSES),dtype=torch.bool)
+    objects=torch.zeros(len(CLASSES))
     for i,boxes in enumerate(dataset.boxes):
-        if len(boxes):present[i,boxes[:,-1].long().unique()]=True
-    frequency=present.float().mean(dim=0).clamp(min=1/max(1,len(dataset)))
-    class_repeat=torch.sqrt(.05/frequency).clamp(min=1,max=3)
+        if len(boxes):
+            labels=boxes[:,-1].long()
+            present[i,labels.unique()]=True
+            objects+=torch.bincount(labels,minlength=len(CLASSES))
+    if cfg.sampling_mode=='object_frequency':
+        frequency=objects/objects.sum().clamp(min=1)
+        class_repeat=torch.sqrt(.1/frequency.clamp(min=1/max(1,float(objects.sum())))).clamp(min=1,max=3)
+    else:
+        frequency=present.float().mean(dim=0).clamp(min=1/max(1,len(dataset)))
+        class_repeat=torch.sqrt(.05/frequency).clamp(min=1,max=3)
     repeats=torch.where(present,class_repeat[None],torch.ones_like(present,dtype=torch.float32)).max(dim=1).values
     generator=torch.Generator().manual_seed(seed)
     counts=repeats.floor().long()+(torch.rand(len(dataset),generator=generator)<repeats.frac()).long()

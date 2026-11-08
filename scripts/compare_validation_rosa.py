@@ -24,7 +24,7 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from raybev import CLASSES,ModelConfig,RayBEVLite
-from raybev.detection import decode_detections,detection_scores,in_bev_range,metric_to_cell
+from raybev.detection import decode_detections,detection_scores,decode_sizes,decode_heading,in_bev_range,metric_to_cell
 from raybev.geometry import load_cameras,project_fisheye
 from raybev.metrics import evaluate_detections,_match_class
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples,load_annotations,names_to_ids,boxes_to_baselink
@@ -135,7 +135,7 @@ def infer(args,state,cfg,dataset):
             with amp:output=model(images.to(device,non_blocking=device.type=='cuda'))
             output=tuple(v.float() for v in output)
             decoded=decode_detections(output,cfg,score_threshold=.01,topk=300)
-            raw=decode_detections(output[:2],cfg,score_threshold=.01,topk=300)
+            raw=decode_detections(output,replace(cfg,quality_score_power=0.),score_threshold=.01,topk=300)
             low=decode_detections(output,cfg,score_threshold=.001,topk=300)
             heat=output[0].sigmoid();quality=output[2].sigmoid()
             ranked=detection_scores(output,cfg)
@@ -156,13 +156,16 @@ def infer(args,state,cfg,dataset):
                     rr,cc=rows.to(device),cols.to(device)
                     probs=heat[bi,:,rr,cc].T.cpu().numpy()
                     regs=output[1][bi,:,rr,cc].T.cpu().numpy()
+                    oracle_sizes=decode_sizes(torch.from_numpy(regs[:,3:6]),classes,cfg).numpy()
+                    bin_logits=output[3][bi,:,rr,cc].T.cpu() if cfg.heading_bins else None
+                    oracle_yaw,_=decode_heading(torch.from_numpy(regs[:,6:8]),bin_logits,cfg)
                     qs=quality[bi,0,rr,cc].cpu().numpy()
                     near=neighborhood[bi,:,rr,cc].T.cpu().numpy()
                     for j,box in enumerate(gt.numpy()):
                         reg=regs[j]
                         oracle=[cfg.bev_x_max-(float(rows[j])+.5+reg[0])*cfg.bev_resolution,
                             cfg.bev_y_max-(float(cols[j])+.5+reg[1])*cfg.bev_resolution,
-                            float(reg[2]),*np.exp(np.clip(reg[3:6],-3,5)).tolist(),math.atan2(reg[6],reg[7])]
+                            float(reg[2]),*oracle_sizes[j].tolist(),float(oracle_yaw[j])]
                         diagnostics.append({'token':token,'gt':box.tolist(),'class_probabilities':probs[j].tolist(),
                             'heat_5x5_peak':float(near[j,int(classes[j])]),'quality':float(qs[j]),'oracle_box':oracle})
                 position+=1
@@ -251,7 +254,7 @@ def analyze(args,cfg,dataset,rosa):
     train=RosaCombinedDataset(args.root,'rosa/fisheye3dod_infos_train.pkl',cfg=cfg,
         box_frame=dataset.box_frame,calibration=getattr(args,'lidar_calibration',None) or args.calibration,
         z_reference=dataset.z_reference)
-    view=balanced_training_view(train)
+    view=balanced_training_view(train,cfg=cfg)
     frame_counts=Counter();box_counts=Counter()
     for b in train.boxes:
         frame_counts.update(CLASSES[i] for i in b[:,7].long().unique().tolist())

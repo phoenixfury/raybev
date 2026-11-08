@@ -22,8 +22,8 @@ from raybev import ModelConfig, RayBEVLite, CLASSES
 from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.rosa_dataset import boxes_to_baselink,read_T_base_clidar
 from raybev.preprocessing import letterbox_images, normalize_imagenet
-from raybev.detection import make_targets,detection_loss
-from raybev.training import add_training_options,build_optimizer,build_scheduler,calibration_sha256
+from raybev.detection import make_targets,detection_loss,in_bev_range
+from raybev.training import add_training_options,build_optimizer,build_scheduler,calibration_sha256,fit_training_config
 
 
 class NPZDataset(Dataset):
@@ -36,17 +36,21 @@ class NPZDataset(Dataset):
         self.T_base_clidar=read_T_base_clidar(calibration) if self.box_frame=='CLIDAR' else None
         self.z_reference=z_reference
     def __len__(self):return len(self.samples)
-    def __getitem__(self,index):
+    def read_boxes(self,index):
         with np.load(self.samples[index]) as data:
-            ims=torch.from_numpy(np.array(data['images'])).float()
             boxes=torch.from_numpy(np.array(data['boxes'],dtype=np.float32))
-        if ims.ndim!=4 or ims.shape[:2]!=(4,3) or boxes.ndim!=2 or boxes.shape[1] not in (8,10):
-            raise ValueError('Expected images [4,3,H,W], boxes [N,8] or legacy [N,10]')
+        if boxes.ndim!=2 or boxes.shape[1] not in (8,10):
+            raise ValueError('Expected boxes [N,8] or legacy [N,10]')
         if boxes.shape[1] == 10:
             # Drop former vx, vy columns, retain the original class ID.
             boxes = boxes[:, [0,1,2,3,4,5,6,9]]
         boxes[:,:7]=torch.as_tensor(boxes_to_baselink(boxes[:,:7].numpy(),self.box_frame,
                                                     self.T_base_clidar,self.z_reference),dtype=boxes.dtype)
+        return boxes[in_bev_range(boxes,self.cfg)&torch.isfinite(boxes).all(dim=1)&(boxes[:,3:6]>0).all(dim=1)]
+    def __getitem__(self,index):
+        with np.load(self.samples[index]) as data:ims=torch.from_numpy(np.array(data['images'])).float()
+        if ims.ndim!=4 or ims.shape[:2]!=(4,3):raise ValueError('Expected images [4,3,H,W]')
+        boxes=self.read_boxes(index)
         if ims.max()>1.5:ims/=255.
         ims=letterbox_images(ims[None],self.cfg.image_width,self.cfg.image_height)
         return normalize_imagenet(ims)[0],boxes
@@ -62,7 +66,7 @@ def build_parser():
     a.add_argument('--epochs',type=int,default=10)
     a.add_argument('--batch-size',type=int,default=2)
     a.add_argument('--lr',type=float,default=2e-4)
-    a.add_argument('--checkpoint',default='raybev_lite.pt')
+    a.add_argument('--checkpoint',default='raybev_v3_tasks.pt')
     a.add_argument('--pretrained',action='store_true',help='Retained for compatibility; pretrained is now the default')
     add_training_options(a)
     return a
@@ -74,9 +78,13 @@ def main():
     cfg=ModelConfig().validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
     device='cuda' if torch.cuda.is_available() else 'cpu'
+    dataset=NPZDataset(args.data,cfg,args.box_frame,args.lidar_calibration,args.z_reference)
+    cfg=fit_training_config(cfg,(dataset.read_boxes(i) for i in range(len(dataset))))
+    dataset.cfg=cfg
+    print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
     model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained,
                      backbone_weights=args.backbone_weights).to(device)
-    loader=DataLoader(NPZDataset(args.data,cfg,args.box_frame,args.lidar_calibration,args.z_reference),batch_size=args.batch_size,
+    loader=DataLoader(dataset,batch_size=args.batch_size,
                       shuffle=True,collate_fn=lambda examples:([x[0] for x in examples],
                                                                  [x[1] for x in examples]))
     optimizer=build_optimizer(model,args.lr,.001,args.backbone_lr_mult)

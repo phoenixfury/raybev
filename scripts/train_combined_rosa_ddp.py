@@ -37,7 +37,7 @@ from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets, detection_loss, decode_detections
 from raybev.metrics import evaluate_detections
 from raybev.rosa_dataset import RosaCombinedDataset, collate_samples
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config
 
 try:
     from tqdm.auto import tqdm
@@ -154,6 +154,10 @@ def make_flat_metrics(row):
     flat = {k: row[k] for k in ('epoch','lr','train_loss','train_heatmap_loss',
              'train_regression_loss','val_loss','val_heatmap_loss','val_regression_loss',
              'seconds','world_size','global_batch_size','train_samples_seen')}
+    for phase in ('train','val'):
+        for component in ('heading_bin','center_classification','size_regression'):
+            key=f'{phase}_{component}_loss'
+            if key in row:flat[key]=row[key]
     for key, value in metrics.items():
         if key not in ('class_results','active_classes','excluded_classes',
                        'AP_distance_thresholds','per_bag_metrics'):
@@ -162,7 +166,8 @@ def make_flat_metrics(row):
         for key in ('mAP','mATE','mASE','mAOE'):
             flat[f'bag_{bag}_{key}'] = bm[key]
     for name,cm in metrics['class_results'].items():
-        for key in ('AP','gt_count','ATE','ASE','AOE','precision','recall','TP','FP','FN'):
+        for key in ('AP','gt_count','ATE','ASE','AOE','precision','recall','TP','FP','FN',
+                    'heading_matches','axis_AOE','heading_flip_rate','heading_within15_rate'):
             flat[f'{key}_{name}'] = cm.get(key)
         for threshold, ap in (cm.get('AP_by_distance') or {}).items():
             flat[f'AP_{name}_at_{threshold}m'] = ap
@@ -205,7 +210,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v2_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v3_tasks_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -273,11 +278,13 @@ def main():
         val = RosaCombinedDataset(ann_file=args.val_ann, **ds_args)
         if len(train) == 0 or len(val) == 0 or len(train) < world:
             raise ValueError('Empty/inadequate train or validation split')
+        cfg=fit_training_config(cfg,train.boxes)
+        if primary:print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
         if any(s['metainfo'].get('temporal_split')!='train' for s in train.rows):
             raise ValueError('Train/validation leakage in training annotation PKL')
         if any(s['metainfo'].get('temporal_split')!='val' for s in val.rows):
             raise ValueError('Train/validation leakage in validation annotation PKL')
-        training_data=train if args.no_balance else balanced_training_view(train,args.seed)
+        training_data=train if args.no_balance else balanced_training_view(train,args.seed,cfg)
         train_sampler = DistributedSampler(training_data, num_replicas=world, rank=rank,
                                            shuffle=True, seed=args.seed, drop_last=True)
         eval_sampler = ExactEvalSampler(val,rank,world)
@@ -363,7 +370,7 @@ def main():
             model.train()
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
-            local_sums = [0.,0.,0.,0.]
+            local_sums = [0.]*7
             optimizer.zero_grad(set_to_none=True)
             progress = Progress('train',epoch+1,args.epochs,len(train_loader),args.progress,args.log_every) if primary else None
             for i,(images,boxes,_) in enumerate(train_loader):
@@ -384,6 +391,8 @@ def main():
                 local_sums[1] += float(parts['heatmap']) * n
                 local_sums[2] += float(parts['regression']) * n
                 local_sums[3] += n
+                for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                    local_sums[j]+=float(parts[key])*n
                 if is_last_in_group:
                     scaler.unscale_(optimizer)
                     torch.nn.utils.clip_grad_norm_(local_model.parameters(),10.)
@@ -403,7 +412,7 @@ def main():
             # fixed multi-megabyte projection buffers.
             sync_bn_running_buffers(local_model)
             local_model.eval()
-            val_sums = [0.,0.,0.,0.]
+            val_sums = [0.]*7
             local_predictions = []
             val_progress = Progress('val',epoch+1,args.epochs,len(val_loader),args.progress,args.log_every) if primary else None
             pos = 0
@@ -419,6 +428,8 @@ def main():
                     val_sums[1] += float(parts['heatmap']) * n
                     val_sums[2] += float(parts['regression']) * n
                     val_sums[3] += n
+                    for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                        val_sums[j]+=float(parts[key])*n
                     decoded = decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                     # ExactEvalSampler yields rank, rank+world, rank+2*world...
                     indices = [rank+world*(pos+j) for j in range(n)]
@@ -465,6 +476,9 @@ def main():
                            global_batch_size=world*args.batch_size*args.accum_steps,
                            train_samples_seen=int(totals[3]),metrics=metrics,
                            per_bag_metrics=per_bag)
+                for phase,sums in (('train',totals),('val',val_totals)):
+                    for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                        row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
                 with (out/'history.jsonl').open('a') as fh:
                     fh.write(json.dumps(row,allow_nan=False)+'\n')
                 flat = make_flat_metrics(row)

@@ -54,7 +54,7 @@ def test_lut_coordinates_no_padding():
 
 
 def test_encode_decode_exact_grid_point():
-    cfg = ModelConfig()
+    cfg = ModelConfig.from_checkpoint({'cfg':{'architecture_version':2}})
     box = torch.tensor([[2.5, -4., 0.8, 4.5, 1.8, 1.5, 1.1, 0.]])
     heat, reg, mask = make_targets([box], cfg)
     assert mask.sum().item() == 1
@@ -65,12 +65,12 @@ def test_encode_decode_exact_grid_point():
     det = decode_detections((logits, reg), cfg, score_threshold=.5)[0]
     assert det.shape == (1, 9)
     assert torch.allclose(det[0, :7], box[0, :7], atol=1e-4)
-    loss, _ = detection_loss((logits, reg), (heat, reg, mask))
+    loss, _ = detection_loss((logits, reg), (heat, reg, mask),cfg=cfg)
     assert torch.isfinite(loss)
 
 
 def test_all_six_class_target_and_decode():
-    cfg = ModelConfig()
+    cfg = ModelConfig.from_checkpoint({'cfg':{'architecture_version':2}})
     boxes = []
     for class_id in range(6):
         boxes.append([15. - class_id * 5., -10. + class_id * 4., 0.9,
@@ -92,7 +92,7 @@ def test_all_six_class_target_and_decode():
     for pred in decoded:
         expected = boxes[int(pred[7])]
         assert torch.allclose(pred[:7], expected[:7], atol=1e-4)
-    loss, metrics = detection_loss((logits, reg), (heat, reg, mask))
+    loss, metrics = detection_loss((logits, reg), (heat, reg, mask),cfg=cfg)
     assert torch.isfinite(loss)
     assert torch.isfinite(metrics['heatmap'])
 

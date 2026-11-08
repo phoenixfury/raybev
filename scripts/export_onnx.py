@@ -44,9 +44,10 @@ def main():
                       str(out/'image_encoder.onnx'),input_names=['image','geometry'],
                       output_names=['feature_map','confidence_logits'],opset_version=17)
     cin=cfg.bev_input_channels
+    output_names=['heatmap_logits','regression','quality_logits']+(['heading_logits'] if cfg.heading_bins else [])
     torch.onnx.export(model.bev_detector,torch.zeros(1,cin,cfg.bev_height,cfg.bev_width),
                       str(out/'bev_detector.onnx'),input_names=['bev_features'],
-                      output_names=['heatmap_logits','regression','quality_logits'],opset_version=17)
+                      output_names=output_names,opset_version=17)
     np.savez_compressed(out/'geometry_lut.npz',
                         sample_grid=model.transport.sample_grid.numpy(),
                         geometric_prior=model.transport.geometric_prior.numpy(),
@@ -71,6 +72,12 @@ def main():
              'quality_score_power':cfg.quality_score_power,'score_peak_mode':cfg.score_peak_mode,
              'score_peak_order':'fuse_then_peak' if cfg.score_peak_mode=='fused' else 'heatmap_peak_then_fuse',
              'score_dtype':'float32',
+             'single_label_per_cell':cfg.single_label,
+             'heading_bins':cfg.heading_bins,
+             'heading_decode':'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)',
+             'heading_confidence':'max(softmax(heading_logits)); separate from object score' if cfg.heading_bins else 'not available',
+             'size_encoding':cfg.size_encoding,'class_size_priors_LWH_m':cfg.class_size_priors,
+             'size_decode':'exp(clamp(size_residual + log(class_prior[predicted_class]), -3, 5))' if cfg.size_encoding=='class_relative' else 'exp(clamp(log_size, -3, 5))',
              'invalid_candidate_handling':'mask nonfinite class, used quality, and regression values before peaks/topk; exclude zero scores',
              'score_interpretation':'ranking confidence, not a calibrated detection probability; no class-loss weights applied',
              'normalization_mean':[.485,.456,.406],'normalization_std':[.229,.224,.225],
@@ -79,7 +86,9 @@ def main():
              'bev_size_hw': [cfg.bev_height,cfg.bev_width],
              'classes': list(CLASSES), 'class_id_to_name': {str(i): s for i,s in enumerate(CLASSES)},
              'regression_channels': 8,
-             'regression_semantics': ['offset_row','offset_col','z','log_length','log_width','log_height','sin_yaw','cos_yaw'],
+             'regression_semantics': ['offset_row','offset_col','z']+(
+                 ['log_length_relative_to_class','log_width_relative_to_class','log_height_relative_to_class'] if cfg.size_encoding=='class_relative' else ['log_length','log_width','log_height'])+(
+                 ['sin_heading_residual','cos_heading_residual'] if cfg.heading_bins else ['sin_yaw','cos_yaw']),
              'decoded_detection_semantics': ['x','y','z','length','width','height','yaw','class_id','confidence'],
              'bev_x_range_m': [cfg.bev_x_min, cfg.bev_x_max],
              'bev_y_range_m': [cfg.bev_y_min, cfg.bev_y_max],

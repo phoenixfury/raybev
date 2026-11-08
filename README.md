@@ -1,5 +1,11 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**Current MobileNet heading/size/classification recipe: [TASK_V3.md](TASK_V3.md).**
+It supersedes the loss, sampler and three-output head contracts below. Train
+fresh into `work_dirs/raybev_v3_tasks_48m_clidar_2x3080ti`; do not resume the old
+v2 task checkpoint. The OpenCV calibration, CLIDAR input convention and BEV
+geometry are unchanged. The new head adds four heading-bin logits.
+
 **Current architecture and training/deployment guide: [V2.md](V2.md).** Start a fresh v2 run: the existing v1 checkpoints cannot resume this network. Source changes do not establish trained accuracy or TDA4VH throughput. Older dataset/history sections below describe the original integration.
 
 **Calibration correction:** the four-bag source labels are CLIDAR (now the
@@ -13,7 +19,8 @@ New-run difficulty weights are `(1,2,4,4,4,4)` for foreground classification,
 box regression and quality supervision in class order below. Confidence now
 uses `class_score * sqrt(quality)` with fused-score peak selection. Old
 checkpoints retain their original scoring through `ModelConfig.from_checkpoint`.
-These training/host-decoder changes do not enlarge the learned TDA4VH graphs.
+Those earlier loss/scoring changes did not enlarge the learned graphs; the
+current task recipe additionally has a small four-logit heading branch.
 
 Architecture: Four native fisheye frames → shared pretrained MobileNetV2-1.0 → geometry-conditioned 32-channel pyramid fusion → OpenCV fisheye LUT sampling across four heights with learned confidence → compact 40-channel pooled BEV → residual multiscale BEV CNN → six-class heatmap, separate eight-channel box tasks, and localization-quality head. No dense depth volume, transformer decoder, LiDAR input, or velocity output.
 

@@ -39,6 +39,18 @@ class ModelConfig:
     yaw_norm_weight: float = 0.1
     quality_score_power: float = 0.5
     score_peak_mode: str = 'fused'
+    # Task recipe 3: lightweight direction classification + local residual.
+    heading_bins: int = 4
+    heading_loss_weight: float = 1.0
+    normalize_yaw_loss: bool = False
+    class_balanced_losses: bool = True
+    center_classification_weight: float = 0.5
+    size_encoding: str = 'class_relative'
+    # Replaced by TRAIN-ONLY medians before constructing the training model.
+    class_size_priors: tuple = ((1.0,1.0,1.0),)*len(CLASSES)
+    training_class_counts: tuple = (0,)*len(CLASSES)
+    sampling_mode: str = 'object_frequency'
+    single_label: bool = True
     nms_iou_threshold: float = 0.25
     max_detections: int = 150
 
@@ -88,6 +100,17 @@ class ModelConfig:
             raise ValueError('Invalid quality score power or peak mode')
         if not 0 <= self.nms_iou_threshold <= 1 or self.max_detections < 1:
             raise ValueError('Invalid NMS configuration')
+        if self.heading_bins not in (0,4) or self.size_encoding not in ('absolute','class_relative'):
+            raise ValueError('Invalid heading bins or size encoding')
+        if (len(self.class_size_priors)!=len(CLASSES) or
+                any(len(p)!=3 or not all(math.isfinite(v) and v>0 for v in p) for p in self.class_size_priors)):
+            raise ValueError('Six finite positive L/W/H class priors required')
+        if len(self.training_class_counts)!=len(CLASSES) or any(n<0 for n in self.training_class_counts):
+            raise ValueError('Invalid training class counts')
+        if self.sampling_mode not in ('frame_presence','object_frequency'):
+            raise ValueError('Invalid sampling mode')
+        if not all(math.isfinite(v) and v>=0 for v in (self.heading_loss_weight,self.center_classification_weight)):
+            raise ValueError('Invalid auxiliary loss weights')
         return self
 
     @classmethod
@@ -99,6 +122,15 @@ class ModelConfig:
         values.setdefault('class_regression_weights',(1.0,)*len(CLASSES))
         values.setdefault('quality_score_power',1.0)
         values.setdefault('score_peak_mode','heatmap')
+        for key,value in dict(heading_bins=0,heading_loss_weight=0.,normalize_yaw_loss=True,
+                class_balanced_losses=False,center_classification_weight=0.,size_encoding='absolute',
+                class_size_priors=((1.,1.,1.),)*len(CLASSES),training_class_counts=(0,)*len(CLASSES),
+                sampling_mode='frame_presence',single_label=False).items():
+            values.setdefault(key,value)
+        # JSON-based tooling may serialize tuple fields as lists.
+        for key in ('heights','class_positive_weights','class_regression_weights','regression_weights','training_class_counts'):
+            if key in values:values[key]=tuple(values[key])
+        if 'class_size_priors' in values:values['class_size_priors']=tuple(tuple(p) for p in values['class_size_priors'])
         return cls(**values).validate()
 
     def downscale(self, factor: int):

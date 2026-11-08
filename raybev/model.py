@@ -174,13 +174,20 @@ class BEVDetector(nn.Module):
         self.height = head(1)
         self.size = head(3)
         self.yaw = head(2)
+        self.heading = head(cfg.heading_bins) if cfg.heading_bins else None
         self.quality = head(1)
         # Regression channels: offset_r,c (2), z (1), log_lwh (3),
-        # sin_yaw,cos_yaw (2). No velocity regression.
+        # Local sin/cos residual for binned heading; global sin/cos for legacy.
         # At 384x384 most cells are background. A 1% initial probability avoids
         # the dense-negative spike produced by the old 10% prior on this grid.
         nn.init.normal_(self.heatmap[-1].weight,std=.001)
         nn.init.constant_(self.heatmap[-1].bias,math.log(.01/.99))
+        if cfg.size_encoding=='class_relative':
+            nn.init.zeros_(self.size[-1].weight)
+            nn.init.zeros_(self.size[-1].bias)
+        if self.heading is not None:
+            nn.init.normal_(self.heading[-1].weight,std=.001)
+            nn.init.zeros_(self.heading[-1].bias)
         nn.init.zeros_(self.yaw[-1].weight)
         with torch.no_grad():
             self.yaw[-1].bias.copy_(torch.tensor([0.,1.]))
@@ -195,7 +202,8 @@ class BEVDetector(nn.Module):
         features = self.fuse1(fine+self.upsample(self.lat2(s2),fine))
         regression = torch.cat((self.offset(features),self.height(features),
                                 self.size(features),self.yaw(features)),dim=1)
-        return self.heatmap(features),regression,self.quality(features)
+        outputs=(self.heatmap(features),regression,self.quality(features))
+        return outputs+(self.heading(features),) if self.heading is not None else outputs
 
     def upsample(self, x, reference):
         if self.exact_pyramid:

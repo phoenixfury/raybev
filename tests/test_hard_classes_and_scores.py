@@ -11,7 +11,9 @@ from raybev.detection import make_targets,detection_loss,decode_detections,detec
 
 def small_config():
     return replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,
-                   bev_y_max=4.,bev_resolution=1.).validate()
+                   bev_y_max=4.,bev_resolution=1.,heading_bins=0,normalize_yaw_loss=True,
+                   class_balanced_losses=False,center_classification_weight=0.,
+                   size_encoding='absolute',single_label=False).validate()
 
 
 def outputs(cfg):
