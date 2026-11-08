@@ -166,7 +166,7 @@ def make_flat_metrics(row):
         for key in ('mAP','mATE','mASE','mAOE'):
             flat[f'bag_{bag}_{key}'] = bm[key]
     for name,cm in metrics['class_results'].items():
-        for key in ('AP','gt_count','ATE','ASE','AOE','precision','recall','TP','FP','FN',
+        for key in ('AP','gt_count','prediction_count','ATE','ASE','AOE','precision','recall','TP','FP','FN',
                     'heading_matches','axis_AOE','heading_flip_rate','heading_within15_rate'):
             flat[f'{key}_{name}'] = cm.get(key)
         for threshold, ap in (cm.get('AP_by_distance') or {}).items():
@@ -210,7 +210,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v3_tasks_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v3_1_tasks_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -271,6 +271,8 @@ def main():
         cfg = ModelConfig().validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
+            print(f'Task recipe 3.1: macro_losses={cfg.class_balanced_losses}; '
+                  f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
             print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
         ds_args = dict(root=args.root, box_frame=args.box_frame, z_reference=args.z_reference,cfg=cfg,
                        calibration=args.lidar_calibration if args.box_frame == 'CLIDAR' else None)
@@ -500,6 +502,9 @@ def main():
                 print('AP per class:', ' '.join(f'{name}={value["AP"]:.4f}'
                       if value['AP'] is not None else f'{name}=N/A'
                       for name,value in metrics['class_results'].items()),flush=True)
+                print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
+                      ' '.join(f'{name}={value["prediction_count"]}/{value["gt_count"]}'
+                               for name,value in metrics['class_results'].items()),flush=True)
                 # Store unwrapped model keys for compatibility with 1-GPU checkpoints.
                 state={'state_dict':local_model.state_dict(),
                        'optimizer':optimizer.state_dict(), 'scheduler':scheduler.state_dict(),

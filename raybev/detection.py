@@ -144,6 +144,8 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     positive=-(torch.log(p) * (1-p).pow(2)*is_pos*class_weights)
     neg_loss=-(torch.log(1-p)*p.pow(2)*neg_w*is_neg).sum()
     if cfg.class_balanced_losses:
+        # Historical v3 only; new runs use global normalization below. Mixing
+        # macro positives with globally normalized negatives distorts priors.
         per_class_count=is_pos.sum(dim=(0,2,3))
         pos_loss=(positive.sum(dim=(0,2,3))/per_class_count.clamp(min=1)).sum()/(per_class_count>0).sum().clamp(min=1)
     else:pos_loss=positive.sum()/is_pos.sum().clamp(min=1)

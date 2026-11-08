@@ -43,13 +43,16 @@ class ModelConfig:
     heading_bins: int = 4
     heading_loss_weight: float = 1.0
     normalize_yaw_loss: bool = False
-    class_balanced_losses: bool = True
-    center_classification_weight: float = 0.5
+    # Task recipe 3.1: keep the same object denominator for foreground and
+    # background. Macro averaging + difficulty weights + repeats collapsed v3
+    # class scores. Retain the flag only to reproduce historical checkpoints.
+    class_balanced_losses: bool = False
+    center_classification_weight: float = 0.1
     size_encoding: str = 'class_relative'
     # Replaced by TRAIN-ONLY medians before constructing the training model.
     class_size_priors: tuple = ((1.0,1.0,1.0),)*len(CLASSES)
     training_class_counts: tuple = (0,)*len(CLASSES)
-    sampling_mode: str = 'object_frequency'
+    sampling_mode: str = 'frame_presence'
     single_label: bool = True
     nms_iou_threshold: float = 0.25
     max_detections: int = 150

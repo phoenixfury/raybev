@@ -50,7 +50,7 @@ def test_flat_metrics_includes_ap_and_nullable_nds():
     mod=module()
     classes={c:dict(AP=None,gt_count=0,ATE=None,ASE=None,AOE=None,
                     precision=None,recall=None,AP_by_distance=None) for c in mod.CLASSES}
-    classes['car'].update(AP=0.4,gt_count=8,AP_by_distance={'2.0':0.4})
+    classes['car'].update(AP=0.4,gt_count=8,prediction_count=10,AP_by_distance={'2.0':0.4})
     metrics=dict(class_results=classes,active_classes=['car'],excluded_classes=['van'],
                  AP_distance_thresholds=[.5,1.,2.,4.],mAP=0.4,NDS=None,mATE=0.5)
     row=dict(epoch=1,lr=0.0002,train_loss=1.,train_heatmap_loss=.2,
@@ -60,5 +60,6 @@ def test_flat_metrics_includes_ap_and_nullable_nds():
              metrics=metrics,per_bag_metrics={})
     flattened=mod.make_flat_metrics(row)
     assert flattened['AP_car']==.4
+    assert flattened['prediction_count_car']==10
     assert flattened['AP_van'] is None
     assert flattened['NDS'] is None

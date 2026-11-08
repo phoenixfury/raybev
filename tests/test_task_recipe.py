@@ -8,7 +8,7 @@ import torch
 from raybev.config import ModelConfig
 from raybev.detection import (make_targets,detection_loss,decode_detections,
                               heading_targets,decode_heading,detection_scores)
-from raybev.training import fit_training_config,balanced_training_view
+from raybev.training import fit_training_config,balanced_training_view,check_resume
 from raybev.metrics import evaluate_detections
 from raybev.model import BEVDetector
 
@@ -84,8 +84,8 @@ def test_size_medians_are_fitted_from_supplied_training_labels_only():
     torch.testing.assert_close(train,original)
 
 
-def test_adding_many_cars_does_not_dilute_bus_foreground_box_or_direction_gradients():
-    cfg=config();gradients=[]
+def test_historical_macro_recipe_preserves_its_original_gradient_contract():
+    cfg=replace(config(),class_balanced_losses=True,center_classification_weight=.5);gradients=[]
     for cars in (1,30):
         gt=[box(cfg,x=3.5,y=3.5)]
         for i in range(1,cars+1):gt.append(box(cfg,ci=0,x=3.5-i//8,y=3.5-i%8))
@@ -110,7 +110,7 @@ def test_auxiliary_class_loss_explicitly_pushes_bus_above_car_at_bus_center():
 
 
 def test_object_sampling_repeats_bus_frames_even_when_frame_presence_exceeds_five_percent():
-    cfg=config()
+    cfg=replace(config(),sampling_mode='object_frequency')
     class Dataset:
         boxes=[torch.tensor([box(cfg,ci=0) for _ in range(10)]+([box(cfg)] if i<10 else [])) for i in range(90)]+[torch.empty(0,8)]
         def __len__(self):return len(self.boxes)
@@ -120,6 +120,92 @@ def test_object_sampling_repeats_bus_frames_even_when_frame_presence_exceeds_fiv
     assert old.count(0)==1 and new.count(0)==3
     assert set(new)==set(range(91)) and new.count(90)==1
     assert new==balanced_training_view(dataset,42,cfg).indices
+
+
+def test_stable_defaults_do_not_stack_macro_loss_and_object_frequency_repeats():
+    cfg=ModelConfig()
+    assert not cfg.class_balanced_losses
+    assert cfg.center_classification_weight==pytest.approx(.1)
+    assert cfg.sampling_mode=='frame_presence'
+    assert cfg.class_positive_weights[3]==cfg.class_positive_weights[5]==4.
+    assert cfg.class_regression_weights[3]==cfg.class_regression_weights[5]==4.
+    assert cfg.heading_bins==4 and cfg.size_encoding=='class_relative'
+
+
+def test_failed_v3_recipe_is_loadable_but_cannot_resume_with_corrected_defaults():
+    cfg=ModelConfig()
+    failed=replace(cfg,class_balanced_losses=True,center_classification_weight=.5,
+                   sampling_mode='object_frequency')
+    state={'cfg':vars(failed)}
+    assert ModelConfig.from_checkpoint(state)==failed
+    with pytest.raises(ValueError,match='Resume config differs'):
+        check_resume(state,cfg,None)
+
+
+def test_global_focal_uses_one_object_denominator_for_positives_and_negatives():
+    cfg=replace(config(),center_classification_weight=0.)
+    gt=torch.tensor([box(cfg,ci=0,x=2.5,y=2.5),box(cfg,ci=0,x=-2.5,y=-2.5),box(cfg)])
+    target=make_targets([gt],cfg,return_class_ids=True)
+    pred=predictions(cfg)
+    _,parts=detection_loss(pred,target,cfg=cfg)
+    pos=target[0]>=1-1e-5
+    class_weights=torch.tensor(cfg.class_positive_weights)[None,:,None,None]
+    expected=math.log(2)*.25*((pos*class_weights).sum()+((1-target[0]).pow(4)*~pos).sum())/pos.sum()
+    torch.testing.assert_close(parts['heatmap'],expected)
+
+
+def test_car_bias_is_not_suppressed_by_stacked_rare_class_balancing():
+    # Realistic early-training prior: many cars, a few heavy vehicles, and
+    # slightly higher truck/bus probabilities across a dense 384x384 map.
+    cfg=ModelConfig();boxes=[]
+    for i,ci in enumerate([0]*17+[1]*3+[3]*2+[5]):
+        boxes.append([30.-(i//6)*10.,30.-(i%6)*10.,1.,*config().class_size_priors[ci],0.,ci])
+    target=make_targets([torch.tensor(boxes)],cfg,return_class_ids=True)
+    probabilities=torch.tensor([.025,.03,.01,.08,.02,.06])
+    gradients=[]
+    for recipe in (cfg,replace(cfg,class_balanced_losses=True,center_classification_weight=.5)):
+        heat=torch.logit(probabilities)[None,:,None,None].expand(1,6,384,384).clone().requires_grad_()
+        pred=[heat]+[torch.zeros(1,c,384,384,requires_grad=True) for c in (8,1,4)]
+        loss,_=detection_loss(pred,target,cfg=recipe);loss.backward()
+        gradients.append(float(heat.grad[:,0].sum()))
+        for ci in (3,5):
+            centers=target[0][:,ci]==1
+            assert (heat.grad[:,ci][centers]<0).all()  # heavy positives still learn
+    assert gradients[0]<0,gradients  # descent increases the corrected car bias
+    assert gradients[1]>0,gradients  # reproduces the failed macro recipe
+
+
+def test_sparse_shared_classifier_learns_cars_trucks_and_buses_with_background():
+    # A learned classification/decode smoke test, not an accuracy claim for the
+    # camera backbone: geometry is oracle and input features identify classes.
+    torch.manual_seed(17)
+    cfg=replace(config(),bev_x_min=-16.,bev_x_max=16.,bev_y_min=-16.,bev_y_max=16.)
+    boxes=[box(cfg,ci=0,x=x,y=y) for x in (-12.5,-7.5,-2.5,2.5)
+           for y in (-12.5,-7.5,-2.5,2.5,7.5)]
+    boxes.extend([box(cfg,ci=3,x=12.5,y=-9.5),box(cfg,ci=5,x=12.5,y=6.5)])
+    gt=torch.tensor(boxes);targets=make_targets([gt],cfg,return_class_ids=True)
+    heat,reg,mask,owners=targets
+    features=torch.zeros(1,7,32,32);features[:,6]=1
+    for ci in (0,3,5):
+        centers=(owners[:,0]==ci)
+        features[:,ci][centers]=1.;features[:,6][centers]=0.
+    classifier=torch.nn.Conv2d(7,6,1)
+    torch.nn.init.zeros_(classifier.weight)
+    torch.nn.init.constant_(classifier.bias,math.log(.01/.99))
+    optimizer=torch.optim.Adam(classifier.parameters(),lr=.12)
+    heading=torch.full((1,4,32,32),-8.);heading[:,0]=8.
+    quality=torch.full((1,1,32,32),8.)
+    for _ in range(100):
+        optimizer.zero_grad(set_to_none=True)
+        loss,_=detection_loss((classifier(features),reg,quality,heading),targets,cfg=cfg)
+        loss.backward();optimizer.step()
+    with torch.no_grad():
+        output=(classifier(features),reg,quality,heading)
+        decoded=decode_detections(output,cfg,score_threshold=.3,apply_nms=False)[0]
+    assert len(decoded)==len(gt)
+    metrics=evaluate_detections([decoded.numpy()],[gt.numpy()])
+    for name in ('car','truck','bus'):
+        assert metrics['class_results'][name]['AP']>.99
 
 
 def test_one_class_per_cell_prevents_car_and_bus_priors_decoding_the_same_shared_box():

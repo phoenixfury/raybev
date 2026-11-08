@@ -109,7 +109,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v3_tasks_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v3_1_tasks_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -124,6 +124,8 @@ def main():
     if torch.cuda.is_available():torch.cuda.manual_seed_all(args.seed)
     cfg=ModelConfig().validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
+    print(f'Task recipe 3.1: macro_losses={cfg.class_balanced_losses}; '
+          f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
     print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
     ds_args=dict(root=args.root,box_frame=args.box_frame,z_reference=args.z_reference,cfg=cfg,
                  calibration=args.lidar_calibration if args.box_frame=='CLIDAR' else None)
@@ -250,6 +252,7 @@ def main():
         for cname,cm in metrics['class_results'].items():
             flat[f'AP_{cname}']=cm['AP']
             flat[f'GT_{cname}']=cm['gt_count']
+            flat[f'prediction_count_{cname}']=cm['prediction_count']
             flat[f'ATE_{cname}']=cm['ATE']
             flat[f'ASE_{cname}']=cm['ASE']
             flat[f'AOE_{cname}']=cm['AOE']
@@ -277,6 +280,9 @@ def main():
         ap_summary=' '.join(f'{name}={result["AP"]:.3f}' if result['AP'] is not None else f'{name}=N/A'
                             for name,result in metrics['class_results'].items())
         print(f'[Epoch {epoch+1}/{args.epochs}] Per-class AP: {ap_summary}',flush=True)
+        print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
+              ' '.join(f'{name}={result["prediction_count"]}/{result["gt_count"]}'
+                       for name,result in metrics['class_results'].items()),flush=True)
         print(f'[Epoch {epoch+1}/{args.epochs}] Saving checkpoint(s)...',flush=True)
         state={'state_dict':model.state_dict(),'optimizer':optimizer.state_dict(),'scheduler':scheduler.state_dict(),
                'epoch':epoch+1,'best_map':max(best,metrics['mAP']),'classes':list(CLASSES),

@@ -2,8 +2,10 @@
 
 **Current MobileNet heading/size/classification recipe: [TASK_V3.md](TASK_V3.md).**
 It supersedes the loss, sampler and three-output head contracts below. Train
-fresh into `work_dirs/raybev_v3_tasks_48m_clidar_2x3080ti`; do not resume the old
-v2 task checkpoint. The OpenCV calibration, CLIDAR input convention and BEV
+fresh into `work_dirs/raybev_v3_1_tasks_48m_clidar_2x3080ti`; do not resume the old
+v2 or failed v3 task checkpoint. Recipe 3.1 restores global loss normalization,
+reduces auxiliary class CE and uses milder frame-presence repeats after v3
+collapsed to zero validation AP. The OpenCV calibration, CLIDAR input convention and BEV
 geometry are unchanged. The new head adds four heading-bin logits.
 
 **Current architecture and training/deployment guide: [V2.md](V2.md).** Start a fresh v2 run: the existing v1 checkpoints cannot resume this network. Source changes do not establish trained accuracy or TDA4VH throughput. Older dataset/history sections below describe the original integration.
