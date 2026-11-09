@@ -29,7 +29,8 @@ def script(name):
 
 
 @pytest.mark.parametrize('recovery',[False,True])
-def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch,recovery):
+@pytest.mark.parametrize('freeze',['none','early'])
+def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch,recovery,freeze):
     cfg=ModelConfig().downscale(5);rows=[]
     for i in range(3):
         cameras={}
@@ -71,6 +72,7 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     out=tmp_path/'run'
     monkeypatch.setattr(sys,'argv',['train','--root',str(tmp_path),'--train-ann','train.pkl','--val-ann','val.pkl',
         '--epochs','1','--batch-size','1','--workers','0','--no-balance','--no-augmentation',
+        '--freeze-image-stages',freeze,
         '--warmup-steps','0','--heading-teacher',str(cachefile),'--out',str(out),'--progress','off']+
         (extra if recovery else ['--no-pretrained']))
     train.main()

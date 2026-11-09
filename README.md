@@ -1,5 +1,12 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**V4.3 results and next opt-in experiments: [TASK_V4_4.md](TASK_V4_4.md).**
+Best v4.3 is epoch 6 (5.31% internal mAP). The approved label-review fork
+corrects cargo trucks mislabeled Bus, keeps trams as Bus, and leaves TRAIN
+unchanged. A paired early-backbone-freeze experiment is available through
+`scripts/launch_v4_4_review_experiment.sh`; it is not an established accuracy gain
+or a new inference architecture. Original datasets/checkpoints are preserved.
+
 **Current recipe: [TASK_V4_3.md](TASK_V4_3.md)** — corrects stride-8 sampling
 alignment, constrains the complete facing vector, and retains separate height
 evidence. Fixed BEV normalization, objectness/foreground separation, TRAIN-only

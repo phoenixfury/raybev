@@ -92,10 +92,13 @@ def main():
     loader=DataLoader(dataset,batch_size=args.batch_size,
                       shuffle=True,collate_fn=lambda examples:([x[0] for x in examples],
                                                                  [x[1] for x in examples]))
+    from raybev.training import configure_image_training
+    configure_image_training(model,args.freeze_image_stages)
     optimizer=build_optimizer(model,args.lr,.001,args.backbone_lr_mult)
     scheduler=build_scheduler(optimizer,len(loader)*args.epochs,args.warmup_steps)
     for epoch in range(args.epochs):
         model.train()
+        configure_image_training(model,args.freeze_image_stages)
         running=0.
         for image_list,box_list in loader:
             images=torch.stack(image_list).to(device)

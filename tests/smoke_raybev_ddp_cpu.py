@@ -9,6 +9,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from raybev import ModelConfig,RayBEVLite
 from raybev.detection import make_targets,detection_loss
 from raybev.diagnostics import center_statistics,summarize_centers
+from raybev.training import configure_image_training
 
 def main():
     rank=int(os.environ['RANK'])
@@ -17,6 +18,8 @@ def main():
         torch.manual_seed(21)
         cfg=ModelConfig().downscale(5)
         model=RayBEVLite(cfg,str(Path(__file__).resolve().parents[1]/'configs/calibration_baselink.json'))
+        mode=os.environ.get('RAYBEV_FREEZE_IMAGE_STAGES','none')
+        configure_image_training(model,mode)
         ddp=DDP(model,broadcast_buffers=False,find_unused_parameters=False)
         x=torch.rand(1,4,3,128,160)
         for step in range(2):
@@ -28,13 +31,14 @@ def main():
             loss,_=detection_loss(output,targets,cfg=cfg)
             loss.backward()
             assert torch.isfinite(loss)
-            assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
+            assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters() if p.requires_grad)
+            assert all(p.grad is None for p in model.parameters() if not p.requires_grad)
             stats=center_statistics(output,targets,cfg)
             dist.all_reduce(stats)
             summary=summarize_centers(stats)
             assert sum(v['count'] for v in summary.values())==1
             assert summary['bus' if step==0 else 'truck']['count']==1
-        if rank==0: print('Real RayBEVLite 2-rank DDP CPU weighted Truck/Bus + empty-rank backward and center-stat reduction PASSED',flush=True)
+        if rank==0: print('Real RayBEVLite 2-rank DDP CPU weighted Truck/Bus + empty-rank backward and center-stat reduction PASSED; freeze='+mode,flush=True)
     finally:
         dist.destroy_process_group()
 if __name__=='__main__':main()

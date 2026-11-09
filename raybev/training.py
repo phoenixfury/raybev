@@ -22,6 +22,8 @@ def add_training_options(parser):
     parser.add_argument('--no-pretrained',action='store_true',help='Explicit random image initialization (ablation only)')
     parser.add_argument('--backbone-weights',help='Matching TorchVision ResNet-18 or MobileNetV2 state_dict for offline training')
     parser.add_argument('--backbone-lr-mult',type=float,default=.5)
+    parser.add_argument('--freeze-image-stages',choices=['none','early','all'],default='none',
+                        help='Generalization ablation: early freezes /8 and /16 backbone stages INCLUDING their BN statistics')
     parser.add_argument('--warmup-steps',type=int,default=500,help='Optimizer steps, not microbatches')
     parser.add_argument('--no-balance',action='store_true')
     parser.add_argument('--no-augmentation',action='store_true')
@@ -148,11 +150,30 @@ def accumulation_weight(batch_index,batch_samples,batch_size,accum_steps,sampler
     return batch_samples/samples
 
 
+def configure_image_training(model,mode='none'):
+    """Freeze pretrained stages, not the ray/FPN adapters or BEV detector.
+
+    Call after model.train() each epoch: requires_grad=False alone does NOT
+    freeze BatchNorm buffers. No inference graph or parameter cost is added.
+    """
+    if mode not in ('none','early','all'):raise ValueError('Invalid image stage freeze mode')
+    for name in ('stage8','stage16','stage32'):
+        stage=getattr(model.image_encoder,name)
+        frozen=mode=='all' or (mode=='early' and name!='stage32')
+        stage.requires_grad_(not frozen)
+        stage.train(model.training and not frozen)
+
+
+def annotation_hashes(train,val):
+    return dict(train=calibration_sha256(train.annotation_path),val=calibration_sha256(val.annotation_path))
+
+
 def build_optimizer(model,lr,weight_decay,backbone_lr_mult=.5):
     if lr<=0 or weight_decay<0 or backbone_lr_mult<=0:
         raise ValueError('Invalid optimizer controls')
     groups={}
     for name,param in model.named_parameters():
+        if not param.requires_grad:continue
         # Only the pretrained image stages use the reduced learning rate.
         backbone=name.startswith(('image_encoder.stage8.','image_encoder.stage16.','image_encoder.stage32.'))
         decay=0. if param.ndim==1 or name.endswith('.bias') else weight_decay
@@ -190,6 +211,11 @@ def check_resume(state,cfg,args):
         if state.get('lidar_calibration_sha256')!=calibration_sha256(lidar_path):
             raise ValueError('Resume CLIDAR calibration differs or has no saved hash; start a fresh run without --resume')
     recipe=state.get('recipe',{})
+    if recipe.get('freeze_image_stages','none')!=getattr(args,'freeze_image_stages','none'):
+        raise ValueError('Resume image freeze policy differs; use --init-from for a new experiment')
+    for split,expected in state.get('annotation_sha256',{}).items():
+        path=Path(args.root)/getattr(args,split+'_ann')
+        if calibration_sha256(path)!=expected:raise ValueError(f'Resume {split} annotation content differs')
     for key in ('epochs','warmup_steps','batch_size','accum_steps','no_balance',
                 'no_augmentation','backbone_lr_mult','lr','weight_decay','z_reference',
                 'seed','root','train_ann','val_ann','heading_teacher_weight','track_heading_weight','backbone'):

@@ -56,7 +56,8 @@ def training_boxes_sha256(dataset):
 
 def names_to_ids(names):
     aliases={'vehicle':'car','bicycle':'cyclist','person':'pedestrian',
-             'motorbike':'cyclist','construction_vehicle':'van'}
+             'motorbike':'cyclist','construction_vehicle':'van',
+             'tram':'bus'}  # Explicit custom taxonomy: rail passenger vehicles are Bus.
     ids=[]
     for x in names:
         name=str(x).strip().lower()

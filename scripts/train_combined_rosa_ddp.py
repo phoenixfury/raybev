@@ -37,6 +37,7 @@ from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets, detection_loss, decode_detections
 from raybev.metrics import evaluate_detections,heading_diagnostics
 from raybev.diagnostics import center_statistics,summarize_centers
+from raybev.training import configure_image_training,annotation_hashes
 from raybev.heading_supervision import HeadingSupervision
 from raybev.rosa_dataset import RosaCombinedDataset, collate_samples
 from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery,accumulation_weight
@@ -156,6 +157,8 @@ def make_flat_metrics(row):
     flat = {k: row[k] for k in ('epoch','lr','train_loss','train_heatmap_loss',
              'train_regression_loss','val_loss','val_heatmap_loss','val_regression_loss',
              'seconds','world_size','global_batch_size','train_samples_seen')}
+    for phase in ('train','val'):
+        if phase+'_annotation_sha256' in row:flat[phase+'_annotation_sha256']=row[phase+'_annotation_sha256']
     for phase in ('train','val'):
         for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction','heavy_classification','objectness'):
             key=f'{phase}_{component}_loss'
@@ -327,6 +330,9 @@ def main():
         if not primary:local_model=RayBEVLite(cfg,args.calibration,**model_options).to(device)
         dist.barrier()
         recovery=initialize_recovery(local_model,cfg,args) if args.init_from else (ckpt.get('warm_start') if ckpt else None)
+        configure_image_training(local_model,args.freeze_image_stages)
+        annotation_sha=annotation_hashes(train,val)
+        if primary:print('Image stage freeze:',args.freeze_image_stages,'annotation SHA256:',annotation_sha,flush=True)
         optimizer=build_optimizer(local_model,args.lr,args.weight_decay,args.backbone_lr_mult)
         scaler = create_grad_scaler(enabled=args.amp and pin)
         steps_per_epoch=math.ceil(len(train_loader)/args.accum_steps)
@@ -387,6 +393,7 @@ def main():
             start_time = time.monotonic()
             train_sampler.set_epoch(epoch)  # different deterministic shuffle each epoch
             model.train()
+            configure_image_training(local_model,args.freeze_image_stages)
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
             local_sums = [0.]*12
@@ -507,6 +514,7 @@ def main():
                            train_samples_seen=int(totals[3]),metrics=metrics,
                            per_bag_metrics=per_bag,heading_diagnostics=diagnostics,
                            center_diagnostics={'train':summarize_centers(train_centers),'val':summarize_centers(val_centers)})
+                row.update({phase+'_annotation_sha256':value for phase,value in annotation_sha.items()})
                 for phase,sums in (('train',totals),('val',val_totals)):
                     for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness'),4):
                         row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
@@ -515,8 +523,11 @@ def main():
                     fh.write(json.dumps(row,allow_nan=False)+'\n')
                 flat = make_flat_metrics(row)
                 csvpath=out/'epochs.csv'
+                fields=list(flat)
+                if csvpath.exists() and csvpath.stat().st_size:
+                    with csvpath.open(newline='') as previous:fields=next(csv.reader(previous))
                 with csvpath.open('a',newline='') as fh:
-                    dw=csv.DictWriter(fh,fieldnames=list(flat),extrasaction='ignore')
+                    dw=csv.DictWriter(fh,fieldnames=fields,extrasaction='ignore')
                     if fh.tell()==0:dw.writeheader()
                     dw.writerow(flat)
                 if writer:
@@ -551,6 +562,7 @@ def main():
                        'backbone_initialization':ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,
                        'heading_teacher_sha256':heading_supervision.teacher_sha256,
                        'heading_diagnostics':diagnostics,
+                       'annotation_sha256':annotation_sha,
                        'center_diagnostics':row['center_diagnostics'],
                        'best_heading_aoe':min(best_heading,heading_score),
                        'world_size':world,'global_batch_size':world*args.batch_size*args.accum_steps}

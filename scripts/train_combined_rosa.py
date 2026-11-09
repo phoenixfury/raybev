@@ -30,6 +30,7 @@ from raybev.detection import make_targets,detection_loss,decode_detections
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.metrics import evaluate_detections,heading_diagnostics
 from raybev.diagnostics import center_statistics,summarize_centers
+from raybev.training import configure_image_training,annotation_hashes
 from raybev.heading_supervision import HeadingSupervision
 from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery
 
@@ -166,6 +167,9 @@ def main():
                      backbone_weights=args.backbone_weights if not args.resume and not args.init_from else None).to(device)
     recovery=initialize_recovery(model,cfg,args) if args.init_from else (state.get('warm_start') if state else None)
     initialization=state.get('backbone_initialization') if state else model.image_encoder.initialization
+    configure_image_training(model,args.freeze_image_stages)
+    annotation_sha=annotation_hashes(train,val)
+    print('Image stage freeze:',args.freeze_image_stages,'annotation SHA256:',annotation_sha,flush=True)
     optimizer=build_optimizer(model,args.lr,args.weight_decay,args.backbone_lr_mult)
     scaler=torch.cuda.amp.GradScaler(enabled=args.amp and pin)
     scheduler=build_scheduler(optimizer,len(dl_train)*args.epochs,args.warmup_steps)
@@ -194,6 +198,7 @@ def main():
         val_centers=torch.zeros_like(train_centers)
         train_frames=val_frames=0
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
+        configure_image_training(model,args.freeze_image_stages)
         train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
         train_progress=BatchProgress('train',epoch+1,args.epochs,len(dl_train),args.progress,args.log_every)
@@ -262,6 +267,7 @@ def main():
              'seconds':time.monotonic()-t0,**metrics,'per_bag_metrics':per_bag,'heading_diagnostics':diagnostics}
         centers={'train':summarize_centers(train_centers),'val':summarize_centers(val_centers)}
         row['center_diagnostics']=centers
+        row.update({phase+'_annotation_sha256':value for phase,value in annotation_sha.items()})
         for phase,values,denom in (('train',train_aux,steps),('val',val_aux,vs)):
             row.update({f'{phase}_{key}_loss':value/denom for key,value in values.items()})
             row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
@@ -295,8 +301,11 @@ def main():
                 flat[f'{key}_{cname}']=cm.get(key)
             for th,ap in (cm['AP_by_distance'] or {}).items():flat[f'AP_{cname}_at_{th}m']=ap
         csvpath=out/'epochs.csv'
+        fields=list(flat)
+        if csvpath.exists() and csvpath.stat().st_size:
+            with csvpath.open(newline='') as previous:fields=next(csv.reader(previous))
         with csvpath.open('a',newline='') as f:
-            w=csv.DictWriter(f,fieldnames=list(flat),extrasaction='ignore')
+            w=csv.DictWriter(f,fieldnames=fields,extrasaction='ignore')
             if f.tell()==0:w.writeheader()
             w.writerow(flat)
         if writer:
@@ -322,6 +331,7 @@ def main():
                'scaler':scaler.state_dict(),'backbone_initialization':initialization,'warm_start':recovery,
                'heading_teacher_sha256':heading_supervision.teacher_sha256,
                'heading_diagnostics':diagnostics,
+               'annotation_sha256':annotation_sha,
                'center_diagnostics':centers,
                'best_heading_aoe':min(best_heading,heading_score),
                'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,

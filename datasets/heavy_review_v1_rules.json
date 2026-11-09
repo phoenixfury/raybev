@@ -1,0 +1,13 @@
+{
+  "type": "raybev_track_class_review_v1",
+  "approved": true,
+  "approval": "User approved cargo trucks -> Truck and trams -> Bus on 2026-11-09.",
+  "taxonomy": {"tram": "Bus", "cargo_truck": "Truck"},
+  "rules": [
+    {"sequence_id": "17_09", "track_id": "932", "from": "Bus", "to": "Truck", "expected_raw_changes": {"train": 0, "val": 10}, "reason": "Box-bodied delivery truck, not a passenger bus; verified native image and three validation frames.", "evidence": "analysis/v4_3_heavy_labels/native_17_09_932.jpg"},
+    {"sequence_id": "30_09", "track_id": "2722", "from": "Bus", "to": "Truck", "expected_raw_changes": {"train": 0, "val": 43}, "reason": "Cargo/refuse truck, not a passenger bus; verified native image and multiview sequence.", "evidence": "analysis/v4_3_heavy_labels/native_30_09_2722.jpg"},
+    {"sequence_id": "30_09", "track_id": "2724", "from": "Bus", "to": "Truck", "expected_raw_changes": {"train": 0, "val": 5}, "reason": "Green cargo/refuse truck, not a passenger bus; verified native image and multiview sequence.", "evidence": "analysis/v4_3_heavy_labels/native_30_09_2724.jpg"}
+  ],
+  "keep_bus_tracks": [{"sequence_id": "17_09", "track_id": "910"}, {"sequence_id": "17_09", "track_id": "914"}, {"sequence_id": "17_09", "track_id": "980"}],
+  "unresolved_do_not_change": [{"sequence_id": "17_09", "track_id": "1003", "reason": "Several projected truck boxes fall on a building facade. Source includes camera_track_hold predictions. Needs point-cloud/manual review; do not silently delete."}, {"sequence_id": "17_09", "track_id": "1008", "reason": "Weak/occluded visual support in sampled frames; insufficient evidence to delete or relabel."}]
+}
