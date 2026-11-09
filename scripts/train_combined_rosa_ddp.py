@@ -36,9 +36,10 @@ from raybev import CLASSES, ModelConfig, RayBEVLite
 from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets, detection_loss, decode_detections
 from raybev.metrics import evaluate_detections,heading_diagnostics
+from raybev.diagnostics import center_statistics,summarize_centers
 from raybev.heading_supervision import HeadingSupervision
 from raybev.rosa_dataset import RosaCombinedDataset, collate_samples
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery,accumulation_weight
 
 try:
     from tqdm.auto import tqdm
@@ -176,6 +177,9 @@ def make_flat_metrics(row):
         for name,values in classes.items():
             for key in ('matched_count','AOE_deg','axis_AOE_deg','flip_rate','recall'):
                 flat[f'heading_score{score}_{key}_{name}']=values[key]
+    for phase,classes in row.get('center_diagnostics',{}).items():
+        for name,values in classes.items():
+            for key,value in values.items():flat[f'{phase}_center_{key}_{name}']=value
     return flat
 
 
@@ -215,7 +219,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v4_2_r18_fg_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v4_3_r18_geometry_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -274,11 +278,11 @@ def main():
         if device.type == 'cuda':
             torch.cuda.manual_seed_all(args.seed + rank)
             torch.backends.cudnn.benchmark = False  # conservative VRAM; enable only after profiling
-        cfg = ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+        cfg = ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
                           heavy_classification_weight=args.heavy_classification_weight).validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-            print(f'Task recipe 4.2: backbone={cfg.backbone}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+            print(f'Task recipe 4.3: backbone={cfg.backbone}; lattice_origin={cfg.feature_pixel_origin}; heights={cfg.height_fusion}; facing_loss={cfg.facing_loss}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
                   f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
                   f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
             print(f'Score = objectness * conditional_class_probability * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
@@ -386,6 +390,8 @@ def main():
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
             local_sums = [0.]*12
+            train_centers=torch.zeros(len(CLASSES),18,device=device)
+            val_centers=torch.zeros_like(train_centers)
             optimizer.zero_grad(set_to_none=True)
             progress = Progress('train',epoch+1,args.epochs,len(train_loader),args.progress,args.log_every) if primary else None
             for i,(images,boxes,tokens) in enumerate(train_loader):
@@ -402,7 +408,9 @@ def main():
                         loss, parts = detection_loss(output, targets,cfg=cfg)
                         auxiliary,aux_parts=heading_supervision.loss(output,targets,tokens)
                         loss=loss+auxiliary;parts.update(aux_parts)
-                    scaler.scale(loss/group_size).backward()
+                    weight=accumulation_weight(i,len(images),args.batch_size,args.accum_steps,len(train_sampler))
+                    scaler.scale(loss*weight).backward()
+                train_centers+=center_statistics(output,targets,cfg)
                 n = len(images)
                 local_sums[0] += float(loss.detach()) * n
                 local_sums[1] += float(parts['heatmap']) * n
@@ -440,6 +448,7 @@ def main():
                     with cuda_autocast(enabled=args.amp and pin):
                         output = local_model(images)  # no DDP collectives in uneven eval
                         loss, parts = detection_loss(output, targets,cfg=cfg)
+                    val_centers+=center_statistics(output,targets,cfg)
                     n = len(images)
                     val_sums[0] += float(loss.detach()) * n
                     val_sums[1] += float(parts['heatmap']) * n
@@ -459,6 +468,8 @@ def main():
             if val_progress: val_progress.close()
             assert pos == len(eval_sampler), (pos,len(eval_sampler))
             val_totals = all_reduce_loss_sums(val_sums,device)
+            dist.all_reduce(train_centers,op=dist.ReduceOp.SUM)
+            dist.all_reduce(val_centers,op=dist.ReduceOp.SUM)
             val_loss,val_heat,val_reg = [v/max(val_totals[3],1) for v in val_totals[:3]]
             # Full validation results MUST be merged across ranks before AP:
             # per-rank APs cannot be averaged to obtain true global mAP.
@@ -494,7 +505,8 @@ def main():
                            seconds=elapsed,world_size=world,
                            global_batch_size=world*args.batch_size*args.accum_steps,
                            train_samples_seen=int(totals[3]),metrics=metrics,
-                           per_bag_metrics=per_bag,heading_diagnostics=diagnostics)
+                           per_bag_metrics=per_bag,heading_diagnostics=diagnostics,
+                           center_diagnostics={'train':summarize_centers(train_centers),'val':summarize_centers(val_centers)})
                 for phase,sums in (('train',totals),('val',val_totals)):
                     for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness'),4):
                         row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
@@ -521,6 +533,7 @@ def main():
                       if value['AP'] is not None else f'{name}=N/A'
                       for name,value in metrics['class_results'].items()),flush=True)
                 print('Heading car score>=0.3:',diagnostics['by_score']['0.3']['car'],flush=True)
+                print('Validation oracle centers (not detection recall):', {k:row['center_diagnostics']['val'][k] for k in ('car','truck','bus')},flush=True)
                 print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
                       ' '.join(f'{name}={value["prediction_count"]}/{value["gt_count"]}'
                                for name,value in metrics['class_results'].items()),flush=True)
@@ -538,6 +551,7 @@ def main():
                        'backbone_initialization':ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,
                        'heading_teacher_sha256':heading_supervision.teacher_sha256,
                        'heading_diagnostics':diagnostics,
+                       'center_diagnostics':row['center_diagnostics'],
                        'best_heading_aoe':min(best_heading,heading_score),
                        'world_size':world,'global_batch_size':world*args.batch_size*args.accum_steps}
                 save_checkpoint(out/'last.pt',state)

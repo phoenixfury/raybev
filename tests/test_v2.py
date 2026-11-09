@@ -41,7 +41,7 @@ def test_image_ray_geometry_reprojects_to_feature_centers():
         uv,visible,_=project_fisheye(point[None],cam,cfg.theta_max_degrees)
         assert visible[0]
         # Aspect-preserving 1920x1536 -> 160x128, matching half-pixel resize.
-        target=np.array([(col+.5)*8-.5,(row+.5)*8-.5])
+        target=np.array([col*8+cfg.feature_pixel_origin,row*8+cfg.feature_pixel_origin])
         np.testing.assert_allclose((uv[0]+.5)*cfg.image_width/cam.width-.5,target,atol=1e-4)
 
 
@@ -98,7 +98,7 @@ def test_all_model_parameters_participate_in_backward(empty):
     assert not missing,missing
     assert all(torch.isfinite(p.grad).all() for p in model.parameters())
     assert model.transport.position_cues.shape[-2:]==(cfg.bev_height,cfg.bev_width)
-    assert cfg.bev_input_channels==40
+    assert cfg.bev_input_channels==136
 
 
 def test_local_backbone_weights_load_strictly_without_network(tmp_path):

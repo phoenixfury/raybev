@@ -104,7 +104,7 @@ def build_projection_lut(cameras, cfg: ModelConfig):
 
     The +0.5 terms are raw pixel centers. The same resize + letterbox
     transform must be applied to the raw images before feeding the model.
-    The resulting normalized sampling coordinates account for padding.
+    Then convert resized input pixels to the actual stride-8 CNN lattice.
     """
     h, w = cfg.bev_height, cfg.bev_width
     x = cfg.bev_x_max - (np.arange(h, dtype=np.float64)+.5)*cfg.bev_resolution
@@ -125,8 +125,8 @@ def build_projection_lut(cameras, cfg: ModelConfig):
             new_w, new_h, pad_left, pad_top = letterbox_params(
                 cam.width, cam.height, cfg.image_width, cfg.image_height)
             grid = np.stack([
-                2*((uv[:, 0]+.5)*(new_w/cam.width)+pad_left)/cfg.image_width-1,
-                2*((uv[:, 1]+.5)*(new_h/cam.height)+pad_top)/cfg.image_height-1,
+                2*((uv[:, 0]+.5)*(new_w/cam.width)+pad_left+3.5-cfg.feature_pixel_origin)/cfg.image_width-1,
+                2*((uv[:, 1]+.5)*(new_h/cam.height)+pad_top+3.5-cfg.feature_pixel_origin)/cfg.image_height-1,
             ], axis=-1)
             grid[~visible] = 2.0  # out of bounds for grid_sample
             row_grid.append(grid.reshape(h, w, 2).astype(np.float32))
@@ -147,8 +147,8 @@ def build_image_geometry(cameras, cfg):
     explicit per-camera encoder input at deployment; it needs no runtime trig.
     """
     h, w = cfg.image_height // 8, cfg.image_width // 8
-    yy, xx = np.meshgrid((np.arange(h)+.5)*8-.5,
-                         (np.arange(w)+.5)*8-.5, indexing='ij')
+    yy, xx = np.meshgrid(np.arange(h)*8+cfg.feature_pixel_origin,
+                         np.arange(w)*8+cfg.feature_pixel_origin, indexing='ij')
     maps = []
     ts = np.linspace(0, math.radians(cfg.theta_max_degrees), 8193)
     for cam in cameras:

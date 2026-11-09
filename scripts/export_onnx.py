@@ -68,9 +68,13 @@ def main():
              'image_geometry_shape':[1,8,cfg.image_height//8,cfg.image_width//8],
              'feature_shape':[1,cfg.feature_channels,cfg.image_height//8,cfg.image_width//8],
              'confidence_shape':[1,len(cfg.heights),cfg.image_height//8,cfg.image_width//8],
-             'feature_stride':8,'sample_align_corners':False,'height_planes_m':list(cfg.heights),
+             'feature_stride':8,'feature_pixel_origin':cfg.feature_pixel_origin,
+             'feature_coordinate_math':'u_net=(u_raw+0.5)*resize_scale-0.5+padding; u_feature=(u_net-feature_pixel_origin)/8; grid_x=2*(u_feature+0.5)/feature_width-1',
+             'sample_align_corners':False,'height_planes_m':list(cfg.heights),
              'bev_input_channels':cin,
-             'bev_layout':['height_pooled_features','per_height_coverage','normalized_mean_height','x_normalized','y_normalized','range_normalized'],
+             'height_fusion':cfg.height_fusion,
+             'height_normalization':'common sum of confidence*geometric_prior over ALL cameras and heights, clamped to 1e-4',
+             'bev_layout':['height_concatenated_features' if cfg.height_fusion=='concat' else 'height_pooled_features','per_height_coverage','normalized_mean_height','x_normalized','y_normalized','range_normalized'],
              'classification_mode':cfg.classification_mode,
              'foreground_class_softmax_location':'host postprocess, NOT learned TIDL graph' if decoupled else None,
              'output_names':output_names,
@@ -82,6 +86,7 @@ def main():
              'backbone':cfg.backbone,'heading_encoding':cfg.heading_encoding,
              'bev_normalization':cfg.bev_normalization,
              'heading_bins':cfg.heading_bins,
+             'facing_loss':cfg.facing_loss,
              'heading_decode':('axis=0.5*atan2(sin_2yaw,cos_2yaw); yaw=wrap(axis + pi if dot(facing_vector,[sin(axis),cos(axis)])<0 else axis)' if axis_heading else
                  'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)'),
              'heading_confidence':('sigmoid(2*abs(dot(facing_vector,[sin(axis),cos(axis)]))); uncalibrated, separate from object score' if axis_heading else

@@ -66,7 +66,7 @@ def build_parser():
     a.add_argument('--epochs',type=int,default=10)
     a.add_argument('--batch-size',type=int,default=2)
     a.add_argument('--lr',type=float,default=2e-4)
-    a.add_argument('--checkpoint',default='raybev_v4_2_r18_fg.pt')
+    a.add_argument('--checkpoint',default='raybev_v4_3_r18_geometry.pt')
     a.add_argument('--pretrained',action='store_true',help='Retained for compatibility; pretrained is now the default')
     add_training_options(a)
     return a
@@ -75,7 +75,7 @@ def build_parser():
 def main():
     args=build_parser().parse_args()
     args.lidar_calibration=args.lidar_calibration or args.calibration
-    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
                     heavy_classification_weight=args.heavy_classification_weight).validate()
     if args.heading_teacher:raise ValueError('NPZ inputs lack tokens/track poses; use the combined trainer for ROSA distillation')
     print(f'Backbone={cfg.backbone}; heading={cfg.heading_encoding}; NPZ teacher/track supervision unavailable',flush=True)

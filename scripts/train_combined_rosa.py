@@ -29,6 +29,7 @@ from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets,detection_loss,decode_detections
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.metrics import evaluate_detections,heading_diagnostics
+from raybev.diagnostics import center_statistics,summarize_centers
 from raybev.heading_supervision import HeadingSupervision
 from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery
 
@@ -110,7 +111,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v4_2_r18_fg_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v4_3_r18_geometry_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -124,10 +125,10 @@ def main():
         raise ValueError('Invalid training controls')
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
     if torch.cuda.is_available():torch.cuda.manual_seed_all(args.seed)
-    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
                     heavy_classification_weight=args.heavy_classification_weight).validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-    print(f'Task recipe 4.2: backbone={cfg.backbone}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+    print(f'Task recipe 4.3: backbone={cfg.backbone}; lattice_origin={cfg.feature_pixel_origin}; heights={cfg.height_fusion}; facing_loss={cfg.facing_loss}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
           f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
           f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
     print(f'Score = objectness * conditional_class_probability * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
@@ -189,6 +190,9 @@ def main():
           f'val={len(val)} frames/{len(dl_val)} batches; epochs={args.epochs}; '
           f'progress={args.progress}',flush=True)
     for epoch in range(start,args.epochs):
+        train_centers=torch.zeros(len(CLASSES),18,device=device)
+        val_centers=torch.zeros_like(train_centers)
+        train_frames=val_frames=0
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
         train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
@@ -201,17 +205,19 @@ def main():
                 output=model(images);loss,parts=detection_loss(output,targets,cfg=cfg)
                 auxiliary,aux_parts=heading_supervision.loss(output,targets,tokens)
                 loss=loss+auxiliary;parts.update(aux_parts)
+            train_centers+=center_statistics(output,targets,cfg)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(),10.)
             old_scale=scaler.get_scale()
             scaler.step(optimizer);scaler.update()
             if scaler.get_scale()>=old_scale:scheduler.step()
-            train_total+=float(loss.item());train_heat+=float(parts['heatmap']);train_reg+=float(parts['regression'])
-            for key in train_aux:train_aux[key]+=float(parts[key])
-            train_progress.update(len(images),{'loss':f'{train_total/(train_progress.index+1):.4f}',
-                'heat':f'{train_heat/(train_progress.index+1):.4f}',
-                'box':f'{train_reg/(train_progress.index+1):.4f}',
+            n=len(images);train_frames+=n
+            train_total+=float(loss.item())*n;train_heat+=float(parts['heatmap'])*n;train_reg+=float(parts['regression'])*n
+            for key in train_aux:train_aux[key]+=float(parts[key])*n
+            train_progress.update(n,{'loss':f'{train_total/train_frames:.4f}',
+                'heat':f'{train_heat/train_frames:.4f}',
+                'box':f'{train_reg/train_frames:.4f}',
                 'lr':f'{optimizer.param_groups[0]["lr"]:.2e}'})
         train_progress.close()
         model.eval();val_total=0.;val_heat=0.;val_reg=0.;predictions=[];ground_truth=[]
@@ -222,14 +228,16 @@ def main():
                 images=images.to(device,non_blocking=pin)
                 targets=make_targets(boxes,cfg,device=device,return_class_ids=True)
                 output=model(images);loss,parts=detection_loss(output,targets,cfg=cfg)
-                val_total+=float(loss.item());val_heat+=float(parts['heatmap']);val_reg+=float(parts['regression'])
-                for key in val_aux:val_aux[key]+=float(parts[key])
+                val_centers+=center_statistics(output,targets,cfg)
+                n=len(images);val_frames+=n
+                val_total+=float(loss.item())*n;val_heat+=float(parts['heatmap'])*n;val_reg+=float(parts['regression'])*n
+                for key in val_aux:val_aux[key]+=float(parts[key])*n
                 det=decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                 predictions.extend([x.float().cpu().numpy() for x in det])
                 ground_truth.extend([x.float().cpu().numpy() for x in boxes])
-                val_progress.update(len(images),{'loss':f'{val_total/(val_progress.index+1):.4f}',
-                    'heat':f'{val_heat/(val_progress.index+1):.4f}',
-                    'box':f'{val_reg/(val_progress.index+1):.4f}'})
+                val_progress.update(n,{'loss':f'{val_total/val_frames:.4f}',
+                    'heat':f'{val_heat/val_frames:.4f}',
+                    'box':f'{val_reg/val_frames:.4f}'})
         val_progress.close()
         print(f'[Epoch {epoch+1}/{args.epochs}] Computing mAP and 3D errors from '
               f'{len(predictions)} validation frames...',flush=True)
@@ -247,16 +255,21 @@ def main():
             if any(len(ground_truth[i]) for i in ids):
                 per_bag[bag]=evaluate_detections([predictions[i] for i in ids],
                     [ground_truth[i] for i in ids],score_threshold=args.score_threshold)
-        steps=len(dl_train);vs=len(dl_val)
+        steps=train_frames;vs=val_frames
         row={'epoch':epoch+1,'lr':optimizer.param_groups[0]['lr'],
              'train_loss':train_total/steps,'train_heatmap_loss':train_heat/steps,'train_regression_loss':train_reg/steps,
              'val_loss':val_total/vs,'val_heatmap_loss':val_heat/vs,'val_regression_loss':val_reg/vs,
              'seconds':time.monotonic()-t0,**metrics,'per_bag_metrics':per_bag,'heading_diagnostics':diagnostics}
+        centers={'train':summarize_centers(train_centers),'val':summarize_centers(val_centers)}
+        row['center_diagnostics']=centers
         for phase,values,denom in (('train',train_aux,steps),('val',val_aux,vs)):
             row.update({f'{phase}_{key}_loss':value/denom for key,value in values.items()})
             row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
         with (out/'history.jsonl').open('a') as f:f.write(json.dumps(row,allow_nan=False)+'\n')
-        flat={k:v for k,v in row.items() if k not in ('class_results','active_classes','excluded_classes','AP_distance_thresholds','per_bag_metrics','heading_diagnostics')}
+        flat={k:v for k,v in row.items() if k not in ('class_results','active_classes','excluded_classes','AP_distance_thresholds','per_bag_metrics','heading_diagnostics','center_diagnostics')}
+        for phase,classes in centers.items():
+            for name,values in classes.items():
+                for key,value in values.items():flat[f'{phase}_center_{key}_{name}']=value
         for score,classes in diagnostics['by_score'].items():
             for cname,values in classes.items():
                 for key in ('matched_count','AOE_deg','axis_AOE_deg','flip_rate','recall'):
@@ -298,6 +311,7 @@ def main():
                             for name,result in metrics['class_results'].items())
         print(f'[Epoch {epoch+1}/{args.epochs}] Per-class AP: {ap_summary}',flush=True)
         print('Heading car score>=0.3:',diagnostics['by_score']['0.3']['car'],flush=True)
+        print('Validation oracle centers (not detection recall):', {k:centers['val'][k] for k in ('car','truck','bus')},flush=True)
         print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
               ' '.join(f'{name}={result["prediction_count"]}/{result["gt_count"]}'
                        for name,result in metrics['class_results'].items()),flush=True)
@@ -308,6 +322,7 @@ def main():
                'scaler':scaler.state_dict(),'backbone_initialization':initialization,'warm_start':recovery,
                'heading_teacher_sha256':heading_supervision.teacher_sha256,
                'heading_diagnostics':diagnostics,
+               'center_diagnostics':centers,
                'best_heading_aoe':min(best_heading,heading_score),
                'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                'calibration_sha256':calibration_sha256(args.calibration)}

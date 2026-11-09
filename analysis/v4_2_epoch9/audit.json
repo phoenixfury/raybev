@@ -1,0 +1,5229 @@
+{
+  "checkpoint": "work_dirs/raybev_v4_2_r18_fg_48m_clidar_2x3080ti/best_map.pt",
+  "sha256": "d14ded493105c4073d95c6da49e883e2e3a8b9b8217720a30d5a4902b9c87ffb",
+  "epoch": 9,
+  "cfg": {
+    "image_width": 800,
+    "image_height": 640,
+    "architecture_version": 2,
+    "feature_channels": 32,
+    "bev_channels": 64,
+    "head_channels": 32,
+    "backbone": "resnet18",
+    "bev_normalization": "frozen_batchnorm",
+    "classification_mode": "objectness_softmax",
+    "foreground_label_smoothing": 0.05,
+    "feature_pixel_origin": 3.5,
+    "height_fusion": "pooled",
+    "facing_loss": "contrast",
+    "mobile_width": 1.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "bev_resolution": 0.25,
+    "heights": [
+      0.4,
+      1.4,
+      2.4,
+      3.4
+    ],
+    "theta_max_degrees": 105.0,
+    "num_classes": 6,
+    "gaussian_overlap": 0.1,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "class_regression_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "regression_weights": [
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "quality_loss_weight": 0.5,
+    "yaw_norm_weight": 0.1,
+    "quality_score_power": 0.5,
+    "score_peak_mode": "fused",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 2,
+    "heading_loss_weight": 1.0,
+    "normalize_yaw_loss": false,
+    "class_balanced_losses": false,
+    "center_classification_weight": 1.0,
+    "heavy_classification_weight": 0.0,
+    "loss_normalization": "fixed_train_mean",
+    "mean_training_objects": 10.981515711645102,
+    "size_encoding": "class_relative",
+    "size_reference": [
+      4.469086170196533,
+      1.8794286251068115,
+      1.6324365139007568
+    ],
+    "class_size_priors": [
+      [
+        4.471713066101074,
+        1.8805935382843018,
+        1.6249220371246338
+      ],
+      [
+        0.6595679521560669,
+        0.6366538405418396,
+        1.75
+      ],
+      [
+        2.11226224899292,
+        0.7368677258491516,
+        1.48087739944458
+      ],
+      [
+        5.683047294616699,
+        2.1855244636535645,
+        2.180659770965576
+      ],
+      [
+        4.548810005187988,
+        2.074049949645996,
+        2.057434558868408
+      ],
+      [
+        11.293651580810547,
+        2.9035391807556152,
+        3.4383225440979004
+      ]
+    ],
+    "training_class_counts": [
+      38155,
+      1849,
+      144,
+      794,
+      58,
+      587
+    ],
+    "sampling_mode": "frame_presence",
+    "single_label": true,
+    "nms_iou_threshold": 0.25,
+    "max_detections": 150
+  },
+  "logged_full_validation_metrics": {
+    "active_classes": [
+      "car",
+      "pedestrian",
+      "cyclist",
+      "truck",
+      "bus"
+    ],
+    "excluded_classes": [
+      "van"
+    ],
+    "mAP": 0.04720435599268552,
+    "NDS": null,
+    "NDS_status": "unavailable: no velocity/attribute outputs and not the official nuScenes dataset",
+    "geometry_score_3term_nonstandard": 0.1110960375994445,
+    "NDS_missing_velocity_attribute_zero_score_nonstandard": 0.0888768300795556,
+    "mATE": 1.1411237540092047,
+    "mASE": 0.3472534791678717,
+    "mAOE": 1.0602817960037387,
+    "precision_at_score_threshold": 0.8588957055214724,
+    "recall_at_score_threshold": 0.17475970540506802,
+    "score_threshold": 0.3,
+    "AP_distance_thresholds": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "class_results": {
+      "car": {
+        "gt_count": 7345,
+        "prediction_count": 65354,
+        "AP": 0.234084154899102,
+        "AP_by_distance": {
+          "0.5": 0.03432980122236561,
+          "1.0": 0.14372322269121132,
+          "2.0": 0.3063403111423857,
+          "4.0": 0.4519432845404454
+        },
+        "ATE": 0.9455947035153335,
+        "ASE": 0.09431969414553505,
+        "AOE": 0.9684074008755774,
+        "precision": 0.8709476309226932,
+        "recall": 0.19019741320626277,
+        "TP": 1397,
+        "FP": 207,
+        "FN": 5948,
+        "heading_matches": 5393,
+        "axis_AOE": 0.29739759345400196,
+        "heading_flip_rate": 0.27980715742629336,
+        "heading_within15_rate": 0.5104765436677174,
+        "status": "evaluated"
+      },
+      "pedestrian": {
+        "gt_count": 313,
+        "prediction_count": 25512,
+        "AP": 0.001937625064325604,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.0004998591205255245,
+          "4.0": 0.007250641136776891
+        },
+        "ATE": 1.1372181543885547,
+        "ASE": 0.1539531771817748,
+        "AOE": 1.4755094286881423,
+        "precision": 0.13043478260869565,
+        "recall": 0.009584664536741214,
+        "TP": 3,
+        "FP": 20,
+        "FN": 310,
+        "heading_matches": 214,
+        "axis_AOE": 0.6932966304640579,
+        "heading_flip_rate": 0.4485981308411215,
+        "heading_within15_rate": 0.14485981308411214,
+        "status": "evaluated"
+      },
+      "cyclist": {
+        "gt_count": 13,
+        "prediction_count": 23,
+        "AP": 0.0,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.0,
+          "4.0": 0.0
+        },
+        "ATE": 1.0,
+        "ASE": 1.0,
+        "AOE": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "TP": 0,
+        "FP": 0,
+        "FN": 13,
+        "heading_matches": 0,
+        "axis_AOE": null,
+        "heading_flip_rate": null,
+        "heading_within15_rate": null,
+        "status": "evaluated"
+      },
+      "truck": {
+        "gt_count": 134,
+        "prediction_count": 736,
+        "AP": 0.0,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.0,
+          "4.0": 0.0
+        },
+        "ATE": 1.3705684380880805,
+        "ASE": 0.35028540485539383,
+        "AOE": 1.8150479636439167,
+        "precision": 0.0,
+        "recall": 0.0,
+        "TP": 0,
+        "FP": 3,
+        "FN": 134,
+        "heading_matches": 2,
+        "axis_AOE": 0.24872725637140447,
+        "heading_flip_rate": 0.5,
+        "heading_within15_rate": 0.0,
+        "status": "evaluated"
+      },
+      "van": {
+        "gt_count": 0,
+        "prediction_count": 8,
+        "AP": null,
+        "AP_by_distance": null,
+        "ATE": null,
+        "ASE": null,
+        "AOE": null,
+        "precision": null,
+        "recall": null,
+        "status": "excluded_no_validation_ground_truth"
+      },
+      "bus": {
+        "gt_count": 206,
+        "prediction_count": 1647,
+        "AP": 0.0,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.0,
+          "4.0": 0.0
+        },
+        "ATE": 1.2522374740540545,
+        "ASE": 0.13770911965665472,
+        "AOE": 0.04244418681105776,
+        "precision": 0.0,
+        "recall": 0.0,
+        "TP": 0,
+        "FP": 0,
+        "FN": 206,
+        "heading_matches": 10,
+        "axis_AOE": 0.04244418681105776,
+        "heading_flip_rate": 0.0,
+        "heading_within15_rate": 1.0,
+        "status": "evaluated"
+      }
+    }
+  },
+  "logged_metric_version": "legacy_envelope_ASE",
+  "finite_parameters": true,
+  "probe_note": "Unaugmented, stratified samples, oracle GT centers; means, not medians. NOT detection AP/recall.",
+  "center_diagnostics": {
+    "val": {
+      "car": {
+        "count": 731,
+        "class_accuracy": 0.9917920656634747,
+        "mean_objectness": 0.17766486505803267,
+        "objectness_ge_0_1_rate": 0.4240766073871409,
+        "mean_true_class_probability": 0.9260931889107387,
+        "mean_true_class_fused_score": 0.16004091150620403,
+        "AOE_deg": 51.67674587309051,
+        "axis_AOE_deg": 19.266723787070944,
+        "flip_rate": 0.253077975376197,
+        "mean_facing_perpendicular": 1.6485146497734269,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.04514363885088919,
+        "mean_L_ratio_GT_class": 0.9985878418636713,
+        "mean_W_ratio_GT_class": 1.0007865269109097,
+        "mean_H_ratio_GT_class": 0.9933133523213065,
+        "mean_L_ratio_predicted_class": 0.9932059772037448,
+        "mean_center_error_m": 0.09290183259100333,
+        "mean_facing_norm": 3.118559496836525,
+        "negative_GT_facing_projection_rate": 0.26265389876880985
+      },
+      "pedestrian": {
+        "count": 32,
+        "class_accuracy": 0.71875,
+        "mean_objectness": 0.04890429228544235,
+        "objectness_ge_0_1_rate": 0.15625,
+        "mean_true_class_probability": 0.5903628468513489,
+        "mean_true_class_fused_score": 0.03240950405597687,
+        "AOE_deg": 70.74050146025384,
+        "axis_AOE_deg": 45.769128364106706,
+        "flip_rate": 0.375,
+        "mean_facing_perpendicular": 1.780068039894104,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.03125,
+        "mean_L_ratio_GT_class": 0.9628834128379822,
+        "mean_W_ratio_GT_class": 0.9736682772636414,
+        "mean_H_ratio_GT_class": 1.0058929920196533,
+        "mean_L_ratio_predicted_class": 2.4908154010772705,
+        "mean_center_error_m": 0.08527455478906631,
+        "mean_facing_norm": 2.5673348903656006,
+        "negative_GT_facing_projection_rate": 0.46875
+      },
+      "cyclist": {
+        "count": 4,
+        "class_accuracy": 0.0,
+        "mean_objectness": 0.09412924945354462,
+        "objectness_ge_0_1_rate": 0.25,
+        "mean_true_class_probability": 0.0464959442615509,
+        "mean_true_class_fused_score": 0.0038850102573633194,
+        "AOE_deg": 39.327952618272036,
+        "axis_AOE_deg": 39.327952618272036,
+        "flip_rate": 0.0,
+        "mean_facing_perpendicular": 1.3733946084976196,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.0,
+        "mean_L_ratio_GT_class": 1.0757286548614502,
+        "mean_W_ratio_GT_class": 1.1469383239746094,
+        "mean_H_ratio_GT_class": 1.116255283355713,
+        "mean_L_ratio_predicted_class": 0.8212841153144836,
+        "mean_center_error_m": 0.10645586252212524,
+        "mean_facing_norm": 2.119943380355835,
+        "negative_GT_facing_projection_rate": 0.0
+      },
+      "truck": {
+        "count": 11,
+        "class_accuracy": 0.0,
+        "mean_objectness": 0.030984938144683838,
+        "objectness_ge_0_1_rate": 0.0,
+        "mean_true_class_probability": 0.013008568774570118,
+        "mean_true_class_fused_score": 0.0005570537918670611,
+        "AOE_deg": 81.57540812556348,
+        "axis_AOE_deg": 40.541603654018154,
+        "flip_rate": 0.45454545454545453,
+        "mean_facing_perpendicular": 1.4759878678755327,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.09090909090909091,
+        "mean_L_ratio_GT_class": 0.9854889782992277,
+        "mean_W_ratio_GT_class": 0.9652022448453036,
+        "mean_H_ratio_GT_class": 0.9416790008544922,
+        "mean_L_ratio_predicted_class": 0.7754332802512429,
+        "mean_center_error_m": 0.0940514477816495,
+        "mean_facing_norm": 2.7757785103537818,
+        "negative_GT_facing_projection_rate": 0.45454545454545453
+      },
+      "van": {
+        "count": 0,
+        "class_accuracy": null,
+        "mean_objectness": null,
+        "objectness_ge_0_1_rate": null,
+        "mean_true_class_probability": null,
+        "mean_true_class_fused_score": null,
+        "AOE_deg": null,
+        "axis_AOE_deg": null,
+        "flip_rate": null,
+        "mean_facing_perpendicular": null,
+        "wrong_decode_despite_positive_GT_projection_rate": null,
+        "mean_L_ratio_GT_class": null,
+        "mean_W_ratio_GT_class": null,
+        "mean_H_ratio_GT_class": null,
+        "mean_L_ratio_predicted_class": null,
+        "mean_center_error_m": null,
+        "mean_facing_norm": null,
+        "negative_GT_facing_projection_rate": null
+      },
+      "bus": {
+        "count": 17,
+        "class_accuracy": 0.11764705882352941,
+        "mean_objectness": 0.02567201852798462,
+        "objectness_ge_0_1_rate": 0.0,
+        "mean_true_class_probability": 0.13260762831744025,
+        "mean_true_class_fused_score": 0.004048859371858484,
+        "AOE_deg": 63.270462579449294,
+        "axis_AOE_deg": 21.348622479571944,
+        "flip_rate": 0.4117647058823529,
+        "mean_facing_perpendicular": 0.9165597242467544,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.0,
+        "mean_L_ratio_GT_class": 1.1493024265064913,
+        "mean_W_ratio_GT_class": 1.0387579974006205,
+        "mean_H_ratio_GT_class": 1.019327949075138,
+        "mean_L_ratio_predicted_class": 0.5347746119779699,
+        "mean_center_error_m": 0.09137043532203226,
+        "mean_facing_norm": 2.7212762271656707,
+        "negative_GT_facing_projection_rate": 0.4117647058823529
+      }
+    },
+    "train": {
+      "car": {
+        "count": 544,
+        "class_accuracy": 0.9963235294117647,
+        "mean_objectness": 0.3430022632374483,
+        "objectness_ge_0_1_rate": 0.7352941176470589,
+        "mean_true_class_probability": 0.9466640248018152,
+        "mean_true_class_fused_score": 0.3115377145655015,
+        "AOE_deg": 13.687314999008699,
+        "axis_AOE_deg": 7.816856601617783,
+        "flip_rate": 0.04963235294117647,
+        "mean_facing_perpendicular": 1.5701959273394417,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.022058823529411766,
+        "mean_L_ratio_GT_class": 1.001758014454561,
+        "mean_W_ratio_GT_class": 1.0017521802116842,
+        "mean_H_ratio_GT_class": 0.9968993243049172,
+        "mean_L_ratio_predicted_class": 1.0074632308062386,
+        "mean_center_error_m": 0.08437822846805348,
+        "mean_facing_norm": 3.743167652803309,
+        "negative_GT_facing_projection_rate": 0.03860294117647059
+      },
+      "pedestrian": {
+        "count": 26,
+        "class_accuracy": 0.9230769230769231,
+        "mean_objectness": 0.1445116905065683,
+        "objectness_ge_0_1_rate": 0.6153846153846154,
+        "mean_true_class_probability": 0.7893717839167669,
+        "mean_true_class_fused_score": 0.1198058220056387,
+        "AOE_deg": 25.443249061837886,
+        "axis_AOE_deg": 21.757332222248838,
+        "flip_rate": 0.038461538461538464,
+        "mean_facing_perpendicular": 1.427324001605694,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.038461538461538464,
+        "mean_L_ratio_GT_class": 1.0151827885554388,
+        "mean_W_ratio_GT_class": 1.0112237930297852,
+        "mean_H_ratio_GT_class": 1.005017794095553,
+        "mean_L_ratio_predicted_class": 1.4374060997596154,
+        "mean_center_error_m": 0.09208792906541091,
+        "mean_facing_norm": 2.352407748882587,
+        "negative_GT_facing_projection_rate": 0.07692307692307693
+      },
+      "cyclist": {
+        "count": 7,
+        "class_accuracy": 0.0,
+        "mean_objectness": 0.12249831642423357,
+        "objectness_ge_0_1_rate": 0.42857142857142855,
+        "mean_true_class_probability": 0.21581193378993443,
+        "mean_true_class_fused_score": 0.022647095578057424,
+        "AOE_deg": 9.612380863182166,
+        "axis_AOE_deg": 9.612380863182166,
+        "flip_rate": 0.0,
+        "mean_facing_perpendicular": 1.4369727543422155,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.0,
+        "mean_L_ratio_GT_class": 0.9830068860735212,
+        "mean_W_ratio_GT_class": 1.0381966999598913,
+        "mean_H_ratio_GT_class": 1.0410233906337194,
+        "mean_L_ratio_predicted_class": 0.5674912588936942,
+        "mean_center_error_m": 0.09237371172223773,
+        "mean_facing_norm": 2.9292174748011996,
+        "negative_GT_facing_projection_rate": 0.0
+      },
+      "truck": {
+        "count": 14,
+        "class_accuracy": 0.7142857142857143,
+        "mean_objectness": 0.30247623579842703,
+        "objectness_ge_0_1_rate": 0.7142857142857143,
+        "mean_true_class_probability": 0.658282961164202,
+        "mean_true_class_fused_score": 0.22358439649854386,
+        "AOE_deg": 6.508616057958071,
+        "axis_AOE_deg": 6.508616057958071,
+        "flip_rate": 0.0,
+        "mean_facing_perpendicular": 1.2380010059901647,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.0,
+        "mean_L_ratio_GT_class": 0.9811146599905831,
+        "mean_W_ratio_GT_class": 0.9819461277553013,
+        "mean_H_ratio_GT_class": 0.9777001653398786,
+        "mean_L_ratio_predicted_class": 0.917217663356236,
+        "mean_center_error_m": 0.07798135280609131,
+        "mean_facing_norm": 4.6793398175920755,
+        "negative_GT_facing_projection_rate": 0.0
+      },
+      "van": {
+        "count": 0,
+        "class_accuracy": null,
+        "mean_objectness": null,
+        "objectness_ge_0_1_rate": null,
+        "mean_true_class_probability": null,
+        "mean_true_class_fused_score": null,
+        "AOE_deg": null,
+        "axis_AOE_deg": null,
+        "flip_rate": null,
+        "mean_facing_perpendicular": null,
+        "wrong_decode_despite_positive_GT_projection_rate": null,
+        "mean_L_ratio_GT_class": null,
+        "mean_W_ratio_GT_class": null,
+        "mean_H_ratio_GT_class": null,
+        "mean_L_ratio_predicted_class": null,
+        "mean_center_error_m": null,
+        "mean_facing_norm": null,
+        "negative_GT_facing_projection_rate": null
+      },
+      "bus": {
+        "count": 11,
+        "class_accuracy": 0.8181818181818182,
+        "mean_objectness": 0.13806558739055286,
+        "objectness_ge_0_1_rate": 0.36363636363636365,
+        "mean_true_class_probability": 0.6501771753484552,
+        "mean_true_class_fused_score": 0.1035195914181796,
+        "AOE_deg": 6.19531811924976,
+        "axis_AOE_deg": 6.19531811924976,
+        "flip_rate": 0.0,
+        "mean_facing_perpendicular": 1.325077230280096,
+        "wrong_decode_despite_positive_GT_projection_rate": 0.0,
+        "mean_L_ratio_GT_class": 1.090178663080389,
+        "mean_W_ratio_GT_class": 1.0161104202270508,
+        "mean_H_ratio_GT_class": 1.0428295135498047,
+        "mean_L_ratio_predicted_class": 0.9700006138194691,
+        "mean_center_error_m": 0.09206224571574818,
+        "mean_facing_norm": 3.5525020252574575,
+        "negative_GT_facing_projection_rate": 0.09090909090909091
+      }
+    }
+  },
+  "sample_tokens": {
+    "val": [
+      "1789553476148722904",
+      "1789553477297781341",
+      "1789553478898971992",
+      "1789553480595700408",
+      "1789553481614056306",
+      "1789553483244871557",
+      "1789553484959043730",
+      "1789553486644125912",
+      "1789553487747843063",
+      "1789553489342669178",
+      "1789553491150435147",
+      "1789553492695505453",
+      "1789634680822354880",
+      "1789634694863542664",
+      "1789634699375852269",
+      "1789634709921495060",
+      "1789634719617267084",
+      "1789634721827519188",
+      "1789634724066884851",
+      "1789634725278123069",
+      "1789634740620272430",
+      "1789634743371433490",
+      "1789634755398877177",
+      "1789634768377340378",
+      "1789634769987313966",
+      "1789634784486945413",
+      "1789634787133967021",
+      "1789634794331823860",
+      "1789634799336084376",
+      "1789634808372799344",
+      "1789634813831654991",
+      "1789634828224960854",
+      "1789634843741810798",
+      "1790343177011341470",
+      "1790343180167106822",
+      "1790343183778070723",
+      "1790343187224026510",
+      "1790343190979961817",
+      "1790343194296022533",
+      "1790343198045494234",
+      "1790343201336196957",
+      "1790343205260704171",
+      "1790343208925743460",
+      "1790343211856066518",
+      "1790343215539930624",
+      "1790763640788855117",
+      "1790763649330999633",
+      "1790763653681285081",
+      "1790763667195734644",
+      "1790763680005341494",
+      "1790763693548972003",
+      "1790763706568224049",
+      "1790763720683451706",
+      "1790763732126219756",
+      "1790763735063091488",
+      "1790763749640469703",
+      "1790763750931898875",
+      "1790763762176291883",
+      "1790763777159906461",
+      "1790763792262806288"
+    ],
+    "train": [
+      "1789552736055163966",
+      "1789552748696244315",
+      "1789552749252236950",
+      "1789552776992377939",
+      "1789552780740026747",
+      "1789552814827642925",
+      "1789552903339710703",
+      "1789552982302128829",
+      "1789553061542805416",
+      "1789553123747155631",
+      "1789553141511745363",
+      "1789553191491785341",
+      "1789553220291463893",
+      "1789553300935389168",
+      "1789634027570191151",
+      "1789634078170238424",
+      "1789634102818859545",
+      "1789634118673637044",
+      "1789634210892341396",
+      "1789634302529565571",
+      "1789634375388266790",
+      "1789634395325520931",
+      "1789634421820531369",
+      "1789634439629008248",
+      "1789634488869244035",
+      "1789634582920099960",
+      "1789634675424875164",
+      "1790342898668922972",
+      "1790342937600339346",
+      "1790342977059385151",
+      "1790343016310604814",
+      "1790343054989888681",
+      "1790343093213116000",
+      "1790343107979090210",
+      "1790343132120278091",
+      "1790343171939749362",
+      "1790763054068741724",
+      "1790763139212310542",
+      "1790763221623222519",
+      "1790763304226403951",
+      "1790763387251061509",
+      "1790763469877275617",
+      "1790763552420572908",
+      "1790763590928367728",
+      "1790763593598232597",
+      "1790763603932871701",
+      "1790763630604279952",
+      "1790763635446917026"
+    ]
+  },
+  "ROSA_cached_full_validation": {
+    "metric_version": "center_distance_v2_aligned_size_union",
+    "active_classes": [
+      "car",
+      "pedestrian",
+      "cyclist",
+      "truck",
+      "bus"
+    ],
+    "excluded_classes": [
+      "van"
+    ],
+    "mAP": 0.16920799961619487,
+    "NDS": null,
+    "NDS_status": "unavailable: no velocity/attribute outputs and not the official nuScenes dataset",
+    "geometry_score_3term_nonstandard": 0.2531222004321054,
+    "NDS_missing_velocity_attribute_zero_score_nonstandard": 0.20249776034568434,
+    "mATE": 0.9758552147624968,
+    "mASE": 0.21869396178206868,
+    "mAOE": 0.6265132180795654,
+    "precision_at_score_threshold": 0.8671821696611326,
+    "recall_at_score_threshold": 0.47597054050680315,
+    "score_threshold": 0.3,
+    "AP_distance_thresholds": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "class_results": {
+      "car": {
+        "gt_count": 7345,
+        "prediction_count": 55833,
+        "AP": 0.5076253029746287,
+        "AP_by_distance": {
+          "0.5": 0.19712704704478168,
+          "1.0": 0.40285410803535726,
+          "2.0": 0.6443077566587908,
+          "4.0": 0.7862123001595853
+        },
+        "ATE": 0.7715868904321603,
+        "ASE": 0.07215415406856338,
+        "AOE": 0.5675435142438655,
+        "precision": 0.8869936034115139,
+        "recall": 0.5097345132743363,
+        "TP": 3744,
+        "FP": 477,
+        "FN": 3601,
+        "heading_matches": 6579,
+        "axis_AOE": 0.20533050036154266,
+        "heading_flip_rate": 0.15154278765769874,
+        "heading_within15_rate": 0.6830825353397173,
+        "status": "evaluated"
+      },
+      "pedestrian": {
+        "gt_count": 313,
+        "prediction_count": 5145,
+        "AP": 0.12034634957619281,
+        "AP_by_distance": {
+          "0.5": 0.015407314945642514,
+          "1.0": 0.08667406267312901,
+          "2.0": 0.17157088456850514,
+          "4.0": 0.20773313611749453
+        },
+        "ATE": 0.9014834362901324,
+        "ASE": 0.16655657168893556,
+        "AOE": 1.1467344677463673,
+        "precision": 0.6363636363636364,
+        "recall": 0.134185303514377,
+        "TP": 42,
+        "FP": 24,
+        "FN": 271,
+        "heading_matches": 230,
+        "axis_AOE": 0.7188592597944915,
+        "heading_flip_rate": 0.33043478260869563,
+        "heading_within15_rate": 0.17391304347826086,
+        "status": "evaluated"
+      },
+      "cyclist": {
+        "gt_count": 13,
+        "prediction_count": 150,
+        "AP": 0.1710650020860594,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.029369132957842627,
+          "2.0": 0.3039041028996226,
+          "4.0": 0.3509867724867724
+        },
+        "ATE": 1.0944709411507847,
+        "ASE": 0.2086055376362675,
+        "AOE": 0.709066363517195,
+        "precision": 0.3888888888888889,
+        "recall": 0.5384615384615384,
+        "TP": 7,
+        "FP": 11,
+        "FN": 6,
+        "heading_matches": 8,
+        "axis_AOE": 0.36354324783443115,
+        "heading_flip_rate": 0.25,
+        "heading_within15_rate": 0.5,
+        "status": "evaluated"
+      },
+      "truck": {
+        "gt_count": 134,
+        "prediction_count": 444,
+        "AP": 0.0028122093165286076,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.0007863580576863262,
+          "4.0": 0.010462479208428103
+        },
+        "ATE": 1.0295116295713294,
+        "ASE": 0.3706006683314159,
+        "AOE": 0.23679236171904638,
+        "precision": 0.18,
+        "recall": 0.06716417910447761,
+        "TP": 9,
+        "FP": 41,
+        "FN": 125,
+        "heading_matches": 21,
+        "axis_AOE": 0.22798717871749577,
+        "heading_flip_rate": 0.047619047619047616,
+        "heading_within15_rate": 0.8571428571428571,
+        "status": "evaluated"
+      },
+      "van": {
+        "gt_count": 0,
+        "prediction_count": 0,
+        "AP": null,
+        "AP_by_distance": null,
+        "ATE": null,
+        "ASE": null,
+        "AOE": null,
+        "precision": null,
+        "recall": null,
+        "status": "excluded_no_validation_ground_truth"
+      },
+      "bus": {
+        "gt_count": 206,
+        "prediction_count": 1349,
+        "AP": 0.04419113412756476,
+        "AP_by_distance": {
+          "0.5": 0.0,
+          "1.0": 0.0,
+          "2.0": 0.036743402873434,
+          "4.0": 0.14002113363682503
+        },
+        "ATE": 1.0822231763680772,
+        "ASE": 0.2755528771851612,
+        "AOE": 0.4724293831713524,
+        "precision": 0.2619047619047619,
+        "recall": 0.05339805825242718,
+        "TP": 11,
+        "FP": 31,
+        "FN": 195,
+        "heading_matches": 93,
+        "axis_AOE": 0.19968231635419606,
+        "heading_flip_rate": 0.10752688172043011,
+        "heading_within15_rate": 0.7096774193548387,
+        "status": "evaluated"
+      }
+    }
+  },
+  "ROSA_heading_diagnostics": {
+    "by_score": {
+      "0.01": {
+        "car": {
+          "matched_count": 6579,
+          "AOE": 0.5675435142438655,
+          "AOE_deg": 32.517848056196414,
+          "median_AOE_deg": 5.4082052565186265,
+          "axis_AOE_deg": 11.764571076025819,
+          "flip_rate": 0.15154278765769874,
+          "within15_rate": 0.6830825353397173,
+          "gt_count": 7345,
+          "prediction_count": 55833,
+          "precision": 0.11783353930471227,
+          "recall": 0.89571136827774
+        },
+        "pedestrian": {
+          "matched_count": 230,
+          "AOE": 1.1467344677463673,
+          "AOE_deg": 65.70304522404767,
+          "median_AOE_deg": 51.136184292196944,
+          "axis_AOE_deg": 41.18760165012275,
+          "flip_rate": 0.33043478260869563,
+          "within15_rate": 0.17391304347826086,
+          "gt_count": 313,
+          "prediction_count": 5145,
+          "precision": 0.04470359572400389,
+          "recall": 0.7348242811501597
+        },
+        "cyclist": {
+          "matched_count": 8,
+          "AOE": 0.709066363517195,
+          "AOE_deg": 40.62651002422428,
+          "median_AOE_deg": 14.493893645198838,
+          "axis_AOE_deg": 20.82949377139141,
+          "flip_rate": 0.25,
+          "within15_rate": 0.5,
+          "gt_count": 13,
+          "prediction_count": 150,
+          "precision": 0.05333333333333334,
+          "recall": 0.6153846153846154
+        },
+        "truck": {
+          "matched_count": 21,
+          "AOE": 0.23679236171904638,
+          "AOE_deg": 13.567202947436517,
+          "median_AOE_deg": 5.276735000609871,
+          "axis_AOE_deg": 13.062703123607331,
+          "flip_rate": 0.047619047619047616,
+          "within15_rate": 0.8571428571428571,
+          "gt_count": 134,
+          "prediction_count": 444,
+          "precision": 0.0472972972972973,
+          "recall": 0.15671641791044777
+        },
+        "van": {
+          "matched_count": 0,
+          "AOE": null,
+          "AOE_deg": null,
+          "median_AOE_deg": null,
+          "axis_AOE_deg": null,
+          "flip_rate": null,
+          "within15_rate": null,
+          "gt_count": 0,
+          "prediction_count": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "bus": {
+          "matched_count": 93,
+          "AOE": 0.4724293831713524,
+          "AOE_deg": 27.068209773687293,
+          "median_AOE_deg": 6.849616575889795,
+          "axis_AOE_deg": 11.44095397049157,
+          "flip_rate": 0.10752688172043011,
+          "within15_rate": 0.7096774193548387,
+          "gt_count": 206,
+          "prediction_count": 1349,
+          "precision": 0.06893995552260934,
+          "recall": 0.45145631067961167
+        }
+      },
+      "0.1": {
+        "car": {
+          "matched_count": 5345,
+          "AOE": 0.5182656142974346,
+          "AOE_deg": 29.694432365997976,
+          "median_AOE_deg": 4.784250627736137,
+          "axis_AOE_deg": 10.36664121501408,
+          "flip_rate": 0.13601496725912068,
+          "within15_rate": 0.7141253507951356,
+          "gt_count": 7345,
+          "prediction_count": 10462,
+          "precision": 0.510896578092143,
+          "recall": 0.7277059223961879
+        },
+        "pedestrian": {
+          "matched_count": 130,
+          "AOE": 1.1845166932769848,
+          "AOE_deg": 67.86780728756348,
+          "median_AOE_deg": 52.69172999358973,
+          "axis_AOE_deg": 42.64366679294295,
+          "flip_rate": 0.36153846153846153,
+          "within15_rate": 0.15384615384615385,
+          "gt_count": 313,
+          "prediction_count": 421,
+          "precision": 0.3087885985748218,
+          "recall": 0.41533546325878595
+        },
+        "cyclist": {
+          "matched_count": 8,
+          "AOE": 0.709066363517195,
+          "AOE_deg": 40.62651002422428,
+          "median_AOE_deg": 14.493893645198838,
+          "axis_AOE_deg": 20.82949377139141,
+          "flip_rate": 0.25,
+          "within15_rate": 0.5,
+          "gt_count": 13,
+          "prediction_count": 38,
+          "precision": 0.21052631578947367,
+          "recall": 0.6153846153846154
+        },
+        "truck": {
+          "matched_count": 17,
+          "AOE": 0.2510263645370112,
+          "AOE_deg": 14.382751234483223,
+          "median_AOE_deg": 4.377445293894429,
+          "axis_AOE_deg": 13.759545569753055,
+          "flip_rate": 0.058823529411764705,
+          "within15_rate": 0.8235294117647058,
+          "gt_count": 134,
+          "prediction_count": 135,
+          "precision": 0.1259259259259259,
+          "recall": 0.12686567164179105
+        },
+        "van": {
+          "matched_count": 0,
+          "AOE": null,
+          "AOE_deg": null,
+          "median_AOE_deg": null,
+          "axis_AOE_deg": null,
+          "flip_rate": null,
+          "within15_rate": null,
+          "gt_count": 0,
+          "prediction_count": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "bus": {
+          "matched_count": 62,
+          "AOE": 0.4413563967825167,
+          "AOE_deg": 25.287858796739553,
+          "median_AOE_deg": 8.570935450750431,
+          "axis_AOE_deg": 10.473866525486345,
+          "flip_rate": 0.0967741935483871,
+          "within15_rate": 0.7096774193548387,
+          "gt_count": 206,
+          "prediction_count": 342,
+          "precision": 0.18128654970760233,
+          "recall": 0.30097087378640774
+        }
+      },
+      "0.3": {
+        "car": {
+          "matched_count": 3744,
+          "AOE": 0.39725523579051336,
+          "AOE_deg": 22.761048400270784,
+          "median_AOE_deg": 3.584337467892168,
+          "axis_AOE_deg": 7.934704887333666,
+          "flip_rate": 0.0998931623931624,
+          "within15_rate": 0.7855235042735043,
+          "gt_count": 7345,
+          "prediction_count": 4221,
+          "precision": 0.8869936034115139,
+          "recall": 0.5097345132743363
+        },
+        "pedestrian": {
+          "matched_count": 42,
+          "AOE": 1.2176199993465906,
+          "AOE_deg": 69.7644870132817,
+          "median_AOE_deg": 72.39644166462125,
+          "axis_AOE_deg": 42.86135392507485,
+          "flip_rate": 0.38095238095238093,
+          "within15_rate": 0.23809523809523808,
+          "gt_count": 313,
+          "prediction_count": 66,
+          "precision": 0.6363636363636364,
+          "recall": 0.134185303514377
+        },
+        "cyclist": {
+          "matched_count": 7,
+          "AOE": 0.5695804187229702,
+          "AOE_deg": 32.6345540861204,
+          "median_AOE_deg": 13.83504676767024,
+          "axis_AOE_deg": 11.88659310886896,
+          "flip_rate": 0.14285714285714285,
+          "within15_rate": 0.5714285714285714,
+          "gt_count": 13,
+          "prediction_count": 18,
+          "precision": 0.3888888888888889,
+          "recall": 0.5384615384615384
+        },
+        "truck": {
+          "matched_count": 9,
+          "AOE": 0.044507090700790286,
+          "AOE_deg": 2.5500684555612367,
+          "median_AOE_deg": 2.4056777895997046,
+          "axis_AOE_deg": 2.5500684555612367,
+          "flip_rate": 0.0,
+          "within15_rate": 1.0,
+          "gt_count": 134,
+          "prediction_count": 50,
+          "precision": 0.18,
+          "recall": 0.06716417910447761
+        },
+        "van": {
+          "matched_count": 0,
+          "AOE": null,
+          "AOE_deg": null,
+          "median_AOE_deg": null,
+          "axis_AOE_deg": null,
+          "flip_rate": null,
+          "within15_rate": null,
+          "gt_count": 0,
+          "prediction_count": 0,
+          "precision": 0.0,
+          "recall": 0.0
+        },
+        "bus": {
+          "matched_count": 11,
+          "AOE": 0.39293452456094063,
+          "AOE_deg": 22.513489882321487,
+          "median_AOE_deg": 6.116806647056184,
+          "axis_AOE_deg": 6.186644683186587,
+          "flip_rate": 0.09090909090909091,
+          "within15_rate": 0.9090909090909091,
+          "gt_count": 206,
+          "prediction_count": 42,
+          "precision": 0.2619047619047619,
+          "recall": 0.05339805825242718
+        }
+      }
+    },
+    "by_distance": {
+      "0.01": {
+        "car": {
+          "0_20m": {
+            "matched_count": 3859,
+            "AOE": 0.4401525605762771,
+            "AOE_deg": 25.218884062896983,
+            "median_AOE_deg": 3.7802600435115954,
+            "axis_AOE_deg": 8.601090447722717,
+            "flip_rate": 0.11505571391552216,
+            "within15_rate": 0.7709251101321586,
+            "gt_count": 4046,
+            "recall": 0.9537815126050421
+          },
+          "20_35m": {
+            "matched_count": 2240,
+            "AOE": 0.7596596534665735,
+            "AOE_deg": 43.525292010005316,
+            "median_AOE_deg": 10.129777892356511,
+            "axis_AOE_deg": 15.882054042593374,
+            "flip_rate": 0.20758928571428573,
+            "within15_rate": 0.5625,
+            "gt_count": 2621,
+            "recall": 0.85463563525372
+          },
+          "35_68m": {
+            "matched_count": 480,
+            "AOE": 0.6951717191279448,
+            "AOE_deg": 39.830405542885124,
+            "median_AOE_deg": 11.708741430927216,
+            "axis_AOE_deg": 17.98271670000572,
+            "flip_rate": 0.18333333333333332,
+            "within15_rate": 0.5395833333333333,
+            "gt_count": 678,
+            "recall": 0.7079646017699115
+          }
+        },
+        "pedestrian": {
+          "0_20m": {
+            "matched_count": 204,
+            "AOE": 1.1219747016165946,
+            "AOE_deg": 64.28441512308073,
+            "median_AOE_deg": 49.863520266790346,
+            "axis_AOE_deg": 40.22113385063084,
+            "flip_rate": 0.3137254901960784,
+            "within15_rate": 0.19117647058823528,
+            "gt_count": 267,
+            "recall": 0.7640449438202247
+          },
+          "20_35m": {
+            "matched_count": 26,
+            "AOE": 1.3410034019953518,
+            "AOE_deg": 76.83383524701898,
+            "median_AOE_deg": 80.30711895000583,
+            "axis_AOE_deg": 48.77065669228997,
+            "flip_rate": 0.46153846153846156,
+            "within15_rate": 0.038461538461538464,
+            "gt_count": 40,
+            "recall": 0.65
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 6,
+            "recall": 0.0
+          }
+        },
+        "cyclist": {
+          "0_20m": {
+            "matched_count": 8,
+            "AOE": 0.709066363517195,
+            "AOE_deg": 40.62651002422428,
+            "median_AOE_deg": 14.493893645198838,
+            "axis_AOE_deg": 20.82949377139141,
+            "flip_rate": 0.25,
+            "within15_rate": 0.5,
+            "gt_count": 10,
+            "recall": 0.8
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 2,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 1,
+            "recall": 0.0
+          }
+        },
+        "truck": {
+          "0_20m": {
+            "matched_count": 10,
+            "AOE": 0.35906270695952786,
+            "AOE_deg": 20.572777689323598,
+            "median_AOE_deg": 3.23699900322388,
+            "axis_AOE_deg": 19.513328059282312,
+            "flip_rate": 0.1,
+            "within15_rate": 0.7,
+            "gt_count": 53,
+            "recall": 0.18867924528301888
+          },
+          "20_35m": {
+            "matched_count": 9,
+            "AOE": 0.12396208848804235,
+            "AOE_deg": 7.102504489992075,
+            "median_AOE_deg": 5.276735000609871,
+            "axis_AOE_deg": 7.102504489992075,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 57,
+            "recall": 0.15789473684210525
+          },
+          "35_68m": {
+            "matched_count": 2,
+            "AOE": 0.1331768650561571,
+            "AOE_deg": 7.630472296501096,
+            "median_AOE_deg": 7.630472296501096,
+            "axis_AOE_deg": 7.630472296501096,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 24,
+            "recall": 0.08333333333333333
+          }
+        },
+        "van": {
+          "0_20m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          }
+        },
+        "bus": {
+          "0_20m": {
+            "matched_count": 14,
+            "AOE": 0.8500356388042499,
+            "AOE_deg": 48.70345453919039,
+            "median_AOE_deg": 7.224564239328434,
+            "axis_AOE_deg": 11.396963700468254,
+            "flip_rate": 0.21428571428571427,
+            "within15_rate": 0.7142857142857143,
+            "gt_count": 61,
+            "recall": 0.22950819672131148
+          },
+          "20_35m": {
+            "matched_count": 50,
+            "AOE": 0.4306281146543387,
+            "AOE_deg": 24.673173509369324,
+            "median_AOE_deg": 4.6079383383893475,
+            "axis_AOE_deg": 6.567053857433398,
+            "flip_rate": 0.12,
+            "within15_rate": 0.84,
+            "gt_count": 87,
+            "recall": 0.5747126436781609
+          },
+          "35_68m": {
+            "matched_count": 29,
+            "AOE": 0.36220786065377036,
+            "AOE_deg": 20.75298172192367,
+            "median_AOE_deg": 15.520742577471262,
+            "axis_AOE_deg": 19.865466709568643,
+            "flip_rate": 0.034482758620689655,
+            "within15_rate": 0.4827586206896552,
+            "gt_count": 58,
+            "recall": 0.5
+          }
+        }
+      },
+      "0.1": {
+        "car": {
+          "0_20m": {
+            "matched_count": 3522,
+            "AOE": 0.4087007762799248,
+            "AOE_deg": 23.416829564560157,
+            "median_AOE_deg": 3.6403149502456684,
+            "axis_AOE_deg": 8.068066276117358,
+            "flip_rate": 0.10477001703577513,
+            "within15_rate": 0.7836456558773425,
+            "gt_count": 4046,
+            "recall": 0.870489372219476
+          },
+          "20_35m": {
+            "matched_count": 1613,
+            "AOE": 0.737897261939943,
+            "AOE_deg": 42.27839882341812,
+            "median_AOE_deg": 9.093433823199007,
+            "axis_AOE_deg": 14.674215544776628,
+            "flip_rate": 0.19900805951642903,
+            "within15_rate": 0.5796652200867948,
+            "gt_count": 2621,
+            "recall": 0.615413964135826
+          },
+          "35_68m": {
+            "matched_count": 210,
+            "AOE": 0.6688442421560199,
+            "AOE_deg": 38.32195222716596,
+            "median_AOE_deg": 9.66231643718796,
+            "axis_AOE_deg": 15.830753314477208,
+            "flip_rate": 0.1761904761904762,
+            "within15_rate": 0.580952380952381,
+            "gt_count": 678,
+            "recall": 0.30973451327433627
+          }
+        },
+        "pedestrian": {
+          "0_20m": {
+            "matched_count": 119,
+            "AOE": 1.199480215871708,
+            "AOE_deg": 68.72515397888976,
+            "median_AOE_deg": 58.62987938252589,
+            "axis_AOE_deg": 42.80089276143796,
+            "flip_rate": 0.36134453781512604,
+            "within15_rate": 0.15966386554621848,
+            "gt_count": 267,
+            "recall": 0.44569288389513106
+          },
+          "20_35m": {
+            "matched_count": 11,
+            "AOE": 1.0226385852067985,
+            "AOE_deg": 58.59287489957918,
+            "median_AOE_deg": 39.03667535913543,
+            "axis_AOE_deg": 40.94276767922433,
+            "flip_rate": 0.36363636363636365,
+            "within15_rate": 0.09090909090909091,
+            "gt_count": 40,
+            "recall": 0.275
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 6,
+            "recall": 0.0
+          }
+        },
+        "cyclist": {
+          "0_20m": {
+            "matched_count": 8,
+            "AOE": 0.709066363517195,
+            "AOE_deg": 40.62651002422428,
+            "median_AOE_deg": 14.493893645198838,
+            "axis_AOE_deg": 20.82949377139141,
+            "flip_rate": 0.25,
+            "within15_rate": 0.5,
+            "gt_count": 10,
+            "recall": 0.8
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 2,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 1,
+            "recall": 0.0
+          }
+        },
+        "truck": {
+          "0_20m": {
+            "matched_count": 10,
+            "AOE": 0.35906270695952786,
+            "AOE_deg": 20.572777689323598,
+            "median_AOE_deg": 3.23699900322388,
+            "axis_AOE_deg": 19.513328059282312,
+            "flip_rate": 0.1,
+            "within15_rate": 0.7,
+            "gt_count": 53,
+            "recall": 0.18867924528301888
+          },
+          "20_35m": {
+            "matched_count": 5,
+            "AOE": 0.08209347948431969,
+            "AOE_deg": 4.703609899995328,
+            "median_AOE_deg": 4.377445293894429,
+            "axis_AOE_deg": 4.703609899995328,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 57,
+            "recall": 0.08771929824561403
+          },
+          "35_68m": {
+            "matched_count": 2,
+            "AOE": 0.1331768650561571,
+            "AOE_deg": 7.630472296501096,
+            "median_AOE_deg": 7.630472296501096,
+            "axis_AOE_deg": 7.630472296501096,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 24,
+            "recall": 0.08333333333333333
+          }
+        },
+        "van": {
+          "0_20m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          }
+        },
+        "bus": {
+          "0_20m": {
+            "matched_count": 7,
+            "AOE": 0.5330456149712484,
+            "AOE_deg": 30.54126402580802,
+            "median_AOE_deg": 6.264459115212581,
+            "axis_AOE_deg": 4.8847929985960326,
+            "flip_rate": 0.14285714285714285,
+            "within15_rate": 0.8571428571428571,
+            "gt_count": 61,
+            "recall": 0.11475409836065574
+          },
+          "20_35m": {
+            "matched_count": 30,
+            "AOE": 0.537931615477095,
+            "AOE_deg": 30.821211233491816,
+            "median_AOE_deg": 4.992923144906199,
+            "axis_AOE_deg": 6.192137112584649,
+            "flip_rate": 0.16666666666666666,
+            "within15_rate": 0.8333333333333334,
+            "gt_count": 87,
+            "recall": 0.3448275862068966
+          },
+          "35_68m": {
+            "matched_count": 25,
+            "AOE": 0.2997931532561779,
+            "AOE_deg": 17.176882408497665,
+            "median_AOE_deg": 14.378709335035744,
+            "axis_AOE_deg": 17.176882408497665,
+            "flip_rate": 0.0,
+            "within15_rate": 0.52,
+            "gt_count": 58,
+            "recall": 0.43103448275862066
+          }
+        }
+      },
+      "0.3": {
+        "car": {
+          "0_20m": {
+            "matched_count": 3064,
+            "AOE": 0.3694195172208661,
+            "AOE_deg": 21.166179206516063,
+            "median_AOE_deg": 3.342268546754761,
+            "axis_AOE_deg": 7.429821236871004,
+            "flip_rate": 0.0933420365535248,
+            "within15_rate": 0.8074412532637075,
+            "gt_count": 4046,
+            "recall": 0.7572911517548195
+          },
+          "20_35m": {
+            "matched_count": 662,
+            "AOE": 0.5209462145426453,
+            "AOE_deg": 29.848019446610287,
+            "median_AOE_deg": 5.308691067838193,
+            "axis_AOE_deg": 10.309923444915498,
+            "flip_rate": 0.1283987915407855,
+            "within15_rate": 0.6842900302114804,
+            "gt_count": 2621,
+            "recall": 0.2525753529187333
+          },
+          "35_68m": {
+            "matched_count": 18,
+            "AOE": 0.5864337782065073,
+            "AOE_deg": 33.600180455143864,
+            "median_AOE_deg": 5.322779066713072,
+            "axis_AOE_deg": 6.521861548357534,
+            "flip_rate": 0.16666666666666666,
+            "within15_rate": 0.7777777777777778,
+            "gt_count": 678,
+            "recall": 0.02654867256637168
+          }
+        },
+        "pedestrian": {
+          "0_20m": {
+            "matched_count": 42,
+            "AOE": 1.2176199993465906,
+            "AOE_deg": 69.7644870132817,
+            "median_AOE_deg": 72.39644166462125,
+            "axis_AOE_deg": 42.86135392507485,
+            "flip_rate": 0.38095238095238093,
+            "within15_rate": 0.23809523809523808,
+            "gt_count": 267,
+            "recall": 0.15730337078651685
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 40,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 6,
+            "recall": 0.0
+          }
+        },
+        "cyclist": {
+          "0_20m": {
+            "matched_count": 7,
+            "AOE": 0.5695804187229702,
+            "AOE_deg": 32.6345540861204,
+            "median_AOE_deg": 13.83504676767024,
+            "axis_AOE_deg": 11.88659310886896,
+            "flip_rate": 0.14285714285714285,
+            "within15_rate": 0.5714285714285714,
+            "gt_count": 10,
+            "recall": 0.7
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 2,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 1,
+            "recall": 0.0
+          }
+        },
+        "truck": {
+          "0_20m": {
+            "matched_count": 7,
+            "AOE": 0.036428297038323114,
+            "AOE_deg": 2.087187675144831,
+            "median_AOE_deg": 1.1660199996867449,
+            "axis_AOE_deg": 2.087187675144831,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 53,
+            "recall": 0.1320754716981132
+          },
+          "20_35m": {
+            "matched_count": 2,
+            "AOE": 0.07278286851942539,
+            "AOE_deg": 4.170151187018658,
+            "median_AOE_deg": 4.170151187018658,
+            "axis_AOE_deg": 4.170151187018658,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 57,
+            "recall": 0.03508771929824561
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 24,
+            "recall": 0.0
+          }
+        },
+        "van": {
+          "0_20m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "20_35m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          },
+          "35_68m": {
+            "matched_count": 0,
+            "AOE": null,
+            "AOE_deg": null,
+            "median_AOE_deg": null,
+            "axis_AOE_deg": null,
+            "flip_rate": null,
+            "within15_rate": null,
+            "gt_count": 0,
+            "recall": 0.0
+          }
+        },
+        "bus": {
+          "0_20m": {
+            "matched_count": 3,
+            "AOE": 1.084273408558533,
+            "AOE_deg": 62.12429014866794,
+            "median_AOE_deg": 5.1516701814821175,
+            "axis_AOE_deg": 2.259191085173302,
+            "flip_rate": 0.3333333333333333,
+            "within15_rate": 0.6666666666666666,
+            "gt_count": 61,
+            "recall": 0.04918032786885246
+          },
+          "20_35m": {
+            "matched_count": 6,
+            "AOE": 0.10000161609301965,
+            "AOE_deg": 5.729670546617559,
+            "median_AOE_deg": 5.893225313774283,
+            "axis_AOE_deg": 5.729670546617559,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 87,
+            "recall": 0.06896551724137931
+          },
+          "35_68m": {
+            "matched_count": 2,
+            "AOE": 0.23472492396831512,
+            "AOE_deg": 13.448747489913595,
+            "median_AOE_deg": 13.448747489913595,
+            "axis_AOE_deg": 13.448747489913595,
+            "flip_rate": 0.0,
+            "within15_rate": 1.0,
+            "gt_count": 58,
+            "recall": 0.034482758620689655
+          }
+        }
+      }
+    },
+    "by_sequence": {
+      "16_09": {
+        "by_score": {
+          "0.01": {
+            "car": {
+              "matched_count": 99,
+              "AOE": 0.3735614395565934,
+              "AOE_deg": 21.403493875424203,
+              "median_AOE_deg": 5.204260396935394,
+              "axis_AOE_deg": 10.740796115969838,
+              "flip_rate": 0.10101010101010101,
+              "within15_rate": 0.7878787878787878,
+              "gt_count": 100,
+              "prediction_count": 1198,
+              "precision": 0.08263772954924875,
+              "recall": 0.99
+            },
+            "pedestrian": {
+              "matched_count": 2,
+              "AOE": 0.9495370611548424,
+              "AOE_deg": 54.40446609542801,
+              "median_AOE_deg": 54.40446609542801,
+              "axis_AOE_deg": 38.97170238772481,
+              "flip_rate": 0.5,
+              "within15_rate": 0.5,
+              "gt_count": 2,
+              "prediction_count": 181,
+              "precision": 0.011049723756906077,
+              "recall": 1.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 13,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 4,
+              "AOE": 2.601666594450597,
+              "AOE_deg": 149.06451556219318,
+              "median_AOE_deg": 176.71201928390855,
+              "axis_AOE_deg": 18.032681783876335,
+              "flip_rate": 0.75,
+              "within15_rate": 0.0,
+              "gt_count": 4,
+              "prediction_count": 44,
+              "precision": 0.09090909090909091,
+              "recall": 1.0
+            }
+          },
+          "0.1": {
+            "car": {
+              "matched_count": 88,
+              "AOE": 0.3992205034070508,
+              "AOE_deg": 22.873649940312113,
+              "median_AOE_deg": 4.895192682805877,
+              "axis_AOE_deg": 10.87811496092595,
+              "flip_rate": 0.11363636363636363,
+              "within15_rate": 0.7954545454545454,
+              "gt_count": 100,
+              "prediction_count": 168,
+              "precision": 0.5238095238095238,
+              "recall": 0.88
+            },
+            "pedestrian": {
+              "matched_count": 2,
+              "AOE": 0.9495370611548424,
+              "AOE_deg": 54.40446609542801,
+              "median_AOE_deg": 54.40446609542801,
+              "axis_AOE_deg": 38.97170238772481,
+              "flip_rate": 0.5,
+              "within15_rate": 0.5,
+              "gt_count": 2,
+              "prediction_count": 14,
+              "precision": 0.14285714285714285,
+              "recall": 1.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 5,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 3,
+              "AOE": 3.0954209430332633,
+              "AOE_deg": 177.3545558522112,
+              "median_AOE_deg": 177.14521277287665,
+              "axis_AOE_deg": 2.6454441477887696,
+              "flip_rate": 1.0,
+              "within15_rate": 0.0,
+              "gt_count": 4,
+              "prediction_count": 6,
+              "precision": 0.5,
+              "recall": 0.75
+            }
+          },
+          "0.3": {
+            "car": {
+              "matched_count": 60,
+              "AOE": 0.21965031737597726,
+              "AOE_deg": 12.585036154352547,
+              "median_AOE_deg": 3.96290126292908,
+              "axis_AOE_deg": 5.169629458791811,
+              "flip_rate": 0.05,
+              "within15_rate": 0.9333333333333333,
+              "gt_count": 100,
+              "prediction_count": 63,
+              "precision": 0.9523809523809523,
+              "recall": 0.6
+            },
+            "pedestrian": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 2,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 4,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            }
+          }
+        },
+        "by_distance": {
+          "0.01": {
+            "car": {
+              "0_20m": {
+                "matched_count": 58,
+                "AOE": 0.20995195122545926,
+                "AOE_deg": 12.029360705755328,
+                "median_AOE_deg": 3.527359469546966,
+                "axis_AOE_deg": 6.064238772224427,
+                "flip_rate": 0.05172413793103448,
+                "within15_rate": 0.9137931034482759,
+                "gt_count": 58,
+                "recall": 1.0
+              },
+              "20_35m": {
+                "matched_count": 30,
+                "AOE": 0.7773558076788366,
+                "AOE_deg": 44.539206959980646,
+                "median_AOE_deg": 11.334316703846904,
+                "axis_AOE_deg": 20.88487342527432,
+                "flip_rate": 0.23333333333333334,
+                "within15_rate": 0.5333333333333333,
+                "gt_count": 31,
+                "recall": 0.967741935483871
+              },
+              "35_68m": {
+                "matched_count": 11,
+                "AOE": 0.13497228315100074,
+                "AOE_deg": 7.733342175797055,
+                "median_AOE_deg": 4.019826834236317,
+                "axis_AOE_deg": 7.733342175797055,
+                "flip_rate": 0.0,
+                "within15_rate": 0.8181818181818182,
+                "gt_count": 11,
+                "recall": 1.0
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 2,
+                "AOE": 0.9495370611548424,
+                "AOE_deg": 54.40446609542801,
+                "median_AOE_deg": 54.40446609542801,
+                "axis_AOE_deg": 38.97170238772481,
+                "flip_rate": 0.5,
+                "within15_rate": 0.5,
+                "gt_count": 2,
+                "recall": 1.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 4,
+                "AOE": 2.601666594450597,
+                "AOE_deg": 149.06451556219318,
+                "median_AOE_deg": 176.71201928390855,
+                "axis_AOE_deg": 18.032681783876335,
+                "flip_rate": 0.75,
+                "within15_rate": 0.0,
+                "gt_count": 4,
+                "recall": 1.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.1": {
+            "car": {
+              "0_20m": {
+                "matched_count": 58,
+                "AOE": 0.20995195122545926,
+                "AOE_deg": 12.029360705755328,
+                "median_AOE_deg": 3.527359469546966,
+                "axis_AOE_deg": 6.064238772224427,
+                "flip_rate": 0.05172413793103448,
+                "within15_rate": 0.9137931034482759,
+                "gt_count": 58,
+                "recall": 1.0
+              },
+              "20_35m": {
+                "matched_count": 24,
+                "AOE": 0.9241485551861898,
+                "AOE_deg": 52.94981185528152,
+                "median_AOE_deg": 20.772360998151438,
+                "axis_AOE_deg": 23.381894936898608,
+                "flip_rate": 0.2916666666666667,
+                "within15_rate": 0.5,
+                "gt_count": 31,
+                "recall": 0.7741935483870968
+              },
+              "35_68m": {
+                "matched_count": 6,
+                "AOE": 0.12910430071254572,
+                "AOE_deg": 7.397131547816697,
+                "median_AOE_deg": 3.3729431931215523,
+                "axis_AOE_deg": 7.397131547816697,
+                "flip_rate": 0.0,
+                "within15_rate": 0.8333333333333334,
+                "gt_count": 11,
+                "recall": 0.5454545454545454
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 2,
+                "AOE": 0.9495370611548424,
+                "AOE_deg": 54.40446609542801,
+                "median_AOE_deg": 54.40446609542801,
+                "axis_AOE_deg": 38.97170238772481,
+                "flip_rate": 0.5,
+                "within15_rate": 0.5,
+                "gt_count": 2,
+                "recall": 1.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 3,
+                "AOE": 3.0954209430332633,
+                "AOE_deg": 177.3545558522112,
+                "median_AOE_deg": 177.14521277287665,
+                "axis_AOE_deg": 2.6454441477887696,
+                "flip_rate": 1.0,
+                "within15_rate": 0.0,
+                "gt_count": 4,
+                "recall": 0.75
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.3": {
+            "car": {
+              "0_20m": {
+                "matched_count": 54,
+                "AOE": 0.1777815204335798,
+                "AOE_deg": 10.186130796262928,
+                "median_AOE_deg": 3.2979780783601074,
+                "axis_AOE_deg": 5.182370728640323,
+                "flip_rate": 0.037037037037037035,
+                "within15_rate": 0.9444444444444444,
+                "gt_count": 58,
+                "recall": 0.9310344827586207
+              },
+              "20_35m": {
+                "matched_count": 6,
+                "AOE": 0.5964694898575544,
+                "AOE_deg": 34.175184377159134,
+                "median_AOE_deg": 5.04516245272076,
+                "axis_AOE_deg": 5.054958030155207,
+                "flip_rate": 0.16666666666666666,
+                "within15_rate": 0.8333333333333334,
+                "gt_count": 31,
+                "recall": 0.1935483870967742
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 11,
+                "recall": 0.0
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 4,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      "17_09": {
+        "by_score": {
+          "0.01": {
+            "car": {
+              "matched_count": 971,
+              "AOE": 0.827201947397466,
+              "AOE_deg": 47.395180390877535,
+              "median_AOE_deg": 8.72110655116327,
+              "axis_AOE_deg": 18.329158965375974,
+              "flip_rate": 0.23892893923789907,
+              "within15_rate": 0.568486096807415,
+              "gt_count": 1119,
+              "prediction_count": 15188,
+              "precision": 0.06393205161969977,
+              "recall": 0.8677390527256479
+            },
+            "pedestrian": {
+              "matched_count": 200,
+              "AOE": 1.1278147594062482,
+              "AOE_deg": 64.61902578654039,
+              "median_AOE_deg": 50.66649864995821,
+              "axis_AOE_deg": 42.06989184586662,
+              "flip_rate": 0.315,
+              "within15_rate": 0.16,
+              "gt_count": 260,
+              "prediction_count": 4211,
+              "precision": 0.04749465685110425,
+              "recall": 0.7692307692307693
+            },
+            "cyclist": {
+              "matched_count": 8,
+              "AOE": 0.709066363517195,
+              "AOE_deg": 40.62651002422428,
+              "median_AOE_deg": 14.493893645198838,
+              "axis_AOE_deg": 20.82949377139141,
+              "flip_rate": 0.25,
+              "within15_rate": 0.5,
+              "gt_count": 13,
+              "prediction_count": 94,
+              "precision": 0.0851063829787234,
+              "recall": 0.6153846153846154
+            },
+            "truck": {
+              "matched_count": 7,
+              "AOE": 0.5115914828092138,
+              "AOE_deg": 29.31203279980756,
+              "median_AOE_deg": 12.049792412979818,
+              "axis_AOE_deg": 27.79853332832001,
+              "flip_rate": 0.14285714285714285,
+              "within15_rate": 0.7142857142857143,
+              "gt_count": 86,
+              "prediction_count": 128,
+              "precision": 0.0546875,
+              "recall": 0.08139534883720931
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 56,
+              "AOE": 0.2857275704995437,
+              "AOE_deg": 16.370983880150543,
+              "median_AOE_deg": 4.6079383383893475,
+              "axis_AOE_deg": 4.414137254906322,
+              "flip_rate": 0.07142857142857142,
+              "within15_rate": 0.9285714285714286,
+              "gt_count": 138,
+              "prediction_count": 858,
+              "precision": 0.06526806526806526,
+              "recall": 0.4057971014492754
+            }
+          },
+          "0.1": {
+            "car": {
+              "matched_count": 735,
+              "AOE": 0.7080284635812639,
+              "AOE_deg": 40.567042738338536,
+              "median_AOE_deg": 6.267994271716591,
+              "axis_AOE_deg": 14.630360124651487,
+              "flip_rate": 0.19183673469387755,
+              "within15_rate": 0.6340136054421769,
+              "gt_count": 1119,
+              "prediction_count": 1706,
+              "precision": 0.4308323563892145,
+              "recall": 0.6568364611260054
+            },
+            "pedestrian": {
+              "matched_count": 111,
+              "AOE": 1.205043811447022,
+              "AOE_deg": 69.04392452427292,
+              "median_AOE_deg": 58.62987938252589,
+              "axis_AOE_deg": 44.006087838457894,
+              "flip_rate": 0.36036036036036034,
+              "within15_rate": 0.12612612612612611,
+              "gt_count": 260,
+              "prediction_count": 368,
+              "precision": 0.3016304347826087,
+              "recall": 0.4269230769230769
+            },
+            "cyclist": {
+              "matched_count": 8,
+              "AOE": 0.709066363517195,
+              "AOE_deg": 40.62651002422428,
+              "median_AOE_deg": 14.493893645198838,
+              "axis_AOE_deg": 20.82949377139141,
+              "flip_rate": 0.25,
+              "within15_rate": 0.5,
+              "gt_count": 13,
+              "prediction_count": 33,
+              "precision": 0.24242424242424243,
+              "recall": 0.6153846153846154
+            },
+            "truck": {
+              "matched_count": 3,
+              "AOE": 0.958649660231238,
+              "AOE_deg": 54.926579562900294,
+              "median_AOE_deg": 64.20575553788458,
+              "axis_AOE_deg": 51.395080796096,
+              "flip_rate": 0.3333333333333333,
+              "within15_rate": 0.3333333333333333,
+              "gt_count": 86,
+              "prediction_count": 17,
+              "precision": 0.17647058823529413,
+              "recall": 0.03488372093023256
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 33,
+              "AOE": 0.2552598733931689,
+              "AOE_deg": 14.625313424472315,
+              "median_AOE_deg": 4.813497136988899,
+              "axis_AOE_deg": 4.719621410470788,
+              "flip_rate": 0.06060606060606061,
+              "within15_rate": 0.9393939393939394,
+              "gt_count": 138,
+              "prediction_count": 149,
+              "precision": 0.2214765100671141,
+              "recall": 0.2391304347826087
+            }
+          },
+          "0.3": {
+            "car": {
+              "matched_count": 481,
+              "AOE": 0.533559259508085,
+              "AOE_deg": 30.57069368993871,
+              "median_AOE_deg": 5.07313538574484,
+              "axis_AOE_deg": 11.56954283318141,
+              "flip_rate": 0.1392931392931393,
+              "within15_rate": 0.7193347193347194,
+              "gt_count": 1119,
+              "prediction_count": 623,
+              "precision": 0.7720706260032103,
+              "recall": 0.4298480786416443
+            },
+            "pedestrian": {
+              "matched_count": 32,
+              "AOE": 1.2795703054745116,
+              "AOE_deg": 73.31397809395501,
+              "median_AOE_deg": 76.34389656146405,
+              "axis_AOE_deg": 44.994335918235564,
+              "flip_rate": 0.40625,
+              "within15_rate": 0.21875,
+              "gt_count": 260,
+              "prediction_count": 52,
+              "precision": 0.6153846153846154,
+              "recall": 0.12307692307692308
+            },
+            "cyclist": {
+              "matched_count": 7,
+              "AOE": 0.5695804187229702,
+              "AOE_deg": 32.6345540861204,
+              "median_AOE_deg": 13.83504676767024,
+              "axis_AOE_deg": 11.88659310886896,
+              "flip_rate": 0.14285714285714285,
+              "within15_rate": 0.5714285714285714,
+              "gt_count": 13,
+              "prediction_count": 17,
+              "precision": 0.4117647058823529,
+              "recall": 0.5384615384615384
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 86,
+              "prediction_count": 1,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 9,
+              "AOE": 0.42809221358152416,
+              "AOE_deg": 24.527877080634354,
+              "median_AOE_deg": 5.669643980492381,
+              "axis_AOE_deg": 4.572844059469473,
+              "flip_rate": 0.1111111111111111,
+              "within15_rate": 0.8888888888888888,
+              "gt_count": 138,
+              "prediction_count": 13,
+              "precision": 0.6923076923076923,
+              "recall": 0.06521739130434782
+            }
+          }
+        },
+        "by_distance": {
+          "0.01": {
+            "car": {
+              "0_20m": {
+                "matched_count": 562,
+                "AOE": 0.6589316490531348,
+                "AOE_deg": 37.754002478340155,
+                "median_AOE_deg": 5.813531840477338,
+                "axis_AOE_deg": 12.611603500983351,
+                "flip_rate": 0.18683274021352314,
+                "within15_rate": 0.6814946619217082,
+                "gt_count": 595,
+                "recall": 0.9445378151260504
+              },
+              "20_35m": {
+                "matched_count": 381,
+                "AOE": 1.04296793211536,
+                "AOE_deg": 59.757660677697075,
+                "median_AOE_deg": 24.05125440739262,
+                "axis_AOE_deg": 25.721061328819392,
+                "flip_rate": 0.30183727034120733,
+                "within15_rate": 0.4199475065616798,
+                "gt_count": 470,
+                "recall": 0.8106382978723404
+              },
+              "35_68m": {
+                "matched_count": 28,
+                "AOE": 1.2686686435402041,
+                "AOE_deg": 72.68935887544077,
+                "median_AOE_deg": 64.12738167847962,
+                "axis_AOE_deg": 32.50599362668729,
+                "flip_rate": 0.42857142857142855,
+                "within15_rate": 0.32142857142857145,
+                "gt_count": 54,
+                "recall": 0.5185185185185185
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 181,
+                "AOE": 1.113326568496039,
+                "AOE_deg": 63.78891359460559,
+                "median_AOE_deg": 49.363964499763846,
+                "axis_AOE_deg": 41.351671665789056,
+                "flip_rate": 0.30939226519337015,
+                "within15_rate": 0.17679558011049723,
+                "gt_count": 226,
+                "recall": 0.8008849557522124
+              },
+              "20_35m": {
+                "matched_count": 19,
+                "AOE": 1.2658338412350851,
+                "AOE_deg": 72.5269366676035,
+                "median_AOE_deg": 53.57226454838054,
+                "axis_AOE_deg": 48.911884087658194,
+                "flip_rate": 0.3684210526315789,
+                "within15_rate": 0.0,
+                "gt_count": 31,
+                "recall": 0.6129032258064516
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 8,
+                "AOE": 0.709066363517195,
+                "AOE_deg": 40.62651002422428,
+                "median_AOE_deg": 14.493893645198838,
+                "axis_AOE_deg": 20.82949377139141,
+                "flip_rate": 0.25,
+                "within15_rate": 0.5,
+                "gt_count": 10,
+                "recall": 0.8
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 2,
+                "AOE": 1.3919262905889234,
+                "AOE_deg": 79.7515018440455,
+                "median_AOE_deg": 79.7515018440455,
+                "axis_AOE_deg": 74.45425369383906,
+                "flip_rate": 0.5,
+                "within15_rate": 0.0,
+                "gt_count": 37,
+                "recall": 0.05405405405405406
+              },
+              "20_35m": {
+                "matched_count": 5,
+                "AOE": 0.15945755969733,
+                "AOE_deg": 9.136245182112381,
+                "median_AOE_deg": 11.7150773385169,
+                "axis_AOE_deg": 9.136245182112381,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 38,
+                "recall": 0.13157894736842105
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 11,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 13,
+                "AOE": 0.7950609743197898,
+                "AOE_deg": 45.553638284083085,
+                "median_AOE_deg": 6.983638441062078,
+                "axis_AOE_deg": 5.377417380843857,
+                "flip_rate": 0.23076923076923078,
+                "within15_rate": 0.7692307692307693,
+                "gt_count": 59,
+                "recall": 0.22033898305084745
+              },
+              "20_35m": {
+                "matched_count": 43,
+                "AOE": 0.13174305306551584,
+                "AOE_deg": 7.5483209208221,
+                "median_AOE_deg": 4.258206305963579,
+                "axis_AOE_deg": 4.122913030785671,
+                "flip_rate": 0.023255813953488372,
+                "within15_rate": 0.9767441860465116,
+                "gt_count": 70,
+                "recall": 0.6142857142857143
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 9,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.1": {
+            "car": {
+              "0_20m": {
+                "matched_count": 494,
+                "AOE": 0.5840777551442374,
+                "AOE_deg": 33.46519027724031,
+                "median_AOE_deg": 5.178663889494802,
+                "axis_AOE_deg": 10.871305964886025,
+                "flip_rate": 0.15991902834008098,
+                "within15_rate": 0.7145748987854251,
+                "gt_count": 595,
+                "recall": 0.8302521008403362
+              },
+              "20_35m": {
+                "matched_count": 234,
+                "AOE": 0.9447184928933309,
+                "AOE_deg": 54.12838247074772,
+                "median_AOE_deg": 17.091520454486822,
+                "axis_AOE_deg": 22.207994883562744,
+                "flip_rate": 0.24786324786324787,
+                "within15_rate": 0.47435897435897434,
+                "gt_count": 470,
+                "recall": 0.4978723404255319
+              },
+              "35_68m": {
+                "matched_count": 7,
+                "AOE": 1.5431974791337615,
+                "AOE_deg": 88.41870250959245,
+                "median_AOE_deg": 108.7116694433014,
+                "axis_AOE_deg": 26.602677458780324,
+                "flip_rate": 0.5714285714285714,
+                "within15_rate": 0.2857142857142857,
+                "gt_count": 54,
+                "recall": 0.12962962962962962
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 104,
+                "AOE": 1.2215804230380334,
+                "AOE_deg": 69.99140257588499,
+                "median_AOE_deg": 59.740246700994305,
+                "axis_AOE_deg": 44.16281376996446,
+                "flip_rate": 0.36538461538461536,
+                "within15_rate": 0.1346153846153846,
+                "gt_count": 226,
+                "recall": 0.46017699115044247
+              },
+              "20_35m": {
+                "matched_count": 7,
+                "AOE": 0.959357010666281,
+                "AOE_deg": 54.967107757465,
+                "median_AOE_deg": 39.03667535913543,
+                "axis_AOE_deg": 41.67758828464612,
+                "flip_rate": 0.2857142857142857,
+                "within15_rate": 0.0,
+                "gt_count": 31,
+                "recall": 0.22580645161290322
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 8,
+                "AOE": 0.709066363517195,
+                "AOE_deg": 40.62651002422428,
+                "median_AOE_deg": 14.493893645198838,
+                "axis_AOE_deg": 20.82949377139141,
+                "flip_rate": 0.25,
+                "within15_rate": 0.5,
+                "gt_count": 10,
+                "recall": 0.8
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 2,
+                "AOE": 1.3919262905889234,
+                "AOE_deg": 79.7515018440455,
+                "median_AOE_deg": 79.7515018440455,
+                "axis_AOE_deg": 74.45425369383906,
+                "flip_rate": 0.5,
+                "within15_rate": 0.0,
+                "gt_count": 37,
+                "recall": 0.05405405405405406
+              },
+              "20_35m": {
+                "matched_count": 1,
+                "AOE": 0.09209639951586723,
+                "AOE_deg": 5.276735000609871,
+                "median_AOE_deg": 5.276735000609871,
+                "axis_AOE_deg": 5.276735000609871,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 38,
+                "recall": 0.02631578947368421
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 11,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 7,
+                "AOE": 0.5330456149712484,
+                "AOE_deg": 30.54126402580802,
+                "median_AOE_deg": 6.264459115212581,
+                "axis_AOE_deg": 4.8847929985960326,
+                "flip_rate": 0.14285714285714285,
+                "within15_rate": 0.8571428571428571,
+                "gt_count": 59,
+                "recall": 0.11864406779661017
+              },
+              "20_35m": {
+                "matched_count": 26,
+                "AOE": 0.18047140450676288,
+                "AOE_deg": 10.340249801035778,
+                "median_AOE_deg": 4.504914913239196,
+                "axis_AOE_deg": 4.67515213674476,
+                "flip_rate": 0.038461538461538464,
+                "within15_rate": 0.9615384615384616,
+                "gt_count": 70,
+                "recall": 0.37142857142857144
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 9,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.3": {
+            "car": {
+              "0_20m": {
+                "matched_count": 415,
+                "AOE": 0.5342793791563922,
+                "AOE_deg": 30.61195350653116,
+                "median_AOE_deg": 5.096372969961694,
+                "axis_AOE_deg": 10.873308967369615,
+                "flip_rate": 0.14457831325301204,
+                "within15_rate": 0.727710843373494,
+                "gt_count": 595,
+                "recall": 0.6974789915966386
+              },
+              "20_35m": {
+                "matched_count": 66,
+                "AOE": 0.5290312344467601,
+                "AOE_deg": 30.31125696439533,
+                "median_AOE_deg": 4.346149827648524,
+                "axis_AOE_deg": 15.947376989422251,
+                "flip_rate": 0.10606060606060606,
+                "within15_rate": 0.6666666666666666,
+                "gt_count": 470,
+                "recall": 0.14042553191489363
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 54,
+                "recall": 0.0
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 32,
+                "AOE": 1.2795703054745116,
+                "AOE_deg": 73.31397809395501,
+                "median_AOE_deg": 76.34389656146405,
+                "axis_AOE_deg": 44.994335918235564,
+                "flip_rate": 0.40625,
+                "within15_rate": 0.21875,
+                "gt_count": 226,
+                "recall": 0.1415929203539823
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 31,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 7,
+                "AOE": 0.5695804187229702,
+                "AOE_deg": 32.6345540861204,
+                "median_AOE_deg": 13.83504676767024,
+                "axis_AOE_deg": 11.88659310886896,
+                "flip_rate": 0.14285714285714285,
+                "within15_rate": 0.5714285714285714,
+                "gt_count": 10,
+                "recall": 0.7
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 37,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 38,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 11,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 3,
+                "AOE": 1.084273408558533,
+                "AOE_deg": 62.12429014866794,
+                "median_AOE_deg": 5.1516701814821175,
+                "axis_AOE_deg": 2.259191085173302,
+                "flip_rate": 0.3333333333333333,
+                "within15_rate": 0.6666666666666666,
+                "gt_count": 59,
+                "recall": 0.05084745762711865
+              },
+              "20_35m": {
+                "matched_count": 6,
+                "AOE": 0.10000161609301965,
+                "AOE_deg": 5.729670546617559,
+                "median_AOE_deg": 5.893225313774283,
+                "axis_AOE_deg": 5.729670546617559,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 70,
+                "recall": 0.08571428571428572
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 9,
+                "recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      "25_09": {
+        "by_score": {
+          "0.01": {
+            "car": {
+              "matched_count": 2267,
+              "AOE": 0.5586549260926201,
+              "AOE_deg": 32.00856946930006,
+              "median_AOE_deg": 4.471970736417468,
+              "axis_AOE_deg": 10.184845071283215,
+              "flip_rate": 0.15659461843846492,
+              "within15_rate": 0.7066607851786502,
+              "gt_count": 2328,
+              "prediction_count": 8436,
+              "precision": 0.26872925557136085,
+              "recall": 0.9737972508591065
+            },
+            "pedestrian": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 217,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 43,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 2,
+              "AOE": 1.6501794775300704,
+              "AOE_deg": 94.5483195015763,
+              "median_AOE_deg": 94.5483195015763,
+              "axis_AOE_deg": 11.331440016785633,
+              "flip_rate": 0.5,
+              "within15_rate": 0.0,
+              "gt_count": 6,
+              "prediction_count": 115,
+              "precision": 0.017391304347826087,
+              "recall": 0.3333333333333333
+            }
+          },
+          "0.1": {
+            "car": {
+              "matched_count": 2141,
+              "AOE": 0.5242970004233868,
+              "AOE_deg": 30.0400053356288,
+              "median_AOE_deg": 4.058245687822287,
+              "axis_AOE_deg": 8.934947732216928,
+              "flip_rate": 0.14712751050910788,
+              "within15_rate": 0.733302195235871,
+              "gt_count": 2328,
+              "prediction_count": 2867,
+              "precision": 0.7467736309731426,
+              "recall": 0.9196735395189003
+            },
+            "pedestrian": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 6,
+              "prediction_count": 45,
+              "precision": 0.0,
+              "recall": 0.0
+            }
+          },
+          "0.3": {
+            "car": {
+              "matched_count": 1821,
+              "AOE": 0.4508247641393071,
+              "AOE_deg": 25.830356285163084,
+              "median_AOE_deg": 3.127181620922828,
+              "axis_AOE_deg": 7.151656925919929,
+              "flip_rate": 0.12465678198791873,
+              "within15_rate": 0.7819879187259747,
+              "gt_count": 2328,
+              "prediction_count": 1913,
+              "precision": 0.9519079979090433,
+              "recall": 0.7822164948453608
+            },
+            "pedestrian": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 6,
+              "prediction_count": 23,
+              "precision": 0.0,
+              "recall": 0.0
+            }
+          }
+        },
+        "by_distance": {
+          "0.01": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1706,
+                "AOE": 0.4869055991692821,
+                "AOE_deg": 27.897635853688428,
+                "median_AOE_deg": 3.602870145668366,
+                "axis_AOE_deg": 8.131966327412014,
+                "flip_rate": 0.1324736225087925,
+                "within15_rate": 0.7584994138335287,
+                "gt_count": 1738,
+                "recall": 0.9815880322209436
+              },
+              "20_35m": {
+                "matched_count": 509,
+                "AOE": 0.7656022975994773,
+                "AOE_deg": 43.86578043796889,
+                "median_AOE_deg": 10.301345947726592,
+                "axis_AOE_deg": 15.166919346623041,
+                "flip_rate": 0.2220039292730845,
+                "within15_rate": 0.555992141453831,
+                "gt_count": 535,
+                "recall": 0.9514018691588785
+              },
+              "35_68m": {
+                "matched_count": 52,
+                "AOE": 0.8868883805969338,
+                "AOE_deg": 50.814961107396556,
+                "median_AOE_deg": 26.601657288759135,
+                "axis_AOE_deg": 28.768216819288824,
+                "flip_rate": 0.3076923076923077,
+                "within15_rate": 0.4807692307692308,
+                "gt_count": 55,
+                "recall": 0.9454545454545454
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 2,
+                "AOE": 1.6501794775300704,
+                "AOE_deg": 94.5483195015763,
+                "median_AOE_deg": 94.5483195015763,
+                "axis_AOE_deg": 11.331440016785633,
+                "flip_rate": 0.5,
+                "within15_rate": 0.0,
+                "gt_count": 5,
+                "recall": 0.4
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.1": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1654,
+                "AOE": 0.4645138592714015,
+                "AOE_deg": 26.614683661585172,
+                "median_AOE_deg": 3.461423758146572,
+                "axis_AOE_deg": 7.5371708378264515,
+                "flip_rate": 0.12636033857315598,
+                "within15_rate": 0.7702539298669892,
+                "gt_count": 1738,
+                "recall": 0.9516685845799769
+              },
+              "20_35m": {
+                "matched_count": 449,
+                "AOE": 0.7417557670954862,
+                "AOE_deg": 42.49947488406022,
+                "median_AOE_deg": 8.266455009061373,
+                "axis_AOE_deg": 13.060639037319909,
+                "flip_rate": 0.22271714922049,
+                "within15_rate": 0.6035634743875279,
+                "gt_count": 535,
+                "recall": 0.8392523364485981
+              },
+              "35_68m": {
+                "matched_count": 38,
+                "AOE": 0.556989874886839,
+                "AOE_deg": 31.913169062535637,
+                "median_AOE_deg": 6.9208394406771605,
+                "axis_AOE_deg": 21.026726346180382,
+                "flip_rate": 0.15789473684210525,
+                "within15_rate": 0.6578947368421053,
+                "gt_count": 55,
+                "recall": 0.6909090909090909
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 5,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            }
+          },
+          "0.3": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1532,
+                "AOE": 0.4383680568400197,
+                "AOE_deg": 25.11663953028411,
+                "median_AOE_deg": 3.15779794387741,
+                "axis_AOE_deg": 6.956539345843363,
+                "flip_rate": 0.12010443864229765,
+                "within15_rate": 0.793733681462141,
+                "gt_count": 1738,
+                "recall": 0.8814729574223246
+              },
+              "20_35m": {
+                "matched_count": 283,
+                "AOE": 0.5260940200972207,
+                "AOE_deg": 30.14296697864146,
+                "median_AOE_deg": 2.569988448811528,
+                "axis_AOE_deg": 8.260853725572343,
+                "flip_rate": 0.1519434628975265,
+                "within15_rate": 0.7137809187279152,
+                "gt_count": 535,
+                "recall": 0.5289719626168224
+              },
+              "35_68m": {
+                "matched_count": 6,
+                "AOE": 0.08123745520909627,
+                "AOE_deg": 4.654563321864281,
+                "median_AOE_deg": 4.819191940611529,
+                "axis_AOE_deg": 4.654563321864281,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 55,
+                "recall": 0.10909090909090909
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 5,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 1,
+                "recall": 0.0
+              }
+            }
+          }
+        }
+      },
+      "30_09": {
+        "by_score": {
+          "0.01": {
+            "car": {
+              "matched_count": 3242,
+              "AOE": 0.50191313674256,
+              "AOE_deg": 28.757504417521254,
+              "median_AOE_deg": 5.192430535973359,
+              "axis_AOE_deg": 10.934335953643966,
+              "flip_rate": 0.12338062924120913,
+              "within15_rate": 0.6977174583590376,
+              "gt_count": 3798,
+              "prediction_count": 31011,
+              "precision": 0.10454354906323562,
+              "recall": 0.8536071616640337
+            },
+            "pedestrian": {
+              "matched_count": 28,
+              "AOE": 1.29596077064661,
+              "AOE_deg": 74.25308257257242,
+              "median_AOE_deg": 65.15249232760827,
+              "axis_AOE_deg": 35.04380734212349,
+              "flip_rate": 0.42857142857142855,
+              "within15_rate": 0.25,
+              "gt_count": 51,
+              "prediction_count": 536,
+              "precision": 0.05223880597014925,
+              "recall": 0.5490196078431373
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 13,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 14,
+              "AOE": 0.09939280117396265,
+              "AOE_deg": 5.694788021250994,
+              "median_AOE_deg": 4.015588648495471,
+              "axis_AOE_deg": 5.694788021250994,
+              "flip_rate": 0.0,
+              "within15_rate": 0.9285714285714286,
+              "gt_count": 48,
+              "prediction_count": 303,
+              "precision": 0.0462046204620462,
+              "recall": 0.2916666666666667
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 31,
+              "AOE": 0.4589730114225418,
+              "AOE_deg": 26.29721646492137,
+              "median_AOE_deg": 16.208740702377476,
+              "axis_AOE_deg": 23.291078251996304,
+              "flip_rate": 0.06451612903225806,
+              "within15_rate": 0.45161290322580644,
+              "gt_count": 58,
+              "prediction_count": 332,
+              "precision": 0.09337349397590361,
+              "recall": 0.5344827586206896
+            }
+          },
+          "0.1": {
+            "car": {
+              "matched_count": 2381,
+              "AOE": 0.4586633790345513,
+              "AOE_deg": 26.279475835888956,
+              "median_AOE_deg": 4.840853832203372,
+              "axis_AOE_deg": 10.318935485675553,
+              "flip_rate": 0.10961780764384713,
+              "within15_rate": 0.7186056278874422,
+              "gt_count": 3798,
+              "prediction_count": 5721,
+              "precision": 0.41618598147177066,
+              "recall": 0.6269088994207478
+            },
+            "pedestrian": {
+              "matched_count": 17,
+              "AOE": 1.0781313490046411,
+              "AOE_deg": 61.77237605871193,
+              "median_AOE_deg": 32.01138226236809,
+              "axis_AOE_deg": 34.17985460225339,
+              "flip_rate": 0.35294117647058826,
+              "within15_rate": 0.29411764705882354,
+              "gt_count": 51,
+              "prediction_count": 39,
+              "precision": 0.4358974358974359,
+              "recall": 0.3333333333333333
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 5,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 14,
+              "AOE": 0.09939280117396265,
+              "AOE_deg": 5.694788021250994,
+              "median_AOE_deg": 4.015588648495471,
+              "axis_AOE_deg": 5.694788021250994,
+              "flip_rate": 0.0,
+              "within15_rate": 0.9285714285714286,
+              "gt_count": 48,
+              "prediction_count": 113,
+              "precision": 0.12389380530973451,
+              "recall": 0.2916666666666667
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 26,
+              "AOE": 0.3713176134400643,
+              "AOE_deg": 21.27493210898586,
+              "median_AOE_deg": 14.949725956253502,
+              "axis_AOE_deg": 18.68061098427889,
+              "flip_rate": 0.038461538461538464,
+              "within15_rate": 0.5,
+              "gt_count": 58,
+              "prediction_count": 142,
+              "precision": 0.18309859154929578,
+              "recall": 0.4482758620689655
+            }
+          },
+          "0.3": {
+            "car": {
+              "matched_count": 1382,
+              "AOE": 0.2869397137742808,
+              "AOE_deg": 16.440434573958143,
+              "median_AOE_deg": 3.678766407312754,
+              "axis_AOE_deg": 7.821447153248401,
+              "flip_rate": 0.055716353111432707,
+              "within15_rate": 0.8068017366136034,
+              "gt_count": 3798,
+              "prediction_count": 1622,
+              "precision": 0.8520345252774353,
+              "recall": 0.3638757240652975
+            },
+            "pedestrian": {
+              "matched_count": 10,
+              "AOE": 1.0193790197372437,
+              "AOE_deg": 58.40611555512711,
+              "median_AOE_deg": 40.67169842237096,
+              "axis_AOE_deg": 36.03581154696058,
+              "flip_rate": 0.3,
+              "within15_rate": 0.3,
+              "gt_count": 51,
+              "prediction_count": 14,
+              "precision": 0.7142857142857143,
+              "recall": 0.19607843137254902
+            },
+            "cyclist": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 1,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "truck": {
+              "matched_count": 9,
+              "AOE": 0.044507090700790286,
+              "AOE_deg": 2.5500684555612367,
+              "median_AOE_deg": 2.4056777895997046,
+              "axis_AOE_deg": 2.5500684555612367,
+              "flip_rate": 0.0,
+              "within15_rate": 1.0,
+              "gt_count": 48,
+              "prediction_count": 49,
+              "precision": 0.1836734693877551,
+              "recall": 0.1875
+            },
+            "van": {
+              "matched_count": 0,
+              "AOE": null,
+              "AOE_deg": null,
+              "median_AOE_deg": null,
+              "axis_AOE_deg": null,
+              "flip_rate": null,
+              "within15_rate": null,
+              "gt_count": 0,
+              "prediction_count": 0,
+              "precision": 0.0,
+              "recall": 0.0
+            },
+            "bus": {
+              "matched_count": 2,
+              "AOE": 0.23472492396831512,
+              "AOE_deg": 13.448747489913595,
+              "median_AOE_deg": 13.448747489913595,
+              "axis_AOE_deg": 13.448747489913595,
+              "flip_rate": 0.0,
+              "within15_rate": 1.0,
+              "gt_count": 58,
+              "prediction_count": 6,
+              "precision": 0.3333333333333333,
+              "recall": 0.034482758620689655
+            }
+          }
+        },
+        "by_distance": {
+          "0.01": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1533,
+                "AOE": 0.31662816643321556,
+                "AOE_deg": 18.141457611589054,
+                "median_AOE_deg": 3.4500340975404584,
+                "axis_AOE_deg": 7.7488757122344465,
+                "flip_rate": 0.07175472928897586,
+                "within15_rate": 0.812133072407045,
+                "gt_count": 1655,
+                "recall": 0.9262839879154079
+              },
+              "20_35m": {
+                "matched_count": 1320,
+                "AOE": 0.6751928772126313,
+                "AOE_deg": 38.68570222157859,
+                "median_AOE_deg": 8.488221219571344,
+                "axis_AOE_deg": 13.204218590105766,
+                "flip_rate": 0.17424242424242425,
+                "within15_rate": 0.6068181818181818,
+                "gt_count": 1585,
+                "recall": 0.832807570977918
+              },
+              "35_68m": {
+                "matched_count": 389,
+                "AOE": 0.6441049158266997,
+                "AOE_deg": 36.904493240499036,
+                "median_AOE_deg": 10.511015893216468,
+                "axis_AOE_deg": 15.785403999791045,
+                "flip_rate": 0.15424164524421594,
+                "within15_rate": 0.5552699228791774,
+                "gt_count": 558,
+                "recall": 0.6971326164874552
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 23,
+                "AOE": 1.1900317492174883,
+                "AOE_deg": 68.18379671673289,
+                "median_AOE_deg": 54.286287174200694,
+                "axis_AOE_deg": 31.32429278351626,
+                "flip_rate": 0.34782608695652173,
+                "within15_rate": 0.30434782608695654,
+                "gt_count": 41,
+                "recall": 0.5609756097560976
+              },
+              "20_35m": {
+                "matched_count": 5,
+                "AOE": 1.78323426922057,
+                "AOE_deg": 102.17179750943427,
+                "median_AOE_deg": 114.38028078456864,
+                "axis_AOE_deg": 52.15357431171677,
+                "flip_rate": 0.8,
+                "within15_rate": 0.0,
+                "gt_count": 7,
+                "recall": 0.7142857142857143
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 8,
+                "AOE": 0.10084681105217896,
+                "AOE_deg": 5.7780966506431195,
+                "median_AOE_deg": 1.7858488946432247,
+                "axis_AOE_deg": 5.7780966506431195,
+                "flip_rate": 0.0,
+                "within15_rate": 0.875,
+                "gt_count": 16,
+                "recall": 0.5
+              },
+              "20_35m": {
+                "matched_count": 4,
+                "AOE": 0.0795927494764328,
+                "AOE_deg": 4.560328624841692,
+                "median_AOE_deg": 4.170151187018658,
+                "axis_AOE_deg": 4.560328624841692,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 19,
+                "recall": 0.21052631578947367
+              },
+              "35_68m": {
+                "matched_count": 2,
+                "AOE": 0.1331768650561571,
+                "AOE_deg": 7.630472296501096,
+                "median_AOE_deg": 7.630472296501096,
+                "axis_AOE_deg": 7.630472296501096,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 13,
+                "recall": 0.15384615384615385
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 1,
+                "AOE": 1.564706277102232,
+                "AOE_deg": 89.65106585558537,
+                "median_AOE_deg": 89.65106585558537,
+                "axis_AOE_deg": 89.65106585558537,
+                "flip_rate": 0.0,
+                "within15_rate": 0.0,
+                "gt_count": 2,
+                "recall": 0.5
+              },
+              "20_35m": {
+                "matched_count": 1,
+                "AOE": 2.159429118037224,
+                "AOE_deg": 123.7261746211906,
+                "median_AOE_deg": 123.7261746211906,
+                "axis_AOE_deg": 56.2738253788094,
+                "flip_rate": 1.0,
+                "within15_rate": 0.0,
+                "gt_count": 8,
+                "recall": 0.125
+              },
+              "35_68m": {
+                "matched_count": 29,
+                "AOE": 0.36220786065377036,
+                "AOE_deg": 20.75298172192367,
+                "median_AOE_deg": 15.520742577471262,
+                "axis_AOE_deg": 19.865466709568643,
+                "flip_rate": 0.034482758620689655,
+                "within15_rate": 0.4827586206896552,
+                "gt_count": 48,
+                "recall": 0.6041666666666666
+              }
+            }
+          },
+          "0.1": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1316,
+                "AOE": 0.2814791691570419,
+                "AOE_deg": 16.127568413547476,
+                "median_AOE_deg": 3.437984149740675,
+                "axis_AOE_deg": 7.771350959937444,
+                "flip_rate": 0.05927051671732523,
+                "within15_rate": 0.8206686930091185,
+                "gt_count": 1655,
+                "recall": 0.795166163141994
+              },
+              "20_35m": {
+                "matched_count": 906,
+                "AOE": 0.677633831591332,
+                "AOE_deg": 38.82555860546211,
+                "median_AOE_deg": 8.998809236211295,
+                "axis_AOE_deg": 13.297402278950123,
+                "flip_rate": 0.17218543046357615,
+                "within15_rate": 0.5971302428256071,
+                "gt_count": 1585,
+                "recall": 0.571608832807571
+              },
+              "35_68m": {
+                "matched_count": 159,
+                "AOE": 0.6774507386720295,
+                "AOE_deg": 38.815068153927356,
+                "median_AOE_deg": 11.943012650590422,
+                "axis_AOE_deg": 14.432962662811303,
+                "flip_rate": 0.16981132075471697,
+                "within15_rate": 0.5660377358490566,
+                "gt_count": 558,
+                "recall": 0.2849462365591398
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 15,
+                "AOE": 1.0462521128518512,
+                "AOE_deg": 59.94583037305619,
+                "median_AOE_deg": 32.01138226236809,
+                "axis_AOE_deg": 33.35824043565417,
+                "flip_rate": 0.3333333333333333,
+                "within15_rate": 0.3333333333333333,
+                "gt_count": 41,
+                "recall": 0.36585365853658536
+              },
+              "20_35m": {
+                "matched_count": 2,
+                "AOE": 1.317225620150566,
+                "AOE_deg": 75.47146870112996,
+                "median_AOE_deg": 75.47146870112996,
+                "axis_AOE_deg": 40.34196085174761,
+                "flip_rate": 0.5,
+                "within15_rate": 0.0,
+                "gt_count": 7,
+                "recall": 0.2857142857142857
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 8,
+                "AOE": 0.10084681105217896,
+                "AOE_deg": 5.7780966506431195,
+                "median_AOE_deg": 1.7858488946432247,
+                "axis_AOE_deg": 5.7780966506431195,
+                "flip_rate": 0.0,
+                "within15_rate": 0.875,
+                "gt_count": 16,
+                "recall": 0.5
+              },
+              "20_35m": {
+                "matched_count": 4,
+                "AOE": 0.0795927494764328,
+                "AOE_deg": 4.560328624841692,
+                "median_AOE_deg": 4.170151187018658,
+                "axis_AOE_deg": 4.560328624841692,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 19,
+                "recall": 0.21052631578947367
+              },
+              "35_68m": {
+                "matched_count": 2,
+                "AOE": 0.1331768650561571,
+                "AOE_deg": 7.630472296501096,
+                "median_AOE_deg": 7.630472296501096,
+                "axis_AOE_deg": 7.630472296501096,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 13,
+                "recall": 0.15384615384615385
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 1,
+                "AOE": 2.159429118037224,
+                "AOE_deg": 123.7261746211906,
+                "median_AOE_deg": 123.7261746211906,
+                "axis_AOE_deg": 56.2738253788094,
+                "flip_rate": 1.0,
+                "within15_rate": 0.0,
+                "gt_count": 8,
+                "recall": 0.125
+              },
+              "35_68m": {
+                "matched_count": 25,
+                "AOE": 0.2997931532561779,
+                "AOE_deg": 17.176882408497665,
+                "median_AOE_deg": 14.378709335035744,
+                "axis_AOE_deg": 17.176882408497665,
+                "flip_rate": 0.0,
+                "within15_rate": 0.52,
+                "gt_count": 48,
+                "recall": 0.5208333333333334
+              }
+            }
+          },
+          "0.3": {
+            "car": {
+              "0_20m": {
+                "matched_count": 1063,
+                "AOE": 0.21542370012465406,
+                "AOE_deg": 12.342868824234545,
+                "median_AOE_deg": 3.159544898159773,
+                "axis_AOE_deg": 6.881733538227424,
+                "flip_rate": 0.03762935089369708,
+                "within15_rate": 0.8513640639698965,
+                "gt_count": 1655,
+                "recall": 0.6422960725075528
+              },
+              "20_35m": {
+                "matched_count": 307,
+                "AOE": 0.512986670772268,
+                "AOE_deg": 29.39197118171802,
+                "median_AOE_deg": 8.486538431714582,
+                "axis_AOE_deg": 11.089547513727316,
+                "flip_rate": 0.11074918566775244,
+                "within15_rate": 0.6579804560260586,
+                "gt_count": 1585,
+                "recall": 0.19369085173501577
+              },
+              "35_68m": {
+                "matched_count": 12,
+                "AOE": 0.839031939705213,
+                "AOE_deg": 48.07298902178366,
+                "median_AOE_deg": 8.170487516169388,
+                "axis_AOE_deg": 7.455510661604159,
+                "flip_rate": 0.25,
+                "within15_rate": 0.6666666666666666,
+                "gt_count": 558,
+                "recall": 0.021505376344086023
+              }
+            },
+            "pedestrian": {
+              "0_20m": {
+                "matched_count": 10,
+                "AOE": 1.0193790197372437,
+                "AOE_deg": 58.40611555512711,
+                "median_AOE_deg": 40.67169842237096,
+                "axis_AOE_deg": 36.03581154696058,
+                "flip_rate": 0.3,
+                "within15_rate": 0.3,
+                "gt_count": 41,
+                "recall": 0.24390243902439024
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 7,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 3,
+                "recall": 0.0
+              }
+            },
+            "cyclist": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "truck": {
+              "0_20m": {
+                "matched_count": 7,
+                "AOE": 0.036428297038323114,
+                "AOE_deg": 2.087187675144831,
+                "median_AOE_deg": 1.1660199996867449,
+                "axis_AOE_deg": 2.087187675144831,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 16,
+                "recall": 0.4375
+              },
+              "20_35m": {
+                "matched_count": 2,
+                "AOE": 0.07278286851942539,
+                "AOE_deg": 4.170151187018658,
+                "median_AOE_deg": 4.170151187018658,
+                "axis_AOE_deg": 4.170151187018658,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 19,
+                "recall": 0.10526315789473684
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 13,
+                "recall": 0.0
+              }
+            },
+            "van": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 0,
+                "recall": 0.0
+              }
+            },
+            "bus": {
+              "0_20m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 2,
+                "recall": 0.0
+              },
+              "20_35m": {
+                "matched_count": 0,
+                "AOE": null,
+                "AOE_deg": null,
+                "median_AOE_deg": null,
+                "axis_AOE_deg": null,
+                "flip_rate": null,
+                "within15_rate": null,
+                "gt_count": 8,
+                "recall": 0.0
+              },
+              "35_68m": {
+                "matched_count": 2,
+                "AOE": 0.23472492396831512,
+                "AOE_deg": 13.448747489913595,
+                "median_AOE_deg": 13.448747489913595,
+                "axis_AOE_deg": 13.448747489913595,
+                "flip_rate": 0.0,
+                "within15_rate": 1.0,
+                "gt_count": 48,
+                "recall": 0.041666666666666664
+              }
+            }
+          }
+        }
+      }
+    },
+    "matching_distance_m": 2.0,
+    "confidence": "object confidence, not a calibrated facing probability"
+  },
+  "ROSA_note": "Identical current GT/frame/range/evaluator; native NMS ROSA=.5, RayBEV=.25; not official ROSA FDS/NDS."
+}

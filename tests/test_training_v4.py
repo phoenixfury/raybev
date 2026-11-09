@@ -78,6 +78,9 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     assert row['train_heading_teacher_loss']>0 and row['train_heading_track_loss']>0
     assert row['train_heading_direction_loss']==row['train_heading_bin_loss']
     assert row['train_heading_axis_loss']>=0
+    assert row['center_diagnostics']['train']['car']['count']==2
+    assert row['center_diagnostics']['val']['car']['count']==1
+    assert row['center_diagnostics']['val']['truck']['class_accuracy'] is None
     assert 'bag' in row['heading_diagnostics']['by_sequence']
     assert saved['last.pt']['cfg']['backbone']=='resnet18'
     assert saved['last.pt']['cfg']['heading_encoding']=='axis_direction'

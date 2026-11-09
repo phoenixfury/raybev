@@ -1,14 +1,17 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
-**Current recipe: [TASK_V4_2.md](TASK_V4_2.md)** — keeps fixed BEV normalization,
-separates object-center detection from foreground classification, removes the
-extra heavy-vs-car ranking penalty, and restores TRAIN-only class size priors.
-ResNet-18, continuous axis/facing, OpenCV/CLIDAR geometry and the TRAIN teacher remain.
-New output: `work_dirs/raybev_v4_2_r18_fg_48m_clidar_2x3080ti`.
-Recover v4.1 `best_map.pt` with `--init-from`, not `--resume`.
-The shared-size experiment regressed rare-class dimensions; it is superseded.
-This changes the raw outputs/score contract. New accuracy and TDA4VH throughput
-still require measurement; source changes do not establish either.
+**Current recipe: [TASK_V4_3.md](TASK_V4_3.md)** — corrects stride-8 sampling
+alignment, constrains the complete facing vector, and retains separate height
+evidence. Fixed BEV normalization, objectness/foreground separation, TRAIN-only
+size priors, ResNet-18, OpenCV/CLIDAR and the offline TRAIN teacher remain.
+New output: `work_dirs/raybev_v4_3_r18_geometry_48m_clidar_2x3080ti`.
+Initialize from v4.2 epoch-9 `best_map.pt` with `--init-from`, not `--resume`.
+The new 136-channel BEV handoff costs more memory; `--height-fusion pooled`
+retains 40 channels for an ablation. Historical checkpoints keep their original
+lattice/layout through `ModelConfig.from_checkpoint`. Regenerate deployment
+exports/LUTs after retraining. New accuracy and TDA4VH throughput still require
+measurement; source changes do not establish either.
+The [v4.2 foreground/size guide](TASK_V4_2.md) documents the previous run.
 The [v4 heading/teacher guide](TASK_V4.md) remains relevant except where superseded.
 The MobileNet sections below are historical; their checkpoints remain readable.
 

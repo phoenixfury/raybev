@@ -12,6 +12,8 @@ from .detection import in_bev_range
 def add_training_options(parser):
     parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2'],default='resnet18')
     parser.add_argument('--bev-normalization',choices=['batchnorm','frozen_batchnorm'],default='frozen_batchnorm')
+    parser.add_argument('--height-fusion',choices=['pooled','concat'],default='concat',
+                        help='Separate normalized height evidence; pooled is a lower-memory ablation')
     parser.add_argument('--heavy-classification-weight',type=float,default=0.)
     parser.add_argument('--init-from',help='Trusted local checkpoint: weights-only recovery, new optimizer/schedule/output; NOT --resume')
     parser.add_argument('--heading-teacher',help='Verified TRAIN-only ROSA heading cache from prepare_heading_teacher.py')
@@ -63,7 +65,8 @@ def initialize_recovery(model,cfg,args):
     old=ModelConfig.from_checkpoint(state)
     allowed={'bev_normalization','heavy_classification_weight','loss_normalization',
              'mean_training_objects','size_encoding','size_reference','class_size_priors',
-             'classification_mode','foreground_label_smoothing','center_classification_weight'}
+             'classification_mode','foreground_label_smoothing','center_classification_weight',
+             'feature_pixel_origin','height_fusion','facing_loss'}
     differences={k for k,v in vars(cfg).items() if v!=getattr(old,k)}
     if differences-allowed:raise ValueError(f'Recovery architecture/data config mismatch: {sorted(differences-allowed)}')
     if (tuple(state.get('classes',()))!=CLASSES or state.get('box_frame')!=args.box_frame or
@@ -74,6 +77,16 @@ def initialize_recovery(model,cfg,args):
         raise ValueError('Recovery CLIDAR calibration mismatch')
     weights=dict(state['state_dict']);current=model.state_dict()
     added=[]
+    if old.height_fusion != cfg.height_fusion:
+        if old.height_fusion != 'pooled' or cfg.height_fusion != 'concat':
+            raise ValueError('Recovery only supports pooled -> concat height expansion')
+        key='bev_detector.fine.0.weight'
+        source_weight=weights[key];channels=cfg.feature_channels
+        # Each plane uses the GLOBAL denominator. Repeating, not dividing,
+        # exactly preserves the old preactivation when the lattice is unchanged.
+        weights[key]=torch.cat([source_weight[:,:channels]]*len(cfg.heights)+[source_weight[:,channels:]],dim=1)
+        if weights[key].shape != current[key].shape:raise ValueError('Invalid height expansion shape')
+        added.append(key)
     if old.classification_mode=='heatmap' and cfg.classification_mode=='objectness_softmax':
         for key in current:
             if key.startswith('bev_detector.objectness.'):
@@ -125,6 +138,14 @@ def balanced_training_view(dataset,seed=3407,cfg=None):
     counts=repeats.floor().long()+(torch.rand(len(dataset),generator=generator)<repeats.frac()).long()
     indices=torch.repeat_interleave(torch.arange(len(dataset)),counts).tolist()
     return Subset(dataset,indices)
+
+
+def accumulation_weight(batch_index,batch_samples,batch_size,accum_steps,sampler_samples):
+    """Sample-mean weight, including a short last microbatch/window per rank."""
+    start=(batch_index//accum_steps)*accum_steps
+    samples=min(accum_steps*batch_size,sampler_samples-start*batch_size)
+    if samples<batch_samples or batch_samples<1:raise ValueError('Invalid accumulation sample counts')
+    return batch_samples/samples
 
 
 def build_optimizer(model,lr,weight_decay,backbone_lr_mult=.5):

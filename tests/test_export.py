@@ -56,6 +56,9 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     metadata=json.loads((output/'metadata.json').read_text())
     assert metadata['backbone']=='resnet18' and metadata['heading_encoding']=='axis_direction'
     assert metadata['bev_normalization']=='frozen_batchnorm'
+    assert metadata['height_fusion']=='concat' and metadata['feature_pixel_origin']==0
+    assert metadata['facing_loss']=='unit_vector'
+    assert metadata['bev_input_channels']==136
     assert metadata['size_encoding']=='class_relative'
     assert metadata['classification_mode']=='objectness_softmax'
     assert 'sigmoid(objectness_logits)' in metadata['quality_score']

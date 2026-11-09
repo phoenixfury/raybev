@@ -164,8 +164,9 @@ class FisheyeRayTransport(nn.Module):
             raise ValueError('Expected four camera features and gates')
         numerator = denominator = height_sum = None
         coverage = []
+        planes = []
         for k in range(len(self.cfg.heights)):
-            plane_denominator = None
+            plane_denominator = plane_numerator = None
             for camera_idx in range(4):
                 # Small reference implementation; replace with one fused LUT gather
                 # + weighted accumulation kernel in a production TI pipeline.
@@ -177,17 +178,24 @@ class FisheyeRayTransport(nn.Module):
                 prior = self.geometric_prior[k,camera_idx][None,None].to(sampled.dtype)
                 weight = torch.sigmoid(sampled[:, -1:]) * prior
                 contribution = sampled[:, :-1] * weight
-                numerator = contribution if numerator is None else numerator + contribution
+                if self.cfg.height_fusion == 'concat':
+                    plane_numerator = contribution if plane_numerator is None else plane_numerator + contribution
+                else:
+                    numerator = contribution if numerator is None else numerator + contribution
                 denominator = weight if denominator is None else denominator + weight
                 hz = weight * (self.cfg.heights[k]/max(1.,max(abs(z) for z in self.cfg.heights)))
                 height_sum = hz if height_sum is None else height_sum+hz
                 plane_denominator = weight if plane_denominator is None else plane_denominator+weight
             coverage.append(plane_denominator.clamp(0,1))
-        # Stream the four planes into ONE feature map; never materialize 4*C BEV.
-        pooled = numerator / denominator.clamp(min=1e-4)
+            if self.cfg.height_fusion == 'concat':planes.append(plane_numerator)
+        # A COMMON denominator preserves camera/height reliability and gives
+        # sum(plane features) == the legacy pooled map. Do not normalize each
+        # height separately: that would amplify nearly invisible height planes.
+        norm = denominator.clamp(min=1e-4)
+        visual = torch.cat(planes,dim=1)/norm if planes else numerator/norm
         height = height_sum / denominator.clamp(min=1e-4)
-        positions = self.position_cues.to(pooled.dtype).expand(b,-1,-1,-1)
-        return torch.cat([pooled,*coverage,height,positions],dim=1)
+        positions = self.position_cues.to(visual.dtype).expand(b,-1,-1,-1)
+        return torch.cat([visual,*coverage,height,positions],dim=1)
 
 
 class BEVDetector(nn.Module):

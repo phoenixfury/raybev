@@ -47,8 +47,8 @@ def test_lut_coordinates_no_padding():
     y = cfg.bev_y_max - (col + .5) * cfg.bev_resolution
     uv, ok, theta = project_fisheye([[x, y, cfg.heights[z]]], cams[c], cfg.theta_max_degrees)
     assert ok[0]
-    gx = 2 * ((uv[0, 0] + .5) * (800 / cams[c].width)) / 800 - 1
-    gy = 2 * ((uv[0, 1] + .5) * (640 / cams[c].height)) / 640 - 1
+    gx = 2 * ((uv[0, 0] + .5) * (800 / cams[c].width) +3.5-cfg.feature_pixel_origin) / 800 - 1
+    gy = 2 * ((uv[0, 1] + .5) * (640 / cams[c].height) +3.5-cfg.feature_pixel_origin) / 640 - 1
     assert abs(lut[z, c, row, col, 0] - gx) < 1e-5
     assert abs(lut[z, c, row, col, 1] - gy) < 1e-5
 

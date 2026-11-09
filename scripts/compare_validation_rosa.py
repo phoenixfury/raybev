@@ -118,6 +118,8 @@ def as_rosa_array(frame,cfg,T_base_clidar=None):
 def infer(args,state,cfg,dataset):
     destination=args.output/'ray_predictions.json'
     if destination.exists():
+        if cfg.classification_mode=='objectness_softmax' and json.loads(destination.read_text()).get('schema_version',1)<2:
+            raise ValueError('Foreground comparison cache predates corrected class probabilities; choose a new output')
         print('Using completed inference cache',destination,flush=True);return
     device=torch.device(args.device)
     if device.type=='cuda' and not torch.cuda.is_available():raise RuntimeError('CUDA unavailable')
@@ -137,17 +139,16 @@ def infer(args,state,cfg,dataset):
             decoded=decode_detections(output,cfg,score_threshold=.01,topk=300)
             raw=decode_detections(output,replace(cfg,quality_score_power=0.),score_threshold=.01,topk=300)
             low=decode_detections(output,cfg,score_threshold=.001,topk=300)
-            heat=output[0].sigmoid();quality=output[2].sigmoid()
+            heat=output[0].softmax(dim=1) if cfg.classification_mode=='objectness_softmax' else output[0].sigmoid()
+            quality=output[2].sigmoid()
             ranked=detection_scores(output,cfg)
-            ids=ranked.flatten(2).topk(50,dim=2).indices
-            allowed=torch.zeros_like(heat,dtype=torch.bool).flatten(2).scatter_(2,ids,True).reshape_as(heat)
-            class_output=(torch.where(allowed,output[0],output[0].new_full((),-30.)),*output[1:])
-            per_class=decode_detections(class_output,cfg,score_threshold=.001,topk=300)
+            per_class=decode_detections(output,cfg,score_threshold=.001,topk=300,per_class_topk=50)
             neighborhood=F.max_pool2d(heat,5,1,2)
             for bi,(gt,token) in enumerate(zip(boxes,tokens)):
                 for name,values in zip(variants,(decoded,raw,low,per_class)):
                     variants[name].append({'token':token,'detections':values[bi].cpu().tolist()})
-                _,global_ids=ranked[bi].flatten().topk(300)
+                candidate_scores,global_ids=ranked[bi].flatten().topk(300)
+                global_ids=global_ids[candidate_scores>0]
                 candidate_counts+=torch.bincount(global_ids//(cfg.bev_height*cfg.bev_width),minlength=6).cpu().numpy()
                 if len(gt):
                     rows=((cfg.bev_x_max-gt[:,0])/cfg.bev_resolution).floor().long().clamp(0,cfg.bev_height-1)
@@ -171,7 +172,8 @@ def infer(args,state,cfg,dataset):
                 position+=1
             if position==len(dataset) or position%20<args.batch_size:
                 print(f'Inference {position}/{len(dataset)} elapsed={time.monotonic()-started:.1f}s',flush=True)
-    dump(destination,{'variants':variants,'gt_diagnostics':diagnostics,
+    dump(destination,{'schema_version':2,'variants':variants,'gt_diagnostics':diagnostics,
+        'class_probability_semantics':'softmax conditional foreground' if cfg.classification_mode=='objectness_softmax' else 'sigmoid heatmap',
         'pre_nms_top300_class_counts':candidate_counts.tolist(),'device':str(device),
         'seconds':time.monotonic()-started,'precision':'autocast FP16 on CUDA; FP32 decoding'})
 

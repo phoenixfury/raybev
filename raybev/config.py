@@ -24,6 +24,10 @@ class ModelConfig:
     bev_normalization: str = 'frozen_batchnorm'
     classification_mode: str = 'objectness_softmax'
     foreground_label_smoothing: float = 0.05
+    # Stride-8 CNN centers are input pixels 0,8,..., not resize-bin centers 3.5,11.5,... .
+    feature_pixel_origin: float = 0.0
+    height_fusion: str = 'concat'
+    facing_loss: str = 'unit_vector'
     mobile_width: float = 1.0
     # 96 m square, 384x384 output. The expensive BEV context runs at /2,/4,/8.
     bev_x_min: float = -48.0
@@ -69,8 +73,8 @@ class ModelConfig:
 
     @property
     def bev_input_channels(self):
-        # Height-pooled features, per-height coverage, mean height, XY/range cues.
-        return self.feature_channels + len(self.heights) + 4
+        planes = len(self.heights) if self.height_fusion == 'concat' else 1
+        return planes*self.feature_channels + len(self.heights) + 4
 
     @property
     def bev_height(self) -> int:
@@ -117,6 +121,9 @@ class ModelConfig:
             raise ValueError('Invalid image backbone')
         if self.bev_normalization not in ('batchnorm','frozen_batchnorm'):
             raise ValueError('Invalid BEV normalization')
+        if (not math.isfinite(self.feature_pixel_origin) or self.height_fusion not in ('pooled','concat')
+                or self.facing_loss not in ('contrast','unit_vector')):
+            raise ValueError('Invalid feature lattice, height fusion or facing loss')
         if self.classification_mode not in ('heatmap','objectness_softmax'):
             raise ValueError('Invalid classification mode')
         if not math.isfinite(self.foreground_label_smoothing) or not 0<=self.foreground_label_smoothing<1:
@@ -153,6 +160,10 @@ class ModelConfig:
         values.setdefault('bev_normalization','batchnorm')
         values.setdefault('classification_mode','heatmap')
         values.setdefault('foreground_label_smoothing',0.)
+        # Historical weights must retain their actual training geometry/layout/loss.
+        values.setdefault('feature_pixel_origin',3.5)
+        values.setdefault('height_fusion','pooled')
+        values.setdefault('facing_loss','contrast')
         values.setdefault('heavy_classification_weight',0.)
         values.setdefault('loss_normalization','batch_objects')
         values.setdefault('mean_training_objects',1.)

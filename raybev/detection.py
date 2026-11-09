@@ -56,6 +56,19 @@ def decode_heading(vectors,bin_logits,cfg):
     return torch.atan2(angle.sin(),angle.cos()),confidence
 
 
+def facing_vector_loss(prediction,target,cfg):
+    """Per-object loss; unit regression also constrains the sideways component.
+
+    Contrast alone has an unbounded orthogonal nullspace: a correct projection
+    onto GT can still flip the decoder when its predicted axis has a small error.
+    Raw (not normalized) regression retains gradients at a 180-degree reversal.
+    """
+    if cfg.facing_loss == 'unit_vector':
+        return F.smooth_l1_loss(prediction,target,reduction='none').sum(dim=-1)
+    projection=2*(prediction*target).sum(dim=-1)
+    return F.binary_cross_entropy_with_logits(projection,torch.ones_like(projection),reduction='none')
+
+
 def decode_sizes(log_sizes,class_ids,cfg):
     if cfg.size_encoding=='class_relative':
         log_sizes=log_sizes+log_sizes.new_tensor(cfg.class_size_priors)[class_ids].log()
@@ -227,11 +240,7 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         heading_logits=output[3].float().permute(0,2,3,1)[reg_mask[:,0]]
         yaw=torch.atan2(truth[:,6],truth[:,7])
         if cfg.heading_encoding=='axis_direction':
-            # Binary contrast GT-front versus GT-rear, expressed continuously:
-            # logit = 2 * dot(facing_vector, [sin(yaw),cos(yaw)]).
-            # The gradient remains nonzero for an exact 180-degree reversal.
-            facing_logit=2*(heading_logits*truth[:,6:8]).sum(dim=1)
-            heading_loss=(F.binary_cross_entropy_with_logits(facing_logit,torch.ones_like(facing_logit),reduction='none')*object_weights).sum()/count
+            heading_loss=(facing_vector_loss(heading_logits,truth[:,6:8],cfg)*object_weights).sum()/count
             truth=torch.cat((truth[:,:6],torch.stack(((2*yaw).sin(),(2*yaw).cos()),dim=1)),dim=1)
         else:
             bin_target,residual_target=heading_targets(yaw,cfg)
@@ -307,7 +316,7 @@ def detection_scores(output,cfg: ModelConfig):
 
 @torch.no_grad()
 def decode_detections(output, cfg: ModelConfig, score_threshold=0.30, topk=300,
-                      apply_nms=True):
+                      apply_nms=True,per_class_topk=None):
     """Return [N,9] x,y,z,l,w,h,yaw,class_id,score per frame.
 
     Peak scores use the checkpoint's fusion rule, then class-aware rotated NMS.
@@ -318,6 +327,14 @@ def decode_detections(output, cfg: ModelConfig, score_threshold=0.30, topk=300,
     heat,reg=output[0],output[1].float()
     b,k,h,w=heat.shape
     score=detection_scores(output,cfg)
+    if per_class_topk is not None:
+        if not isinstance(per_class_topk,int) or per_class_topk<1:raise ValueError('per_class_topk must be positive')
+        # Select on FINAL scores. Masking conditional class logits beforehand
+        # renormalizes softmax and spuriously boosts the surviving classes.
+        flat=score.flatten(2)
+        ids=flat.topk(min(per_class_topk,h*w),dim=2).indices
+        allowed=torch.zeros_like(flat,dtype=torch.bool).scatter_(2,ids,True)
+        score=score.masked_fill(~allowed.reshape_as(score),0.)
     results=[]
     for bi in range(b):
         scores,indices=score[bi].flatten().topk(min(topk,k*h*w))

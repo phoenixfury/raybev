@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from .config import CLASSES
-from .detection import metric_to_cell,in_bev_range,loss_denominator
+from .detection import metric_to_cell,in_bev_range,loss_denominator,facing_vector_loss
 from .rosa_dataset import boxes_to_baselink,names_to_ids,read_T_base_clidar,training_boxes_sha256
 from .training import calibration_sha256
 
@@ -129,8 +129,7 @@ class HeadingSupervision:
         yaw=zero.new_tensor(angles);w=zero.new_tensor(weights)
         axis_target=torch.stack(((2*yaw).sin(),(2*yaw).cos()),dim=1)
         axis_loss=F.smooth_l1_loss(axis,axis_target,reduction='none').sum(1)
-        projection=2*(facing*torch.stack((yaw.sin(),yaw.cos()),dim=1)).sum(1)
-        direction_loss=F.binary_cross_entropy_with_logits(projection,torch.ones_like(projection),reduction='none')
+        direction_loss=facing_vector_loss(facing,torch.stack((yaw.sin(),yaw.cos()),dim=1),self.cfg)
         # Bounded sparse auxiliaries; do not reintroduce inverse-class/match counts.
         return ((axis_loss+direction_loss)*w).sum()/loss_denominator(targets[2],self.cfg),len(angles)
 

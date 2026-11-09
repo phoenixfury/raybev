@@ -149,7 +149,9 @@ def evaluate_detections(predictions,ground_truth,score_threshold=.3):
             ate.append(d)
             # Size error equivalent to 1-aligned 3D IoU after identical centers and yaw.
             a=np.maximum(pred[3:6],1e-5);b=np.maximum(gt[3:6],1e-5)
-            ase.append(1.0-float(np.prod(np.minimum(a,b))/np.prod(np.maximum(a,b))))
+            intersection=np.prod(np.minimum(a,b))
+            union=np.prod(a)+np.prod(b)-intersection
+            ase.append(1.0-float(intersection/union))
             aoe.append(_yaw_err(pred[6],gt[6]))
         # Missing matches are represented as error 1, not artificially perfect.
         e={'ATE':float(np.mean(ate)) if ate else 1.0,
@@ -172,7 +174,8 @@ def evaluate_detections(predictions,ground_truth,score_threshold=.3):
     # Always explicitly record NDS=None, never silently boost missing terms.
     geometry_score=(5*mean_ap+sum(max(0.0,1-min(1,means[f'm{k}'])) for k in ('ATE','ASE','AOE')))/8
     lower_bound=(5*mean_ap+sum(max(0.0,1-min(1,means[f'm{k}'])) for k in ('ATE','ASE','AOE')))/10
-    return {'active_classes':active,'excluded_classes':[n for n in CLASSES if n not in active],
+    return {'metric_version':'center_distance_v2_aligned_size_union',
+            'active_classes':active,'excluded_classes':[n for n in CLASSES if n not in active],
             'mAP':mean_ap,'NDS':None,'NDS_status':'unavailable: no velocity/attribute outputs and not the official nuScenes dataset',
             'geometry_score_3term_nonstandard':geometry_score,
             'NDS_missing_velocity_attribute_zero_score_nonstandard':lower_bound,
