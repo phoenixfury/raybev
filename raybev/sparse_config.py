@@ -38,8 +38,20 @@ class SparseConfig:
     dn_weight: float = .5
     teacher_weight: float = .2
 
+    @property
+    def is_refined(self):return self.architecture_version==4
+
+    @property
+    def num_learned_points(self):return 6 if self.is_refined else 0
+
+    @property
+    def num_support_points(self):return 7+self.num_learned_points
+
+    @property
+    def center_loss_beta(self):return .1 if self.is_refined else 1.
+
     def validate(self):
-        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version!=3 or self.backbone!='yolo26n':
+        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version not in (3,4) or self.backbone!='yolo26n':
             raise ValueError('Sparse architecture contract mismatch; dense/ROSA checkpoints cannot be resumed')
         if min(self.image_width,self.image_height)<=0 or self.image_width%32 or self.image_height%32:
             raise ValueError('Sparse image size must be divisible by 32')

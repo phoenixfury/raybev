@@ -1,5 +1,13 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**V6.1 heading/localization and ROSA-style heavy-class changes:
+[TASK_V6_1_REFINEMENT.md](TASK_V6_1_REFINEMENT.md).**
+Retains YOLO26n/Q100/L4/C64; adds raw-axis supervision, final metric center
+refinement, 13 adaptive support points, compact task heads and semantic fusion.
+Start a NEW run with `bash scripts/launch_v6_1_yolo_rosa_refine.sh`; optional
+audited V6 weights-only warm-start is documented there. Full validation metrics
+and TRAIN/VAL component losses are printed/saved. Old V6 semantics are retained.
+
 **New sparse architecture: [TASK_V6_SPARSE.md](TASK_V6_SPARSE.md).**
 YOLO-ROSA-Lite replaces dense BEV with 100 queries, four object-conditioned
 refinement stages, three 64-channel image scales and seven box support points.

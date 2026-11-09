@@ -90,14 +90,16 @@ class SparseCriterion(nn.Module):
         pred=stage['boxes'][pi].float()
         weights=gt.new_tensor(self.cfg.class_positive_weights)[gt[:,7].long()]
         def average(value):return (value*weights).sum()/denominator
-        result['center']=average(F.smooth_l1_loss(pred[:,:3],gt[:,:3],reduction='none').sum(-1))
+        result['center']=average(F.smooth_l1_loss(pred[:,:3],gt[:,:3],beta=self.cfg.center_loss_beta,reduction='none').sum(-1))
         size_error=(pred[:,3:6].clamp_min(.05).log()-gt[:,3:6].log())
-        result['size']=average(F.smooth_l1_loss(size_error,torch.zeros_like(size_error),reduction='none').sum(-1))
+        size_loss=size_error.abs() if self.cfg.is_refined else F.smooth_l1_loss(size_error,torch.zeros_like(size_error),reduction='none')
+        result['size']=average(size_loss.sum(-1))
         axis_target=torch.stack(((2*gt[:,6]).sin(),(2*gt[:,6]).cos()),-1)
         result['axis']=average(F.smooth_l1_loss(stage['axis'][pi].float(),axis_target,reduction='none').sum(-1))
         direction=torch.stack((gt[:,6].sin(),gt[:,6].cos()),-1)
         result['facing']=average(facing_vector_loss(stage['facing'][pi].float(),direction,self.cfg))
-        quality=torch.exp(-(pred[:,:2]-gt[:,:2]).norm(dim=-1)-size_error.abs().mean(-1)).detach()
+        distance=(pred[:,:2]-gt[:,:2]).norm(dim=-1)
+        quality=torch.exp(-distance if self.cfg.is_refined else -distance-size_error.abs().mean(-1)).detach()
         result['quality']=average(F.binary_cross_entropy_with_logits(stage['quality_logits'][pi].float(),quality,reduction='none'))
         if self.teacher is not None and token is not None:
             yaw,confidence=self.teacher.targets(token,gt)

@@ -27,13 +27,23 @@ class YOLOPyramid(nn.Module):
         self.adapters=nn.ModuleList(nn.Sequential(conv_bn_relu(n,cfg.channels,1),
             nn.Conv2d(cfg.channels,cfg.channels,3,padding=1,groups=cfg.channels,bias=False),
             nn.BatchNorm2d(cfg.channels),nn.ReLU6()) for n in (128,128,256))
+        if cfg.is_refined:
+            # ROSA uses an FPN: retain semantic top-down fusion without its
+            # wide neck. Zero-gamma residuals preserve the input function.
+            self.top_down=nn.ModuleList(nn.Sequential(nn.Conv2d(cfg.channels,cfg.channels,1,bias=False),
+                nn.BatchNorm2d(cfg.channels)) for _ in range(2))
+            for block in self.top_down:nn.init.zeros_(block[-1].weight)
         self.register_buffer('mean',torch.tensor([.485,.456,.406]).view(1,3,1,1),persistent=False)
         self.register_buffer('std',torch.tensor([.229,.224,.225]).view(1,3,1,1),persistent=False)
 
     def forward_single(self,image):
         p3=self.stage8(image*self.std+self.mean)
         p4=self.stage16(p3);p5=self.stage32(p4)
-        return tuple(adapter(x) for adapter,x in zip(self.adapters,(p3,p4,p5)))
+        p3,p4,p5=(adapter(x) for adapter,x in zip(self.adapters,(p3,p4,p5)))
+        if hasattr(self,'top_down'):
+            p4=p4+F.interpolate(self.top_down[0](p5),size=p4.shape[-2:],mode='nearest')
+            p3=p3+F.interpolate(self.top_down[1](p4),size=p3.shape[-2:],mode='nearest')
+        return p3,p4,p5
 
     def forward(self,images):
         b,n,c,h,w=images.shape
@@ -80,8 +90,10 @@ class OpenCVProjector(nn.Module):
         return net,valid,cues
 
 
-def box_points(boxes):
+def box_points(boxes,learned_offsets=None):
     offsets=boxes.new_tensor([[0,0,0],[.45,0,0],[-.45,0,0],[0,.45,0],[0,-.45,0],[0,0,.45],[0,0,-.45]])
+    if learned_offsets is not None:
+        offsets=torch.cat((offsets[None,None].expand(*boxes.shape[:2],-1,-1),learned_offsets.float()),-2)
     local=boxes[...,None,3:6]*offsets
     x,y,z=local.unbind(-1);angle=boxes[...,6,None]
     rotated=torch.stack((x*angle.cos()-y*angle.sin(),x*angle.sin()+y*angle.cos(),z),-1)
@@ -122,12 +134,23 @@ class SparseEvidence(nn.Module):
         # ray XYZ, angle, margin, log-range, expected angular size, log stride.
         self.geometry=nn.Sequential(nn.Linear(8,16),nn.ReLU(),nn.Linear(16,cfg.heads))
         self.ray=nn.Linear(9,cfg.channels,bias=False);nn.init.zeros_(self.ray.weight)
-        self.point_query=nn.Linear(cfg.channels,7*cfg.heads)
+        self.point_query=nn.Linear(cfg.channels,cfg.num_support_points*cfg.heads)
+        if cfg.num_learned_points:
+            self.offsets=nn.Linear(cfg.channels,3*cfg.num_learned_points)
+            nn.init.xavier_uniform_(self.offsets.weight);nn.init.zeros_(self.offsets.bias)
+            with torch.no_grad():
+                self.point_query.weight[7*cfg.heads:].zero_()
+                self.point_query.bias[7*cfg.heads:].fill_(-2.)
         self.point_key=nn.Linear(cfg.channels,cfg.heads)
         self.output=nn.Linear(cfg.channels,cfg.channels)
 
     def forward(self,query,boxes,features,projector):
-        uv,visible,cues=projector(box_points(boxes))
+        # Same object-size-adaptive, yaw-rotated six learned points as ROSA;
+        # never select a size or an offset using a predicted class ID.
+        offsets=None
+        if self.cfg.num_learned_points:
+            offsets=self.offsets(query).float().reshape(*query.shape[:2],self.cfg.num_learned_points,3).sigmoid()-.5
+        uv,visible,cues=projector(box_points(boxes,offsets))
         b,q,p,n,_=uv.shape;h=self.cfg.heads;c=self.cfg.channels
         sampled=[]
         for feature,stride in zip(features,(8,16,32)):
@@ -164,8 +187,8 @@ class SparseEvidence(nn.Module):
 
 
 class SparseStage(nn.Module):
-    def __init__(self,cfg):
-        super().__init__();self.cfg=cfg
+    def __init__(self,cfg,stage_index=0):
+        super().__init__();self.cfg=cfg;self.stage_index=stage_index
         self.position=nn.Sequential(nn.Linear(8,cfg.channels),nn.ReLU(),nn.Linear(cfg.channels,cfg.channels))
         self.attention=QueryAttention(cfg);self.norm1=nn.LayerNorm(cfg.channels)
         self.evidence=SparseEvidence(cfg);self.norm2=nn.LayerNorm(cfg.channels)
@@ -175,6 +198,16 @@ class SparseStage(nn.Module):
         self.center=nn.Linear(cfg.channels,3);self.size=nn.Linear(cfg.channels,3)
         self.axis=nn.Linear(cfg.channels,2);self.quality=nn.Linear(cfg.channels,1)
         self.facing=nn.Sequential(nn.Linear(3*cfg.channels,cfg.channels//2),nn.ReLU(),nn.Linear(cfg.channels//2,8))
+        if cfg.is_refined:
+            self.head_state=nn.Linear(8,cfg.channels)
+            nn.init.zeros_(self.head_state.weight);nn.init.zeros_(self.head_state.bias)
+            def task_context():
+                block=nn.Sequential(nn.Linear(cfg.channels,cfg.channels//2),nn.ReLU(),nn.Linear(cfg.channels//2,cfg.channels))
+                nn.init.zeros_(block[-1].weight);nn.init.zeros_(block[-1].bias)
+                return block
+            # Independent nonlinear task representations, reduced from ROSA's
+            # C256 trunks. Residual initialization retains the learned query.
+            self.class_context=task_context();self.size_context=task_context()
         nn.init.constant_(self.classifier.bias,math.log(.01/.99))
         for module in (self.center,self.size,self.axis,self.facing[-1]):
             nn.init.zeros_(module.weight);nn.init.zeros_(module.bias)
@@ -194,21 +227,60 @@ class SparseStage(nn.Module):
         fallback=direction.new_tensor([1,0,0]).expand_as(tangent)
         tangent=F.normalize(torch.where(tangent.norm(dim=-1,keepdim=True)>.001,tangent,fallback),dim=-1)
         vertical=torch.cross(direction,tangent,dim=-1)
-        direction=F.normalize(direction+.5*raw[...,:1].tanh()*tangent+.5*raw[...,1:2].tanh()*vertical,dim=-1)
-        distance=(radius.log()+.7*raw[...,2:3].tanh()).clamp(math.log(self.cfg.min_range),math.log(self.cfg.max_range)).exp()
-        center=direction*distance
-        size=(boxes[...,3:6].clamp_min(.05).log()+.5*self.size(query).float().tanh()).clamp(-3,5).exp()
-        rotation=F.normalize(self.axis(query).float(),dim=-1,eps=1e-4)
+        if self.cfg.is_refined and self.stage_index>=max(1,self.cfg.stages-2):
+            # Coarse stages retain anchor capture. Fine stages operate in
+            # metres: a given raw correction no longer grows with range.
+            limit=1. if self.stage_index==self.cfg.stages-1 else 2.
+            center=boxes[...,:3]+raw.tanh()*raw.new_tensor([limit,limit,limit/2])
+            r=center.norm(dim=-1,keepdim=True)
+            safe=torch.where(r>1e-4,center/r.clamp_min(1e-4),direction)
+            center=safe*r.clamp(self.cfg.min_range,self.cfg.max_range)
+        else:
+            direction=F.normalize(direction+.5*raw[...,:1].tanh()*tangent+.5*raw[...,1:2].tanh()*vertical,dim=-1)
+            distance=(radius.log()+.7*raw[...,2:3].tanh()).clamp(math.log(self.cfg.min_range),math.log(self.cfg.max_range)).exp()
+            center=direction*distance
+        task_query=query+self.head_state(position) if self.cfg.is_refined else query
+        size_query=task_query+self.size_context(task_query) if self.cfg.is_refined else query
+        size_delta=self.size(size_query).float()
+        if not self.cfg.is_refined:size_delta=.5*size_delta.tanh()
+        size=(boxes[...,3:6].clamp_min(.05).log()+size_delta).clamp(-3,5).exp()
+        rotation=self.axis(query).float()
+        if not self.cfg.is_refined:rotation=F.normalize(rotation,dim=-1,eps=1e-4)
         old=2*boxes[...,6]
         axis=torch.stack((old.sin()*rotation[...,1]+old.cos()*rotation[...,0],
                           old.cos()*rotation[...,1]-old.sin()*rotation[...,0]),-1)
         facing_input=torch.cat((query,points[:,:,1]-points[:,:,2],points[:,:,1]+points[:,:,2]),-1)
         centers=query.new_tensor([i*2*math.pi/8 for i in range(8)])
         facing=self.facing(facing_input).float()+torch.cos(centers-boxes[...,6,None])
-        yaw,_=decode_heading(axis,facing,self.cfg)
+        decode_axis=axis
+        if self.cfg.is_refined:
+            # Keep raw axis for loss so a 90-degree physical error has a
+            # corrective gradient. Never feed atan2(0,0), even under AMP.
+            previous=torch.stack((old.sin(),old.cos()),-1)
+            decode_axis=torch.where(axis.square().sum(-1,keepdim=True)>1e-4,axis,previous)
+        yaw,_=decode_heading(decode_axis,facing,self.cfg)
         updated=torch.cat((center,size,yaw[...,None]),-1)
-        return query,dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(query),
+        class_query=task_query+self.class_context(task_query) if self.cfg.is_refined else query
+        return query,dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(class_query),
                           quality_logits=self.quality(query)[...,0],supported=supported)
+
+
+def class_balanced_dn_indices(gt,limit,class_weights):
+    """ROSA selection: one randomized representative/class, then fill slots."""
+    known=torch.nonzero(gt[:,7]>=0,as_tuple=False)[:,0];limit=min(limit,len(known))
+    if not limit:return known[:0]
+    labels=gt[known,7].long();categories=labels.unique()
+    weights=gt.new_tensor(class_weights)[categories]
+    order=torch.multinomial(weights,len(categories),replacement=False)
+    representatives=[]
+    for category in categories[order[:limit]]:
+        choices=known[labels==category]
+        representatives.append(choices[torch.randint(len(choices),(),device=gt.device)])
+    selected=torch.stack(representatives)
+    if len(selected)<limit:
+        available=known[~(known[:,None]==selected[None]).any(-1)]
+        selected=torch.cat((selected,available[torch.randperm(len(available),device=gt.device)[:limit-len(selected)]]))
+    return selected
 
 
 class YOLOROSALite(nn.Module):
@@ -226,7 +298,7 @@ class YOLOROSALite(nn.Module):
         if (anchors[:,:3].norm(dim=-1)<self.cfg.min_range).any():raise ValueError('Anchor centers cannot be at the rig origin')
         self.register_buffer('anchors',anchors.clone())
         self.query_features=nn.Parameter(torch.randn(self.cfg.queries,self.cfg.channels)*.02)
-        self.layers=nn.ModuleList(SparseStage(self.cfg) for _ in range(self.cfg.stages))
+        self.layers=nn.ModuleList(SparseStage(self.cfg,i) for i in range(self.cfg.stages))
 
     def forward_features(self,features,targets=None):
         b=features[0].shape[0];q=self.cfg.queries
@@ -237,8 +309,11 @@ class YOLOROSALite(nn.Module):
             for gt in targets:
                 known=torch.nonzero(gt[:,7]>=0,as_tuple=False)[:,0]
                 if len(known):
-                    weights=gt.new_tensor(self.cfg.class_positive_weights)[gt[known,7].long()]
-                    known=known[torch.multinomial(weights,min(len(known),self.cfg.dn_queries),replacement=False)]
+                    if self.cfg.is_refined:
+                        known=class_balanced_dn_indices(gt,self.cfg.dn_queries,self.cfg.class_positive_weights)
+                    else:
+                        weights=gt.new_tensor(self.cfg.class_positive_weights)[gt[known,7].long()]
+                        known=known[torch.multinomial(weights,min(len(known),self.cfg.dn_queries),replacement=False)]
                 indices.append(known)
             count=max(map(len,indices),default=0)
             if count:
@@ -247,7 +322,11 @@ class YOLOROSALite(nn.Module):
                 valid[:,q:]=False
                 for bi,ids in enumerate(indices):
                     value=targets[bi][ids,:7].to(boxes.device).clone();n=len(value)
-                    value[:,:3]+=(torch.rand_like(value[:,:3])-.5)*value[:,3:6]*.4
+                    noise=(torch.rand_like(value[:,:3])-.5)*value[:,3:6]*.4
+                    if self.cfg.is_refined:
+                        x,y,z=noise.unbind(-1);angle=value[:,6]
+                        noise=torch.stack((x*angle.cos()-y*angle.sin(),x*angle.sin()+y*angle.cos(),z),-1)
+                    value[:,:3]+=noise
                     value[:,3:6]*=torch.exp(torch.randn_like(value[:,3:6])*.1)
                     value[:,6]+=(torch.rand_like(value[:,6])-.5)*.6
                     extra[bi,:n]=value;valid[bi,q:q+n]=True

@@ -1,0 +1,185 @@
+{
+  "type": "native_sparse_structural_smoke_NOT_accuracy",
+  "cfg": {
+    "architecture": "yolo_rosa_lite_v1",
+    "architecture_version": 4,
+    "backbone": "yolo26n",
+    "image_width": 800,
+    "image_height": 640,
+    "channels": 64,
+    "queries": 100,
+    "stages": 4,
+    "heads": 4,
+    "attention_channels": 32,
+    "ffn_channels": 128,
+    "num_classes": 6,
+    "theta_max_degrees": 105.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "min_range": 0.5,
+    "max_range": 68.0,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "mean_training_objects": 10.94322682862424,
+    "training_class_counts": [
+      38155,
+      1849,
+      144,
+      645,
+      312,
+      337
+    ],
+    "facing_loss": "circular_bins",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 8,
+    "quality_score_power": 0.5,
+    "nms_iou_threshold": 0.5,
+    "max_detections": 100,
+    "dn_queries": 24,
+    "dn_weight": 0.5,
+    "teacher_weight": 0.2
+  },
+  "teacher_sha256": "6b913c4bd82368d81019e09974656318285e9f5d36c36df9db85e59685064469",
+  "calibration_sha256": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+  "backbone_initialization": "YOLO26N_official_COCO_conv_sppf; path=/home/mostafa/mmdetection3d/projects/raybev_lite/weights/yolo26n.pt; sha256=9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef; ultralytics=8.4.182; layers=0..9; taps=4,6,9; no_C2PSA_no_2D_head",
+  "parameters": 1440372,
+  "steps": [
+    {
+      "index": 3277,
+      "sequence_id": "30_09",
+      "track_id": "2303",
+      "loss": 11.56517505645752,
+      "gradient_norm": 147.55052185058594,
+      "components": {
+        "classification": 0.9577643275260925,
+        "center": 2.096843719482422,
+        "size": 0.7402118444442749,
+        "axis": 0.28155434131622314,
+        "facing": 1.396728515625,
+        "quality": 0.6463181376457214,
+        "teacher": 1.1535311937332153,
+        "denoising": 6.882726669311523,
+        "matches": 7.0
+      },
+      "matching_queries": 100,
+      "train_queries": 107,
+      "loss_scale": 2048.0
+    },
+    {
+      "index": 1462,
+      "sequence_id": "17_09",
+      "track_id": "370",
+      "loss": 16.31611442565918,
+      "gradient_norm": 168.09547424316406,
+      "components": {
+        "classification": 1.0909721851348877,
+        "center": 3.4765782356262207,
+        "size": 0.8526296615600586,
+        "axis": 0.3263271152973175,
+        "facing": 2.5899176597595215,
+        "quality": 0.6371172666549683,
+        "teacher": 0.36005353927612305,
+        "denoising": 8.225083351135254,
+        "matches": 8.0
+      },
+      "matching_queries": 100,
+      "train_queries": 108,
+      "loss_scale": 2048.0
+    },
+    {
+      "index": 1548,
+      "sequence_id": "17_09",
+      "track_id": "420",
+      "loss": 20.42236328125,
+      "gradient_norm": 661.8214721679688,
+      "components": {
+        "classification": 1.2850266695022583,
+        "center": 5.41803503036499,
+        "size": 0.7772256135940552,
+        "axis": 1.047555685043335,
+        "facing": 2.379473924636841,
+        "quality": 0.7824916839599609,
+        "teacher": 0.7656819820404053,
+        "denoising": 7.105257034301758,
+        "matches": 6.0
+      },
+      "matching_queries": 100,
+      "train_queries": 106,
+      "loss_scale": 512.0
+    },
+    {
+      "index": 119,
+      "sequence_id": "16_09",
+      "track_id": "1193",
+      "loss": 13.546649932861328,
+      "gradient_norm": 104.46394348144531,
+      "components": {
+        "classification": 0.9320482015609741,
+        "center": 2.6426243782043457,
+        "size": 1.353729486465454,
+        "axis": 0.7342473864555359,
+        "facing": 2.0243186950683594,
+        "quality": 0.5713672637939453,
+        "teacher": 0.9560083746910095,
+        "denoising": 5.480343818664551,
+        "matches": 7.0
+      },
+      "matching_queries": 100,
+      "train_queries": 107,
+      "loss_scale": 512.0
+    }
+  ],
+  "amp_backoffs": [
+    {
+      "index": 3277,
+      "old_scale": 65536.0,
+      "new_scale": 32768.0
+    },
+    {
+      "index": 3277,
+      "old_scale": 32768.0,
+      "new_scale": 16384.0
+    },
+    {
+      "index": 3277,
+      "old_scale": 16384.0,
+      "new_scale": 8192.0
+    },
+    {
+      "index": 3277,
+      "old_scale": 8192.0,
+      "new_scale": 4096.0
+    },
+    {
+      "index": 3277,
+      "old_scale": 4096.0,
+      "new_scale": 2048.0
+    },
+    {
+      "index": 1548,
+      "old_scale": 2048.0,
+      "new_scale": 1024.0
+    },
+    {
+      "index": 1548,
+      "old_scale": 1024.0,
+      "new_scale": 512.0
+    }
+  ],
+  "warm_start": null,
+  "inference_shape": [
+    1,
+    100,
+    7
+  ],
+  "peak_cuda_allocated_MiB": 463.076171875,
+  "deployment": "No TIDL/INT8 or TDA4VH latency claim"
+}

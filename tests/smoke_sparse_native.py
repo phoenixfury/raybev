@@ -19,19 +19,32 @@ def main():
     p.add_argument('--root',required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--export-output',type=Path)
+    p.add_argument('--architecture-version',type=int,choices=[3,4],default=3)
+    p.add_argument('--init-from',type=Path)
     a=p.parse_args()
     if a.output.exists() or (a.export_output and a.export_output.exists()):raise FileExistsError('Choose new smoke/export outputs')
     if not torch.cuda.is_available():raise RuntimeError('Native AMP smoke requires CUDA')
     torch.set_num_threads(2);torch.manual_seed(3407)
-    cfg=SparseConfig();ds=RosaCombinedDataset(a.root,str(Path('datasets/heavy_review_v4/train.pkl').resolve()),cfg=cfg,calibration=DEFAULT_CALIBRATION)
+    cfg=SparseConfig(architecture_version=a.architecture_version);ds=RosaCombinedDataset(a.root,str(Path('datasets/heavy_review_v4/train.pkl').resolve()),cfg=cfg,calibration=DEFAULT_CALIBRATION)
     cfg,anchors=fit_sparse_anchors(ds,cfg)
     teacher=SparseYawTeacher('teacher/raybev_heading_teacher_train_reviewv4.json',ds,DEFAULT_CALIBRATION)
-    model=YOLOROSALite(cfg,anchors=anchors,pretrained=True).cuda().train()
+    model=YOLOROSALite(cfg,anchors=anchors,pretrained=not bool(a.init_from)).cuda().train()
+    initialization=None
+    if a.init_from:
+        from types import SimpleNamespace
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
+        from train_yolo_rosa_sparse import check_warm_start,transfer_sparse_weights,contracts
+        val=RosaCombinedDataset(a.root,str(Path('datasets/heavy_review_v4/val.pkl').resolve()),cfg=cfg,calibration=DEFAULT_CALIBRATION)
+        contract=contracts(ds,val,SimpleNamespace(box_frame='CLIDAR',z_reference='center',calibration=DEFAULT_CALIBRATION,lidar_calibration=None))
+        state=torch.load(a.init_from,map_location='cpu',weights_only=False)
+        check_warm_start(state,cfg,contract,teacher.sha256)
+        initialization=transfer_sparse_weights(model,state)
+        model.image_encoder.initialization=state['backbone_initialization']
     optimizer=build_optimizer(model,2e-4,.001,.1);criterion=SparseCriterion(cfg,teacher)
     scaler=torch.amp.GradScaler('cuda')
     report=dict(type='native_sparse_structural_smoke_NOT_accuracy',cfg=cfg.to_dict(),teacher_sha256=teacher.sha256,
         calibration_sha256=calibration_sha256(DEFAULT_CALIBRATION),backbone_initialization=model.image_encoder.initialization,
-        parameters=sum(p.numel() for p in model.parameters()),steps=[],amp_backoffs=[])
+        parameters=sum(p.numel() for p in model.parameters()),steps=[],amp_backoffs=[],warm_start=initialization)
     for sequence,uid in [('30_09','2303'),('17_09','370'),('17_09','420'),('16_09','1193')]:
         ids=[i for i,r in enumerate(ds.rows) if str(r['metainfo']['sequence_id'])==sequence and uid in set(map(str,r['annos']['gt_ids']))]
         index=ids[len(ids)//2];images,boxes,token=ds[index];images=images[None].cuda();target=[boxes.cuda()]

@@ -87,3 +87,26 @@ def test_v6_sparse_launcher_uses_reviewed_labels_and_isolated_fresh_architecture
     assert '--init-from' not in args
     if resuming:assert '--backbone-weights' not in args and args[args.index('--resume')+1]=='sparse_run/last.pt'
     else:assert args[args.index('--backbone-weights')+1]==env['YOLO26_WEIGHTS']
+
+
+@pytest.mark.parametrize('mode',['fresh','warm','resume'])
+def test_v61_refinement_launcher_isolated_version_and_update_budget(launch_environment,tmp_path,mode):
+    teacher=tmp_path/'teacher.json';teacher.write_text('{}')
+    checkpoint=tmp_path/'best.pt';checkpoint.write_bytes(b'argument-test-only')
+    env=dict(launch_environment,HEADING_TEACHER=str(teacher))
+    for key in ('OUT','BATCH_SIZE','ACCUM_STEPS','EPOCHS','LR','INIT_FROM'):env.pop(key,None)
+    extra=[]
+    if mode=='warm':env['INIT_FROM']=str(checkpoint)
+    if mode=='resume':extra=['--resume','refined/last.pt']
+    if mode!='fresh':env['YOLO26_WEIGHTS']+='.missing'
+    result=subprocess.run(['bash',str(PROJECT/'scripts/launch_v6_1_yolo_rosa_refine.sh'),*extra],
+                          env=env,capture_output=True,text=True,check=True)
+    args=result.stdout.splitlines()
+    assert args[args.index('--architecture-version')+1]=='4'
+    assert args[args.index('--epochs')+1]=='96'
+    assert args[args.index('--batch-size')+1]=='16' and args[args.index('--accum-steps')+1]=='1'
+    assert args[args.index('--out')+1]=='work_dirs/raybev_v6_1_yolo_rosa_refine_48m_clidar_b16a1'
+    if mode=='fresh':assert '--backbone-weights' in args and '--init-from' not in args
+    else:assert '--backbone-weights' not in args
+    if mode=='warm':assert args[args.index('--init-from')+1]==str(checkpoint)
+    if mode=='resume':assert '--init-from' not in args

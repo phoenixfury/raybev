@@ -1,5 +1,6 @@
 """Two-rank sparse DDP backward: empty/ignored rank, DN and repeated optimizer steps."""
 import os
+import argparse
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -12,10 +13,12 @@ from raybev.sparse_loss import SparseCriterion
 
 
 def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--architecture-version',type=int,choices=[3,4],default=3)
+    args=parser.parse_args()
     torch.set_num_threads(2);torch.manual_seed(34)
     rank=int(os.environ['RANK']);dist.init_process_group('gloo')
     try:
-        cfg=SparseConfig(image_width=160,image_height=128,queries=12,stages=4,channels=32,ffn_channels=64,max_detections=12)
+        cfg=SparseConfig(architecture_version=args.architecture_version,image_width=160,image_height=128,queries=12,stages=4,channels=32,ffn_channels=64,max_detections=12)
         model=YOLOROSALite(cfg).train();wrapped=DDP(model,broadcast_buffers=False,find_unused_parameters=False)
         optimizer=torch.optim.AdamW(model.parameters(),lr=1e-4);criterion=SparseCriterion(cfg)
         images=torch.randn(1,4,3,128,160)
