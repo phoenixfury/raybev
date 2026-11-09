@@ -1,5 +1,13 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**New sparse architecture: [TASK_V6_SPARSE.md](TASK_V6_SPARSE.md).**
+YOLO-ROSA-Lite replaces dense BEV with 100 queries, four object-conditioned
+refinement stages, three 64-channel image scales and seven box support points.
+It uses the existing OpenCV rig and reviewed CLIDAR annotations. Start a NEW
+run with `bash scripts/launch_v6_yolo_rosa_sparse.sh`; do not resume dense v5
+or full ROSA checkpoints. Old models, scripts and defaults remain available.
+Structural/GPU/DDP/ONNX checks are not accuracy or TDA4VH 5-FPS measurements.
+
 **V5 results / next paired experiment: [TASK_V5_1.md](TASK_V5_1.md).**
 V5 peaks at 6.24% mAP but overfits Truck/Bus and has front/back errors. V5.1
 adds a reviewed TRAIN fork with safe ignore masks and opt-in circular facing;

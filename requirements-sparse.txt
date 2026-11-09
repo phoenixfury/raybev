@@ -1,0 +1,3 @@
+# Additional dependency for the sparse head's TRAIN-only Hungarian matching.
+# Reuse the working Torch/NumPy/Ultralytics environment; no backbone downgrade.
+scipy>=1.7

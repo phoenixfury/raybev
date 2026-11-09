@@ -1,0 +1,150 @@
+{
+  "type": "native_sparse_export_after_four_smoke_updates_NOT_accuracy",
+  "cfg": {
+    "architecture": "yolo_rosa_lite_v1",
+    "architecture_version": 3,
+    "backbone": "yolo26n",
+    "image_width": 800,
+    "image_height": 640,
+    "channels": 64,
+    "queries": 100,
+    "stages": 4,
+    "heads": 4,
+    "attention_channels": 32,
+    "ffn_channels": 128,
+    "num_classes": 6,
+    "theta_max_degrees": 105.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "min_range": 0.5,
+    "max_range": 68.0,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "mean_training_objects": 10.94322682862424,
+    "training_class_counts": [
+      38155,
+      1849,
+      144,
+      645,
+      312,
+      337
+    ],
+    "facing_loss": "circular_bins",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 8,
+    "quality_score_power": 0.5,
+    "nms_iou_threshold": 0.5,
+    "max_detections": 100,
+    "dn_queries": 24,
+    "dn_weight": 0.5,
+    "teacher_weight": 0.2
+  },
+  "parity": {
+    "encoder_four_camera": {
+      "max_absolute_errors": [
+        2.0563602447509766e-06,
+        2.5779008865356445e-06,
+        3.4496188163757324e-06
+      ],
+      "output_shapes": [
+        [
+          1,
+          4,
+          64,
+          80,
+          100
+        ],
+        [
+          1,
+          4,
+          64,
+          40,
+          50
+        ],
+        [
+          1,
+          4,
+          64,
+          20,
+          25
+        ]
+      ]
+    },
+    "encoder_single_camera": {
+      "max_absolute_errors": [
+        1.6838312149047852e-06,
+        1.925043761730194e-06,
+        3.0547380447387695e-06
+      ],
+      "output_shapes": [
+        [
+          1,
+          64,
+          80,
+          100
+        ],
+        [
+          1,
+          64,
+          40,
+          50
+        ],
+        [
+          1,
+          64,
+          20,
+          25
+        ]
+      ]
+    },
+    "sparse_head": {
+      "max_absolute_errors": [
+        1.71661376953125e-05,
+        7.152557373046875e-07,
+        5.960464477539062e-07,
+        1.9073486328125e-06,
+        1.341104507446289e-06,
+        0.0
+      ],
+      "output_shapes": [
+        [
+          1,
+          100,
+          7
+        ],
+        [
+          1,
+          100,
+          6
+        ],
+        [
+          1,
+          100
+        ],
+        [
+          1,
+          100,
+          2
+        ],
+        [
+          1,
+          100,
+          8
+        ],
+        [
+          1,
+          100
+        ]
+      ]
+    }
+  },
+  "TDA4VH_latency_measured": false
+}

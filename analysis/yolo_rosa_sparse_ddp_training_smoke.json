@@ -1,0 +1,15 @@
+{
+  "type": "two_epoch_synthetic_sparse_DDP_trainer_NOT_accuracy",
+  "world_size": 2,
+  "epochs": 2,
+  "train_samples_per_epoch": [
+    4,
+    4
+  ],
+  "val_GT_count": 2,
+  "exact_nonpadded_validation": true,
+  "checkpoint_architecture": "yolo_rosa_lite_v1",
+  "queries": 12,
+  "stages": 4,
+  "finite_parameters": true
+}

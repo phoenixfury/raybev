@@ -140,3 +140,41 @@ def test_rosa_comparison_uses_model_output_frame_before_range_filtering():
     assert len(corrected)==1
     np.testing.assert_allclose(corrected[:,:7],boxes_to_baselink(raw)[:1],atol=1e-6)
     assert corrected[0,7]==0 and corrected[0,8]==pytest.approx(.9)
+
+
+@pytest.mark.parametrize('revision',['original','reviewed','wrong_geometry'])
+def test_comparison_uses_selected_gt_and_distinguishes_class_review_from_geometry(tmp_path,revision):
+    import copy
+    import torch
+    from raybev.config import CLASSES
+    comparison=load_script('compare_validation_rosa')
+    root=tmp_path/'data';(root/'rosa').mkdir(parents=True)
+    row=dict(token='val-token',metainfo=dict(temporal_split='val',sequence_id='bag'),
+             annos=dict(gt_boxes=np.array([[10.,0.,1.,7.,2.,3.,0.]]),gt_names=['Bus']))
+    def save(path,rows):
+        with path.open('wb') as stream:pickle.dump(dict(data_list=rows),stream)
+    save(root/'rosa/fisheye3dod_infos_val.pkl',[row])
+    reviewed=copy.deepcopy(row);reviewed['annos']['gt_names']=['Truck']
+    if revision=='wrong_geometry':reviewed['annos']['gt_boxes'][0,0]+=1
+    selected=tmp_path/'reviewed.pkl';save(selected,[reviewed])
+    cache=tmp_path/'cache';(cache/'new_best6').mkdir(parents=True)
+    union=cache/'union.pkl';save(union,[row])
+    predictions=cache/'new_best6/predictions.json'
+    predictions.write_text(json.dumps(dict(box_origin='gravity_center',score_threshold=.01,frames=[dict(token='val-token')])))
+    (cache/'plan.json').write_text(json.dumps(dict(union=str(union),models=dict(new_best6=dict(checkpoint_sha256='fixture')))))
+    (cache/'new_best6/inference_complete.json').write_text(json.dumps(dict(predictions_sha256=comparison.sha(predictions),
+        union_sha256=comparison.sha(union),checkpoint_sha256='fixture')))
+    checkpoint=tmp_path/'model.pt';h=calibration_sha256(DEFAULT_CALIBRATION)
+    torch.save(dict(cfg=vars(ModelConfig()),classes=CLASSES,calibration_sha256=h,lidar_calibration_sha256=h,
+                    box_frame='CLIDAR',epoch=1,recipe=dict(z_reference='center')),checkpoint)
+    args=SimpleNamespace(root=root,checkpoint=checkpoint,calibration=Path(DEFAULT_CALIBRATION),
+        rosa_analysis=cache,output=tmp_path/'output',val_ann=None if revision=='original' else selected)
+    if revision=='wrong_geometry':
+        with pytest.raises(ValueError,match='GT mismatch'):comparison.prepare(args)
+        return
+    _,_,dataset,_,_=comparison.prepare(args)
+    assert int(dataset.boxes[0][0,7])==(5 if revision=='original' else 3)
+    manifest=json.loads((args.output/'manifest.json').read_text())
+    assert manifest['ground_truth_geometry_equal_to_ROSA_cache'] is True
+    assert manifest['ground_truth_equal_to_ROSA_cache']==(revision=='original')
+    assert manifest['annotation_sha256']==calibration_sha256(dataset.annotation_path)

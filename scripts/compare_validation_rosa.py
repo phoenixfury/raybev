@@ -24,9 +24,10 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from raybev import CLASSES,ModelConfig,RayBEVLite
-from raybev.detection import decode_detections,detection_scores,decode_sizes,decode_heading,in_bev_range,metric_to_cell
+from raybev.detection import decode_detections,detection_scores,decode_sizes,decode_heading,in_bev_range,metric_to_cell,make_targets
+from raybev.diagnostics import center_statistics,summarize_centers
 from raybev.geometry import load_cameras,project_fisheye
-from raybev.metrics import evaluate_detections,_match_class
+from raybev.metrics import evaluate_detections,heading_diagnostics,_match_class
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples,load_annotations,names_to_ids,boxes_to_baselink
 from raybev.training import balanced_training_view
 
@@ -58,7 +59,8 @@ def prepare(args):
     lidar_calibration=getattr(args,'lidar_calibration',None) or args.calibration
     if state['box_frame']=='CLIDAR' and sha(lidar_calibration)!=state.get('lidar_calibration_sha256'):
         raise ValueError('Checkpoint CLIDAR calibration hash mismatch')
-    dataset=RosaCombinedDataset(args.root,'rosa/fisheye3dod_infos_val.pkl',cfg=cfg,
+    val_ann=getattr(args,'val_ann',None) or 'rosa/fisheye3dod_infos_val.pkl'
+    dataset=RosaCombinedDataset(args.root,val_ann,cfg=cfg,
         box_frame=state['box_frame'],calibration=lidar_calibration,z_reference=state['recipe']['z_reference'])
     if any(r['metainfo']['temporal_split']!='val' for r in dataset.rows):
         raise ValueError('Comparison must contain validation frames only')
@@ -76,20 +78,24 @@ def prepare(args):
     rosa_by_token={str(r['token']):r for r in rosa['frames']}
     tokens=[str(r['token']) for r in dataset.rows]
     if len(tokens)!=len(set(tokens)):raise ValueError('Duplicate validation tokens')
+    same_classes=True
     for row in dataset.rows:
         token=str(row['token'])
         if token not in old_rows or token not in rosa_by_token:
             raise ValueError(f'No matched ROSA validation frame {token}')
         if not np.array_equal(row['annos']['gt_boxes'],old_rows[token]['annos']['gt_boxes']):
             raise ValueError(f'GT mismatch for token {token}')
+        same_classes&=np.array_equal(names_to_ids(row['annos']['gt_names']),names_to_ids(old_rows[token]['annos']['gt_names']))
     contract={'ray_checkpoint':str(args.checkpoint),'ray_checkpoint_sha256':sha(args.checkpoint),
         'ray_epoch':state['epoch'],'ray_recipe':state['recipe'],'cfg':vars(cfg),
-        'annotation_sha256':sha(args.root/'rosa/fisheye3dod_infos_val.pkl'),
+        'annotation_sha256':sha(dataset.annotation_path),'annotation_path':str(dataset.annotation_path),
         'calibration_sha256':sha(args.calibration),
         'lidar_calibration_sha256':sha(lidar_calibration) if dataset.T_base_clidar is not None else None,
         'rosa':plan['models']['new_best6'],
         'rosa_predictions_sha256':done['predictions_sha256'],'frames':len(tokens),
-        'tokens':tokens,'ground_truth_equal_to_ROSA_cache':True,
+        'tokens':tokens,'ground_truth_equal_to_ROSA_cache':bool(same_classes),
+        'ground_truth_geometry_equal_to_ROSA_cache':True,
+        'ground_truth_class_labels_equal_to_ROSA_cache':bool(same_classes),
         'range_m':'X,Y centers in [-48,48); same GT and class order for both',
         'metric':'raybev.metrics diagnostic evaluator for BOTH models; not official ROSA FDS/NDS',
         'decoder_note':'Native Ray NMS=.25, ROSA cached NMS=.5; each capped at 150 boxes and floor .01 for primary comparison',
@@ -130,17 +136,20 @@ def infer(args,state,cfg,dataset):
         collate_fn=collate_samples,pin_memory=device.type=='cuda')
     variants={k:[] for k in ('trained','heat_only','floor_001','classwise_50')}
     diagnostics=[];candidate_counts=np.zeros(6,dtype=np.int64)
+    centers=torch.zeros(len(CLASSES),18,device=device)
     started=time.monotonic();position=0
     with torch.inference_mode():
         for images,boxes,tokens in loader:
             amp=torch.autocast('cuda') if device.type=='cuda' else nullcontext()
             with amp:output=model(images.to(device,non_blocking=device.type=='cuda'))
             output=tuple(v.float() for v in output)
+            centers+=center_statistics(output,make_targets(boxes,cfg,device=device,return_class_ids=True),cfg)
             decoded=decode_detections(output,cfg,score_threshold=.01,topk=300)
             raw=decode_detections(output,replace(cfg,quality_score_power=0.),score_threshold=.01,topk=300)
             low=decode_detections(output,cfg,score_threshold=.001,topk=300)
             heat=output[0].softmax(dim=1) if cfg.classification_mode=='objectness_softmax' else output[0].sigmoid()
             quality=output[2].sigmoid()
+            objectness=output[4].sigmoid() if cfg.classification_mode=='objectness_softmax' else torch.ones_like(quality)
             ranked=detection_scores(output,cfg)
             per_class=decode_detections(output,cfg,score_threshold=.001,topk=300,per_class_topk=50)
             neighborhood=F.max_pool2d(heat,5,1,2)
@@ -159,8 +168,9 @@ def infer(args,state,cfg,dataset):
                     regs=output[1][bi,:,rr,cc].T.cpu().numpy()
                     oracle_sizes=decode_sizes(torch.from_numpy(regs[:,3:6]),classes,cfg).numpy()
                     bin_logits=output[3][bi,:,rr,cc].T.cpu() if cfg.heading_bins else None
-                    oracle_yaw,_=decode_heading(torch.from_numpy(regs[:,6:8]),bin_logits,cfg)
+                    oracle_yaw,heading_confidence=decode_heading(torch.from_numpy(regs[:,6:8]),bin_logits,cfg)
                     qs=quality[bi,0,rr,cc].cpu().numpy()
+                    objects=objectness[bi,0,rr,cc].cpu().numpy()
                     near=neighborhood[bi,:,rr,cc].T.cpu().numpy()
                     for j,box in enumerate(gt.numpy()):
                         reg=regs[j]
@@ -168,11 +178,13 @@ def infer(args,state,cfg,dataset):
                             cfg.bev_y_max-(float(cols[j])+.5+reg[1])*cfg.bev_resolution,
                             float(reg[2]),*oracle_sizes[j].tolist(),float(oracle_yaw[j])]
                         diagnostics.append({'token':token,'gt':box.tolist(),'class_probabilities':probs[j].tolist(),
-                            'heat_5x5_peak':float(near[j,int(classes[j])]),'quality':float(qs[j]),'oracle_box':oracle})
+                            'heat_5x5_peak':float(near[j,int(classes[j])]),'quality':float(qs[j]),
+                            'objectness':float(objects[j]),'heading_confidence':float(heading_confidence[j]),'oracle_box':oracle})
                 position+=1
             if position==len(dataset) or position%20<args.batch_size:
                 print(f'Inference {position}/{len(dataset)} elapsed={time.monotonic()-started:.1f}s',flush=True)
-    dump(destination,{'schema_version':2,'variants':variants,'gt_diagnostics':diagnostics,
+    dump(destination,{'schema_version':3,'variants':variants,'gt_diagnostics':diagnostics,
+        'center_statistics':summarize_centers(centers),
         'class_probability_semantics':'softmax conditional foreground' if cfg.classification_mode=='objectness_softmax' else 'sigmoid heatmap',
         'pre_nms_top300_class_counts':candidate_counts.tolist(),'device':str(device),
         'seconds':time.monotonic()-started,'precision':'autocast FP16 on CUDA; FP32 decoding'})
@@ -231,6 +243,7 @@ def analyze(args,cfg,dataset,rosa):
         print('Evaluating',name,flush=True)
         results[name]={'metrics':evaluate_detections(ps,gt,score_threshold=.1)}
         if name in ('trained','ROSA'):
+            results[name]['heading']=heading_diagnostics(ps,gt,[str(r['metainfo']['sequence_id']) for r in dataset.rows])
             results[name]['operating']={str(t):matched(ps,gt,t) for t in (.03,.05,.1,.2,.3)}
             results[name]['confusion']=confusion(ps,gt)
             results[name]['per_bag']={}
@@ -253,7 +266,11 @@ def analyze(args,cfg,dataset,rosa):
             'oracle_yaw_error_deg_median':float(np.median(yaw)*180/math.pi),
             'GT_LWH_medians':np.median(truth[:,3:6],axis=0).tolist(),
             'oracle_predicted_LWH_medians':np.median(oracle[:,3:6],axis=0).tolist()}
-    train=RosaCombinedDataset(args.root,'rosa/fisheye3dod_infos_train.pkl',cfg=cfg,
+        if 'objectness' in rows[0]:
+            diagnostics[name]['median_objectness']=float(np.median([r['objectness'] for r in rows]))
+            diagnostics[name]['median_heading_confidence']=float(np.median([r['heading_confidence'] for r in rows]))
+    train_ann=getattr(args,'train_ann',None) or 'rosa/fisheye3dod_infos_train.pkl'
+    train=RosaCombinedDataset(args.root,train_ann,cfg=cfg,
         box_frame=dataset.box_frame,calibration=getattr(args,'lidar_calibration',None) or args.calibration,
         z_reference=dataset.z_reference)
     view=balanced_training_view(train,cfg=cfg)
@@ -263,7 +280,7 @@ def analyze(args,cfg,dataset,rosa):
         box_counts.update(CLASSES[i] for i in b[:,7].long().tolist())
     weighted_box_counts=Counter()
     for i in view.indices:weighted_box_counts.update(CLASSES[j] for j in train.boxes[i][:,7].long().tolist())
-    report={'models':results,'GT_center_diagnostics':diagnostics,
+    report={'models':results,'GT_center_diagnostics':diagnostics,'center_statistics':document.get('center_statistics'),
         'candidate_top300_counts':dict(zip(CLASSES,document['pre_nms_top300_class_counts'])),
         'training_sampling':{'original_frames':len(train),'balanced_entries':len(view),
             'frame_presence_counts':dict(frame_counts),'original_boxes':dict(box_counts),'balanced_boxes':dict(weighted_box_counts)},
@@ -398,7 +415,8 @@ def render(args,cfg,dataset,old_rows,rosa,report):
             scene=str(meta['scene_name']);cut=scene!=previous_scene
             text(canvas,f"VALIDATION ONLY | {i+1}/{len(dataset)} | bag {meta['sequence_id']} | frame {meta['source_frame_id']} | {scene}"+(' | SCENE CUT' if cut else ''),(18,28),.7)
             previous_scene=scene
-            for side,(name,ps,title) in enumerate((('trained',ray[i],f"RayBEV-Lite v2 epoch {manifest['ray_epoch']}"),('ROSA',rs[i],'ROSA four-bag epoch 6'))):
+            ray_title=getattr(args,'ray_title',None) or f'RayBEV-Lite {cfg.backbone}'
+            for side,(name,ps,title) in enumerate((('trained',ray[i],f"{ray_title} epoch {manifest['ray_epoch']}"),('ROSA',rs[i],'ROSA four-bag epoch 6'))):
                 ps=ps[ps[:,8]>=args.score_threshold]
                 x=side*1280
                 text(canvas,title,(x+20,68),.85,thickness=2)
@@ -438,6 +456,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--checkpoint',type=Path,required=True)
     parser.add_argument('--root',type=Path,required=True)
+    parser.add_argument('--train-ann',type=Path,help='Absolute reviewed TRAIN annotations for sampling diagnostics')
+    parser.add_argument('--val-ann',type=Path,help='Absolute reviewed VAL annotations; same GT is used for both models')
     parser.add_argument('--calibration',type=Path,required=True)
     parser.add_argument('--lidar-calibration',type=Path,default=None,help='Defaults to --calibration')
     parser.add_argument('--rosa-analysis',type=Path,required=True)
@@ -448,6 +468,7 @@ def main():
     parser.add_argument('--workers',type=int,default=2)
     parser.add_argument('--fps',type=float,default=2.)
     parser.add_argument('--score-threshold',type=float,default=.1)
+    parser.add_argument('--ray-title',help='Display label; checkpoint epoch is appended')
     args=parser.parse_args()
     state,cfg,dataset,old,rosa=prepare(args)
     if args.stage in ('all','infer'):infer(args,state,cfg,dataset)

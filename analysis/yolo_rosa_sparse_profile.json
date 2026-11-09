@@ -1,0 +1,16 @@
+{
+  "architecture": "yolo_rosa_lite_v1",
+  "parameters": 1385164,
+  "image_encoder_parameters": 1151008,
+  "sparse_decoder_parameters": 234156,
+  "convolution_GMACs_per_four_camera_frame": 7.487104,
+  "projected_point_camera_count_per_frame": 11200,
+  "feature_vector_reads_before_visibility_culling": 33600,
+  "image_feature_handoff_int8_MiB": 2.5634765625,
+  "query_state_shape": [
+    1,
+    100,
+    7
+  ],
+  "limits": "Convolution MACs exclude Linear/attention, projection, sampling, normalization, elementwise ops and NMS. Tensor handoff is not peak memory or measured board latency."
+}

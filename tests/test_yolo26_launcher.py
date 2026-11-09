@@ -67,3 +67,23 @@ def test_v51_launcher_pairs_same_review_freeze_and_schedule(launch_environment,t
     assert args[args.index('--out')+1]==f'work_dirs/raybev_v5_1_yolo26n_{mode}_reviewv4_48m_clidar_2x3080ti'
     result=subprocess.run(['bash',str(launcher),mode,'--resume','new/last.pt'],env=env,capture_output=True,text=True,check=True)
     assert '--init-from' not in result.stdout.splitlines() and '--resume\nnew/last.pt' in result.stdout
+
+
+@pytest.mark.parametrize('resuming',[False,True])
+def test_v6_sparse_launcher_uses_reviewed_labels_and_isolated_fresh_architecture(launch_environment,tmp_path,resuming):
+    teacher=tmp_path/'teacher.json';teacher.write_text('{}')
+    env=dict(launch_environment,HEADING_TEACHER=str(teacher))
+    for key in ('OUT','BATCH_SIZE','ACCUM_STEPS','EPOCHS','LR'):env.pop(key,None)
+    extra=['--resume','sparse_run/last.pt'] if resuming else []
+    if resuming:env['YOLO26_WEIGHTS']+='.missing'
+    result=subprocess.run(['bash',str(PROJECT/'scripts/launch_v6_yolo_rosa_sparse.sh'),*extra],
+                          env=env,capture_output=True,text=True,check=True)
+    args=result.stdout.splitlines()
+    assert 'scripts/train_yolo_rosa_sparse.py' in args
+    assert args[args.index('--out')+1]=='work_dirs/raybev_v6_yolo_rosa_q100_l4_48m_clidar_2x3080ti'
+    assert args[args.index('--batch-size')+1]=='2' and args[args.index('--accum-steps')+1]=='2'
+    assert args[args.index('--train-ann')+1]==str(PROJECT/'datasets/heavy_review_v4/train.pkl')
+    assert args[args.index('--heading-teacher')+1]==str(teacher)
+    assert '--init-from' not in args
+    if resuming:assert '--backbone-weights' not in args and args[args.index('--resume')+1]=='sparse_run/last.pt'
+    else:assert args[args.index('--backbone-weights')+1]==env['YOLO26_WEIGHTS']
