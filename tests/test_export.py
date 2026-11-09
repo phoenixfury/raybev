@@ -28,6 +28,7 @@ def test_exported_subgraphs_match_torch(tmp_path):
         graph=onnx.load(path);onnx.checker.check_model(graph)
         operators={n.op_type for n in graph.graph.node}
         assert not operators.intersection({'GridSample','LayerNormalization','Softmax','Attention'})
+        if name=='bev':assert not operators.intersection({'ReduceMean','ReduceSum','InstanceNormalization','BatchNormalization'})
         session=ort.InferenceSession(path,options,providers=['CPUExecutionProvider'])
         actual=session.run(None,{n:v.numpy() for n,v in zip(input_names,inputs)})
         with torch.no_grad():expected=module(*inputs)
@@ -54,6 +55,9 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     export.main()
     metadata=json.loads((output/'metadata.json').read_text())
     assert metadata['backbone']=='resnet18' and metadata['heading_encoding']=='axis_direction'
+    assert metadata['bev_normalization']=='frozen_batchnorm'
+    assert metadata['size_encoding']=='shared_relative'
+    assert 'independent of predicted class' in metadata['size_decode']
     assert metadata['regression_semantics'][-2:]==['sin_2yaw','cos_2yaw']
     assert '0.5*atan2' in metadata['heading_decode']
     import onnx

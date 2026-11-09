@@ -1,9 +1,13 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
-**Current recipe: [TASK_V4.md](TASK_V4.md)** — ResNet-18, continuous axis/facing
-heading, TRAIN-only ROSA response distillation and pose-aware track references.
-New output: `work_dirs/raybev_v4_r18_axis_48m_clidar_2x3080ti`. Do not resume
-MobileNet checkpoints into this recipe. TDA4VH throughput is not yet measured.
+**Current recipe: [TASK_V4_1.md](TASK_V4_1.md)** — fixes the v4 BEV BatchNorm
+train/inference mismatch, adds symmetric heavy-vehicle hard-negative ranking,
+and decodes physical dimensions independently of the predicted class.
+ResNet-18, continuous axis/facing, OpenCV/CLIDAR geometry and the TRAIN teacher remain.
+New output: `work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar_2x3080ti`.
+Recover v4 with `--init-from`, not `--resume`; the size projection is reset.
+Accuracy recovery and TDA4VH throughput still require measurement.
+The [v4 heading/teacher guide](TASK_V4.md) remains relevant except where superseded.
 The MobileNet sections below are historical; their checkpoints remain readable.
 
 **Historical MobileNet heading/size/classification recipe: [TASK_V3.md](TASK_V3.md).**

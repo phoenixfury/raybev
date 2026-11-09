@@ -15,6 +15,7 @@ from raybev.model import BEVDetector
 
 def config():
     return replace(ModelConfig(),backbone='mobilenet_v2',heading_encoding='binned_residual',heading_bins=4,
+        bev_normalization='batchnorm',size_encoding='class_relative',loss_normalization='batch_objects',heavy_classification_weight=0.,
         bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,
         class_size_priors=((4.5,1.9,1.6),(.7,.7,1.7),(1.8,.7,1.6),(6.,2.5,2.8),(5.,2.,2.),(10.,2.8,3.5))).validate()
 
@@ -130,7 +131,8 @@ def test_stable_defaults_do_not_stack_macro_loss_and_object_frequency_repeats():
     assert cfg.sampling_mode=='frame_presence'
     assert cfg.class_positive_weights[3]==cfg.class_positive_weights[5]==4.
     assert cfg.class_regression_weights[3]==cfg.class_regression_weights[5]==4.
-    assert cfg.heading_bins==2 and cfg.heading_encoding=='axis_direction' and cfg.size_encoding=='class_relative'
+    assert cfg.heading_bins==2 and cfg.heading_encoding=='axis_direction' and cfg.size_encoding=='shared_relative'
+    assert cfg.bev_normalization=='frozen_batchnorm' and cfg.loss_normalization=='fixed_train_mean'
     assert cfg.backbone=='resnet18'
 
 

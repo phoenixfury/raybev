@@ -11,9 +11,14 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 import numpy as np
+import pytest
+import torch
 from PIL import Image
 from raybev.config import ModelConfig,DEFAULT_CALIBRATION,CAMERAS
 from raybev.rosa_dataset import RosaCombinedDataset
+from raybev.model import RayBEVLite
+from raybev.training import fit_training_config,calibration_sha256
+from raybev.config import CLASSES
 
 
 def script(name):
@@ -23,7 +28,8 @@ def script(name):
     return module
 
 
-def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch):
+@pytest.mark.parametrize('recovery',[False,True])
+def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch,recovery):
     cfg=ModelConfig().downscale(5);rows=[]
     for i in range(3):
         cameras={}
@@ -43,18 +49,29 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     predictions=tmp_path/'predictions.json';predictions.write_text(json.dumps(doc))
     cache=script('prepare_heading_teacher').build_cache(ds,doc,teacher,DEFAULT_CALIBRATION,DEFAULT_CALIBRATION,predictions)
     cachefile=tmp_path/'teacher.json';cachefile.write_text(json.dumps(cache))
+    extra=[]
+    if recovery:
+        old_cfg=replace(fit_training_config(cfg,ds.boxes),bev_normalization='batchnorm',
+                        size_encoding='class_relative',heavy_classification_weight=0.,loss_normalization='batch_objects')
+        old=RayBEVLite(old_cfg,DEFAULT_CALIBRATION)
+        checkpoint=tmp_path/'v4.pt'
+        torch.save(dict(cfg=vars(old_cfg),state_dict=old.state_dict(),epoch=20,classes=CLASSES,
+                        box_frame='CLIDAR',calibration_sha256=calibration_sha256(DEFAULT_CALIBRATION),
+                        lidar_calibration_sha256=calibration_sha256(DEFAULT_CALIBRATION)),checkpoint)
+        extra=['--init-from',str(checkpoint)]
     train=script('train_combined_rosa')
     monkeypatch.setattr(train,'ModelConfig',lambda **kwargs:replace(cfg,**kwargs))
     def dataset(**kwargs):return RosaCombinedDataset(**kwargs,expected_size=(160,128))
     monkeypatch.setattr(train,'RosaCombinedDataset',dataset)
     saved={}
     def save(state,path):
-        saved[Path(path).name]={k:state[k] for k in ('cfg','heading_teacher_sha256','epoch','best_heading_aoe','heading_diagnostics')}
+        saved[Path(path).name]={k:state[k] for k in ('cfg','heading_teacher_sha256','epoch','best_heading_aoe','heading_diagnostics','warm_start')}
     monkeypatch.setattr(train.torch,'save',save)
     out=tmp_path/'run'
     monkeypatch.setattr(sys,'argv',['train','--root',str(tmp_path),'--train-ann','train.pkl','--val-ann','val.pkl',
-        '--epochs','1','--batch-size','1','--workers','0','--no-pretrained','--no-balance','--no-augmentation',
-        '--warmup-steps','0','--heading-teacher',str(cachefile),'--out',str(out),'--progress','off'])
+        '--epochs','1','--batch-size','1','--workers','0','--no-balance','--no-augmentation',
+        '--warmup-steps','0','--heading-teacher',str(cachefile),'--out',str(out),'--progress','off']+
+        (extra if recovery else ['--no-pretrained']))
     train.main()
     row=json.loads((out/'history.jsonl').read_text().splitlines()[0])
     assert row['train_heading_teacher_loss']>0 and row['train_heading_track_loss']>0
@@ -63,6 +80,11 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     assert 'bag' in row['heading_diagnostics']['by_sequence']
     assert saved['last.pt']['cfg']['backbone']=='resnet18'
     assert saved['last.pt']['cfg']['heading_encoding']=='axis_direction'
+    assert saved['last.pt']['cfg']['bev_normalization']=='frozen_batchnorm'
+    assert saved['last.pt']['cfg']['size_encoding']=='shared_relative'
+    assert saved['last.pt']['epoch']==1
+    assert bool(saved['last.pt']['warm_start'])==recovery
+    assert 'train_heavy_classification_loss' in row and 'val_heavy_classification_loss' in row
     assert saved['last.pt']['heading_teacher_sha256']
     assert 'by_score' in saved['last.pt']['heading_diagnostics']
     assert 'best_map.pt' in saved and 'best_heading.pt' not in saved  # insufficient matched recall

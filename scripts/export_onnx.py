@@ -75,6 +75,7 @@ def main():
              'score_dtype':'float32',
              'single_label_per_cell':cfg.single_label,
              'backbone':cfg.backbone,'heading_encoding':cfg.heading_encoding,
+             'bev_normalization':cfg.bev_normalization,
              'heading_bins':cfg.heading_bins,
              'heading_decode':('axis=0.5*atan2(sin_2yaw,cos_2yaw); yaw=wrap(axis + pi if dot(facing_vector,[sin(axis),cos(axis)])<0 else axis)' if axis_heading else
                  'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)'),
@@ -82,7 +83,9 @@ def main():
                  'max(softmax(heading_logits)); separate from object score' if cfg.heading_bins else 'not available'),
              'training_only_components_excluded':['ROSA teacher','track IDs','world poses','heading distillation','track consistency'],
              'size_encoding':cfg.size_encoding,'class_size_priors_LWH_m':cfg.class_size_priors,
-             'size_decode':'exp(clamp(size_residual + log(class_prior[predicted_class]), -3, 5))' if cfg.size_encoding=='class_relative' else 'exp(clamp(log_size, -3, 5))',
+             'size_reference_LWH_m':cfg.size_reference,
+             'size_decode':('exp(clamp(size_residual + log(class_prior[predicted_class]), -3, 5))' if cfg.size_encoding=='class_relative' else
+                 'exp(clamp(size_residual + log(shared_size_reference), -3, 5)); independent of predicted class' if cfg.size_encoding=='shared_relative' else 'exp(clamp(log_size, -3, 5))'),
              'invalid_candidate_handling':'mask nonfinite class, used quality, and regression values before peaks/topk; exclude zero scores',
              'score_interpretation':'ranking confidence, not a calibrated detection probability; no class-loss weights applied',
              'normalization_mean':[.485,.456,.406],'normalization_std':[.229,.224,.225],
@@ -92,7 +95,8 @@ def main():
              'classes': list(CLASSES), 'class_id_to_name': {str(i): s for i,s in enumerate(CLASSES)},
              'regression_channels': 8,
              'regression_semantics': ['offset_row','offset_col','z']+(
-                 ['log_length_relative_to_class','log_width_relative_to_class','log_height_relative_to_class'] if cfg.size_encoding=='class_relative' else ['log_length','log_width','log_height'])+(
+                 ['log_length_relative_to_class','log_width_relative_to_class','log_height_relative_to_class'] if cfg.size_encoding=='class_relative' else
+                 ['log_length_relative_to_shared_reference','log_width_relative_to_shared_reference','log_height_relative_to_shared_reference'] if cfg.size_encoding=='shared_relative' else ['log_length','log_width','log_height'])+(
                  ['sin_2yaw','cos_2yaw'] if axis_heading else ['sin_heading_residual','cos_heading_residual'] if cfg.heading_bins else ['sin_yaw','cos_yaw']),
              'decoded_detection_semantics': ['x','y','z','length','width','height','yaw','class_id','confidence'],
              'bev_x_range_m': [cfg.bev_x_min, cfg.bev_x_max],

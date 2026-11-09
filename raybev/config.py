@@ -21,6 +21,7 @@ class ModelConfig:
     bev_channels: int = 64
     head_channels: int = 32
     backbone: str = 'resnet18'
+    bev_normalization: str = 'frozen_batchnorm'
     mobile_width: float = 1.0
     # 96 m square, 384x384 output. The expensive BEV context runs at /2,/4,/8.
     bev_x_min: float = -48.0
@@ -50,7 +51,12 @@ class ModelConfig:
     # class scores. Retain the flag only to reproduce historical checkpoints.
     class_balanced_losses: bool = False
     center_classification_weight: float = 0.1
-    size_encoding: str = 'class_relative'
+    heavy_classification_weight: float = 0.2
+    # Fixed TRAIN mean makes accumulation independent of per-frame crowding.
+    loss_normalization: str = 'fixed_train_mean'
+    mean_training_objects: float = 1.0  # fitted before training
+    size_encoding: str = 'shared_relative'
+    size_reference: tuple = (4.5,1.9,1.6)  # fitted from TRAIN, never predicted class
     # Replaced by TRAIN-ONLY medians before constructing the training model.
     class_size_priors: tuple = ((1.0,1.0,1.0),)*len(CLASSES)
     training_class_counts: tuple = (0,)*len(CLASSES)
@@ -107,11 +113,18 @@ class ModelConfig:
             raise ValueError('Invalid NMS configuration')
         if self.backbone not in ('mobilenet_v2','resnet18'):
             raise ValueError('Invalid image backbone')
+        if self.bev_normalization not in ('batchnorm','frozen_batchnorm'):
+            raise ValueError('Invalid BEV normalization')
+        if (self.loss_normalization not in ('batch_objects','fixed_train_mean') or
+                not math.isfinite(self.mean_training_objects) or self.mean_training_objects<=0):
+            raise ValueError('Invalid loss normalization')
+        if len(self.size_reference)!=3 or not all(math.isfinite(v) and v>0 for v in self.size_reference):
+            raise ValueError('Invalid shared size reference')
         if self.heading_encoding not in ('axis_direction','binned_residual'):
             raise ValueError('Invalid heading encoding')
         if (self.heading_bins not in (0,2,4) or
                 (self.heading_bins and self.heading_bins!=(2 if self.heading_encoding=='axis_direction' else 4)) or
-                self.size_encoding not in ('absolute','class_relative')):
+                self.size_encoding not in ('absolute','class_relative','shared_relative')):
             raise ValueError('Invalid heading bins or size encoding')
         if (len(self.class_size_priors)!=len(CLASSES) or
                 any(len(p)!=3 or not all(math.isfinite(v) and v>0 for v in p) for p in self.class_size_priors)):
@@ -120,7 +133,7 @@ class ModelConfig:
             raise ValueError('Invalid training class counts')
         if self.sampling_mode not in ('frame_presence','object_frequency'):
             raise ValueError('Invalid sampling mode')
-        if not all(math.isfinite(v) and v>=0 for v in (self.heading_loss_weight,self.center_classification_weight)):
+        if not all(math.isfinite(v) and v>=0 for v in (self.heading_loss_weight,self.center_classification_weight,self.heavy_classification_weight)):
             raise ValueError('Invalid auxiliary loss weights')
         return self
 
@@ -131,6 +144,11 @@ class ModelConfig:
         values=dict(state['cfg'])
         values.setdefault('backbone','mobilenet_v2')
         values.setdefault('heading_encoding','binned_residual')
+        values.setdefault('bev_normalization','batchnorm')
+        values.setdefault('heavy_classification_weight',0.)
+        values.setdefault('loss_normalization','batch_objects')
+        values.setdefault('mean_training_objects',1.)
+        values.setdefault('size_reference',(4.5,1.9,1.6))
         # Historical v2 weights must keep their original losses and score rule.
         values.setdefault('class_regression_weights',(1.0,)*len(CLASSES))
         values.setdefault('quality_score_power',1.0)
@@ -141,7 +159,7 @@ class ModelConfig:
                 sampling_mode='frame_presence',single_label=False).items():
             values.setdefault(key,value)
         # JSON-based tooling may serialize tuple fields as lists.
-        for key in ('heights','class_positive_weights','class_regression_weights','regression_weights','training_class_counts'):
+        for key in ('heights','class_positive_weights','class_regression_weights','regression_weights','training_class_counts','size_reference'):
             if key in values:values[key]=tuple(values[key])
         if 'class_size_priors' in values:values['class_size_priors']=tuple(tuple(p) for p in values['class_size_priors'])
         return cls(**values).validate()

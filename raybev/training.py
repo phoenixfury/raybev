@@ -11,6 +11,9 @@ from .detection import in_bev_range
 
 def add_training_options(parser):
     parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2'],default='resnet18')
+    parser.add_argument('--bev-normalization',choices=['batchnorm','frozen_batchnorm'],default='frozen_batchnorm')
+    parser.add_argument('--heavy-classification-weight',type=float,default=.2)
+    parser.add_argument('--init-from',help='Trusted local checkpoint: weights-only recovery, new optimizer/schedule/output; NOT --resume')
     parser.add_argument('--heading-teacher',help='Verified TRAIN-only ROSA heading cache from prepare_heading_teacher.py')
     parser.add_argument('--heading-teacher-weight',type=float,default=.2)
     parser.add_argument('--track-heading-weight',type=float,default=.1)
@@ -23,13 +26,14 @@ def add_training_options(parser):
 
 
 def fit_training_config(cfg,batch_boxes):
-    """Fit dimension anchors ONLY from range-filtered training labels.
+    """Fit size references and mean object count ONLY from training labels.
 
     Never call this on validation/test data. Missing training classes retain
     the explicitly configured fallback prior and are reported in the counts.
     """
-    grouped=[[] for _ in CLASSES]
+    grouped=[[] for _ in CLASSES];frames=0
     for boxes in batch_boxes:
+        frames+=1
         boxes=torch.as_tensor(boxes,dtype=torch.float32).detach().cpu()
         valid=in_bev_range(boxes,cfg)&torch.isfinite(boxes).all(dim=1)&(boxes[:,3:6]>0).all(dim=1)
         boxes=boxes[valid]
@@ -44,8 +48,44 @@ def fit_training_config(cfg,batch_boxes):
         counts.append(len(values))
         priors.append(tuple(torch.quantile(values,.5,dim=0).tolist()) if len(values) else tuple(cfg.class_size_priors[ci]))
     if not sum(counts):raise ValueError('No valid training objects to fit the task recipe')
-    return replace(cfg,training_class_counts=tuple(counts),
-                   class_size_priors=tuple(priors) if cfg.size_encoding=='class_relative' else cfg.class_size_priors).validate()
+    all_sizes=torch.cat([torch.cat(items) for items in grouped if items])
+    return replace(cfg,training_class_counts=tuple(counts),mean_training_objects=sum(counts)/frames,
+                   size_reference=tuple(torch.quantile(all_sizes,.5,dim=0).tolist()),
+                   class_size_priors=tuple(priors) if cfg.size_encoding in ('class_relative','shared_relative') else cfg.class_size_priors).validate()
+
+
+def initialize_recovery(model,cfg,args):
+    """Strict weight migration; never restores optimizer, epoch or best metrics."""
+    source=getattr(args,'init_from',None)
+    if not source:return None
+    if getattr(args,'resume',None):raise ValueError('--init-from and --resume are mutually exclusive')
+    state=torch.load(source,map_location='cpu',weights_only=False)
+    old=ModelConfig.from_checkpoint(state)
+    allowed={'bev_normalization','heavy_classification_weight','loss_normalization',
+             'mean_training_objects','size_encoding','size_reference','class_size_priors'}
+    differences={k for k,v in vars(cfg).items() if v!=getattr(old,k)}
+    if differences-allowed:raise ValueError(f'Recovery architecture/data config mismatch: {sorted(differences-allowed)}')
+    if (tuple(state.get('classes',()))!=CLASSES or state.get('box_frame')!=args.box_frame or
+            state.get('calibration_sha256')!=calibration_sha256(args.calibration) or
+            state.get('recipe',{}).get('z_reference',args.z_reference)!=args.z_reference):
+        raise ValueError('Recovery class/frame/calibration contract mismatch')
+    if args.box_frame=='CLIDAR' and state.get('lidar_calibration_sha256')!=calibration_sha256(args.lidar_calibration or args.calibration):
+        raise ValueError('Recovery CLIDAR calibration mismatch')
+    weights=dict(state['state_dict']);current=model.state_dict()
+    if set(weights)!=set(current):raise ValueError('Recovery state keys differ; refusing partial model load')
+    reset=[]
+    if old.size_encoding!=cfg.size_encoding or old.size_reference!=cfg.size_reference:
+        # Old relative-to-CLASS residuals cannot be converted by one constant.
+        # Retain size features, but relearn its last projection in physical size.
+        reset=['bev_detector.size.1.weight','bev_detector.size.1.bias']
+        if cfg.size_encoding!='shared_relative':raise ValueError('Recovery size migration only supports shared_relative')
+        for key in reset:weights[key]=torch.zeros_like(current[key])
+    model.load_state_dict(weights,strict=True)
+    model.image_encoder.initialization=state.get('backbone_initialization','recovery_checkpoint')
+    report=dict(checkpoint=str(source),sha256=calibration_sha256(source),epoch=state.get('epoch'),
+                changed_config=sorted(differences),reset_parameters=reset)
+    print('Weights-only recovery:',report,flush=True)
+    return report
 
 
 def balanced_training_view(dataset,seed=3407,cfg=None):

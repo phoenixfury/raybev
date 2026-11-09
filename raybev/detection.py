@@ -59,7 +59,31 @@ def decode_heading(vectors,bin_logits,cfg):
 def decode_sizes(log_sizes,class_ids,cfg):
     if cfg.size_encoding=='class_relative':
         log_sizes=log_sizes+log_sizes.new_tensor(cfg.class_size_priors)[class_ids].log()
+    elif cfg.size_encoding=='shared_relative':
+        log_sizes=log_sizes+log_sizes.new_tensor(cfg.size_reference).log()
     return log_sizes.clamp(-3.,5.).exp()
+
+
+def loss_denominator(mask,cfg):
+    if cfg.loss_normalization=='fixed_train_mean':
+        return mask.new_tensor(mask.shape[0]*cfg.mean_training_objects,dtype=torch.float32)
+    return mask.sum().clamp(min=1)
+
+
+def heavy_vehicle_classification(logits,class_ids,weights,count):
+    """Hard-negative vehicle ranking at GT centers, including light-car negatives.
+
+    Heavy GT competes with car/van AND the other heavy class; car/van GT
+    counters false truck/bus scores. No class-macro average or inference boost.
+    """
+    vehicle_ids=class_ids.new_tensor((0,3,4,5))
+    heavy=(class_ids==3)|(class_ids==5)
+    light=(class_ids==0)|(class_ids==4)
+    rivals=logits[:,vehicle_ids]
+    allowed=(vehicle_ids[None]!=class_ids[:,None]) & (heavy[:,None]|((vehicle_ids==3)|(vehicle_ids==5))[None])
+    hardest=rivals.masked_fill(~allowed,float('-inf')).max(dim=1).values
+    correct=logits.gather(1,class_ids[:,None])[:,0]
+    return (F.softplus(.5+hardest-correct)*weights*(heavy|light)).sum()/count
 
 
 def _object_loss_weights(class_ids,cfg,reference):
@@ -104,6 +128,8 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
     owners = torch.full((b,1,h,w),-1,dtype=torch.long) if return_class_ids else None
     best = torch.full((b,1,h,w),float('inf'))
     log_priors=torch.tensor(cfg.class_size_priors).log() if cfg.size_encoding=='class_relative' else torch.zeros(cfg.num_classes,3)
+    if cfg.size_encoding=='shared_relative':
+        log_priors=torch.tensor(cfg.size_reference).log().expand(cfg.num_classes,-1)
     for batch, boxes in enumerate(batch_boxes):
         if isinstance(boxes,torch.Tensor):
             boxes = boxes.detach().cpu().tolist()
@@ -160,17 +186,18 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         # macro positives with globally normalized negatives distorts priors.
         per_class_count=is_pos.sum(dim=(0,2,3))
         pos_loss=(positive.sum(dim=(0,2,3))/per_class_count.clamp(min=1)).sum()/(per_class_count>0).sum().clamp(min=1)
-    else:pos_loss=positive.sum()/is_pos.sum().clamp(min=1)
-    heat_loss=pos_loss+neg_loss/is_pos.sum().clamp(min=1)
+    heat_count=loss_denominator(reg_mask,cfg) if cfg.loss_normalization=='fixed_train_mean' else is_pos.sum().clamp(min=1)
+    if not cfg.class_balanced_losses:pos_loss=positive.sum()/heat_count
+    heat_loss=pos_loss+neg_loss/heat_count
     # Select centers before normalizing yaw; no boolean branch for empty DDP ranks.
     pred=reg_pred.permute(0,2,3,1)[reg_mask[:,0]]
     truth=reg_target.permute(0,2,3,1)[reg_mask[:,0]]
-    count=reg_mask.sum().clamp(min=1)
+    count=loss_denominator(reg_mask,cfg)
     if len(targets)==4:
         class_ids=targets[3][:,0][reg_mask[:,0]]
     else:
         center_classes=is_pos.permute(0,2,3,1)[reg_mask[:,0]]
-        class_aware=(cfg.class_balanced_losses or cfg.center_classification_weight>0 or
+        class_aware=(cfg.class_balanced_losses or cfg.center_classification_weight>0 or cfg.heavy_classification_weight>0 or
                      tuple(cfg.class_regression_weights)!=(1.0,)*cfg.num_classes)
         if class_aware and bool((center_classes.sum(dim=1)!=1).any()):
             raise ValueError('Ambiguous regression class; use make_targets(..., return_class_ids=True)')
@@ -196,8 +223,8 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
             truth=torch.cat((truth[:,:6],residual_target),dim=1)
             heading_loss=(F.cross_entropy(heading_logits,bin_target,reduction='none')*object_weights).sum()/count
     weighted=F.smooth_l1_loss(regression_prediction,truth,reduction='none')*pred.new_tensor(cfg.regression_weights)
-    # Divide by the unweighted object count: a single Bus retains its 4x
-    # gradient instead of its weight cancelling in a weighted denominator.
+    # Use one unweighted object normalizer (fixed TRAIN mean in recipe 4.1):
+    # a Bus retains 4x gradient, rather than cancelling its weight below.
     yaw_penalty=((norm[:,0]-1).square()*object_weights).sum()/count
     reg_loss=(weighted.sum(dim=1)*object_weights).sum()/count+cfg.yaw_norm_weight*yaw_penalty
     quality_loss=reg_pred.sum()*0.
@@ -212,11 +239,13 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     center_logits=heat_logits.permute(0,2,3,1)[reg_mask[:,0]]
     unique_center=(is_pos.permute(0,2,3,1)[reg_mask[:,0]].sum(dim=1)==1)
     center_loss=(F.cross_entropy(center_logits,class_ids,reduction='none')*object_weights*unique_center).sum()/count
-    classification=heat_loss+cfg.center_classification_weight*center_loss
+    heavy_loss=heavy_vehicle_classification(center_logits,class_ids,object_weights*unique_center,count)
+    classification=heat_loss+cfg.center_classification_weight*center_loss+cfg.heavy_classification_weight*heavy_loss
     return heat_weight*classification + regression_weight*reg_loss+cfg.quality_loss_weight*quality_loss+cfg.heading_loss_weight*heading_loss, {
         'heatmap': classification.detach(), 'regression': reg_loss.detach(),
         'quality':quality_loss.detach(),'yaw_norm':yaw_penalty.detach(),
         'heading_bin':heading_loss.detach(),'center_classification':center_loss.detach(),
+        'heavy_classification':heavy_loss.detach(),
         'heading_axis':(weighted[:,6:8].sum(dim=1)*object_weights).sum().detach()/count,
         'size_regression':(weighted[:,3:6].sum(dim=1)*object_weights).sum().detach()/count,
     }

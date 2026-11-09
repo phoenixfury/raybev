@@ -23,7 +23,7 @@ from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.rosa_dataset import boxes_to_baselink,read_T_base_clidar
 from raybev.preprocessing import letterbox_images, normalize_imagenet
 from raybev.detection import make_targets,detection_loss,in_bev_range
-from raybev.training import add_training_options,build_optimizer,build_scheduler,calibration_sha256,fit_training_config
+from raybev.training import add_training_options,build_optimizer,build_scheduler,calibration_sha256,fit_training_config,initialize_recovery
 
 
 class NPZDataset(Dataset):
@@ -66,7 +66,7 @@ def build_parser():
     a.add_argument('--epochs',type=int,default=10)
     a.add_argument('--batch-size',type=int,default=2)
     a.add_argument('--lr',type=float,default=2e-4)
-    a.add_argument('--checkpoint',default='raybev_v4_r18_axis.pt')
+    a.add_argument('--checkpoint',default='raybev_v4_1_r18_norm_heavy.pt')
     a.add_argument('--pretrained',action='store_true',help='Retained for compatibility; pretrained is now the default')
     add_training_options(a)
     return a
@@ -75,17 +75,20 @@ def build_parser():
 def main():
     args=build_parser().parse_args()
     args.lidar_calibration=args.lidar_calibration or args.calibration
-    cfg=ModelConfig(backbone=args.backbone).validate()
+    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+                    heavy_classification_weight=args.heavy_classification_weight).validate()
     if args.heading_teacher:raise ValueError('NPZ inputs lack tokens/track poses; use the combined trainer for ROSA distillation')
     print(f'Backbone={cfg.backbone}; heading={cfg.heading_encoding}; NPZ teacher/track supervision unavailable',flush=True)
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
     device='cuda' if torch.cuda.is_available() else 'cpu'
     dataset=NPZDataset(args.data,cfg,args.box_frame,args.lidar_calibration,args.z_reference)
     cfg=fit_training_config(cfg,(dataset.read_boxes(i) for i in range(len(dataset))))
+    print(f'TRAIN mean objects/frame={cfg.mean_training_objects:.6f}; shared size reference={cfg.size_reference}',flush=True)
     dataset.cfg=cfg
     print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
-    model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained,
-                     backbone_weights=args.backbone_weights).to(device)
+    model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained and not args.init_from,
+                     backbone_weights=args.backbone_weights if not args.init_from else None).to(device)
+    recovery=initialize_recovery(model,cfg,args)
     loader=DataLoader(dataset,batch_size=args.batch_size,
                       shuffle=True,collate_fn=lambda examples:([x[0] for x in examples],
                                                                  [x[1] for x in examples]))
@@ -110,7 +113,7 @@ def main():
                     'epoch':epoch+1,'classes':list(CLASSES),'recipe':vars(args),
                     'box_frame':args.box_frame,
                     'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
-                    'backbone_initialization':model.image_encoder.initialization,
+                    'backbone_initialization':model.image_encoder.initialization,'warm_start':recovery,
                     'calibration_sha256':calibration_sha256(args.calibration)},args.checkpoint)
 
 if __name__=='__main__':main()

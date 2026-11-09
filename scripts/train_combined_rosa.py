@@ -30,7 +30,7 @@ from raybev.detection import make_targets,detection_loss,decode_detections
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.metrics import evaluate_detections,heading_diagnostics
 from raybev.heading_supervision import HeadingSupervision
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery
 
 
 class BatchProgress:
@@ -110,7 +110,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v4_r18_axis_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -118,14 +118,17 @@ def build_parser():
 
 def main():
     args=build_parser().parse_args()
+    if args.resume and args.init_from:raise ValueError('--init-from and --resume are mutually exclusive')
     args.lidar_calibration=args.lidar_calibration or args.calibration
     if args.epochs<1 or args.batch_size<1 or args.workers<0 or args.log_every<1:
         raise ValueError('Invalid training controls')
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
     if torch.cuda.is_available():torch.cuda.manual_seed_all(args.seed)
-    cfg=ModelConfig(backbone=args.backbone).validate()
+    cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+                    heavy_classification_weight=args.heavy_classification_weight).validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-    print(f'Task recipe 4: backbone={cfg.backbone}; heading={cfg.heading_encoding}; macro_losses={cfg.class_balanced_losses}; '
+    print(f'Task recipe 4.1: backbone={cfg.backbone}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+          f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
           f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
     print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
     ds_args=dict(root=args.root,box_frame=args.box_frame,z_reference=args.z_reference,cfg=cfg,
@@ -134,6 +137,7 @@ def main():
     val=RosaCombinedDataset(ann_file=args.val_ann,**ds_args)
     if not train or not val:raise ValueError('Empty train/val split')
     cfg=fit_training_config(cfg,train.boxes)
+    print(f'TRAIN mean objects/frame={cfg.mean_training_objects:.6f}; shared size reference={cfg.size_reference}',flush=True)
     heading_supervision=HeadingSupervision(train,cfg,args)
     print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
     print('Train boxes:',train.gt_counts,flush=True)
@@ -157,8 +161,9 @@ def main():
     if state is not None:check_resume(state,cfg,args)
     if state is not None and state.get('world_size')!=1:
         raise ValueError('Resume world size differs from checkpoint')
-    model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained and not args.resume,
-                     backbone_weights=args.backbone_weights if not args.resume else None).to(device)
+    model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained and not args.resume and not args.init_from,
+                     backbone_weights=args.backbone_weights if not args.resume and not args.init_from else None).to(device)
+    recovery=initialize_recovery(model,cfg,args) if args.init_from else (state.get('warm_start') if state else None)
     initialization=state.get('backbone_initialization') if state else model.image_encoder.initialization
     optimizer=build_optimizer(model,args.lr,args.weight_decay,args.backbone_lr_mult)
     scaler=torch.cuda.amp.GradScaler(enabled=args.amp and pin)
@@ -185,7 +190,7 @@ def main():
           f'progress={args.progress}',flush=True)
     for epoch in range(start,args.epochs):
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
-        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis')}
+        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
         train_progress=BatchProgress('train',epoch+1,args.epochs,len(dl_train),args.progress,args.log_every)
         for images,boxes,tokens in dl_train:
@@ -210,7 +215,7 @@ def main():
                 'lr':f'{optimizer.param_groups[0]["lr"]:.2e}'})
         train_progress.close()
         model.eval();val_total=0.;val_heat=0.;val_reg=0.;predictions=[];ground_truth=[]
-        val_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_axis')}
+        val_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_axis','heavy_classification')}
         val_progress=BatchProgress('val',epoch+1,args.epochs,len(dl_val),args.progress,args.log_every)
         with torch.no_grad():
             for images,boxes,_ in dl_val:
@@ -300,7 +305,7 @@ def main():
         state={'state_dict':model.state_dict(),'optimizer':optimizer.state_dict(),'scheduler':scheduler.state_dict(),
                'epoch':epoch+1,'best_map':max(best,metrics['mAP']),'classes':list(CLASSES),
                'cfg':vars(cfg),'metrics':metrics,'box_frame':args.box_frame,'recipe':vars(args),'world_size':1,
-               'scaler':scaler.state_dict(),'backbone_initialization':initialization,
+               'scaler':scaler.state_dict(),'backbone_initialization':initialization,'warm_start':recovery,
                'heading_teacher_sha256':heading_supervision.teacher_sha256,
                'heading_diagnostics':diagnostics,
                'best_heading_aoe':min(best_heading,heading_score),

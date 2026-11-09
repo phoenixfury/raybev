@@ -19,6 +19,27 @@ def conv_bn_relu(cin, cout, kernel=3, stride=1):
                          nn.BatchNorm2d(cout), nn.ReLU6(inplace=True))
 
 
+class FixedStatsBatchNorm2d(nn.BatchNorm2d):
+    """Learnable affine, fixed statistics in BOTH modes; folds into Conv at export.
+
+    Ordinary BatchNorm state keys are retained for strict v4 weight migration.
+    model.train(), including DDP, cannot re-enable per-frame normalization.
+    """
+    def forward(self,x):
+        return F.batch_norm(x,self.running_mean,self.running_var,self.weight,self.bias,
+                            training=False,momentum=0.,eps=self.eps)
+
+
+def fix_batchnorm_statistics(module):
+    for name,child in module.named_children():
+        if isinstance(child,nn.BatchNorm2d):
+            fixed=FixedStatsBatchNorm2d(child.num_features,eps=child.eps,
+                                       momentum=child.momentum,affine=child.affine)
+            fixed.load_state_dict(child.state_dict(),strict=True)
+            setattr(module,name,fixed)
+        else:fix_batchnorm_statistics(child)
+
+
 class SeparableBlock(nn.Module):
     def __init__(self, cin, cout=None, stride=1):
         super().__init__()
@@ -202,7 +223,7 @@ class BEVDetector(nn.Module):
         # the dense-negative spike produced by the old 10% prior on this grid.
         nn.init.normal_(self.heatmap[-1].weight,std=.001)
         nn.init.constant_(self.heatmap[-1].bias,math.log(.01/.99))
-        if cfg.size_encoding=='class_relative':
+        if cfg.size_encoding in ('class_relative','shared_relative'):
             nn.init.zeros_(self.size[-1].weight)
             nn.init.zeros_(self.size[-1].bias)
         if self.heading is not None:
@@ -211,6 +232,8 @@ class BEVDetector(nn.Module):
         nn.init.zeros_(self.yaw[-1].weight)
         with torch.no_grad():
             self.yaw[-1].bias.copy_(torch.tensor([0.,1.]))
+        if cfg.bev_normalization=='frozen_batchnorm':
+            fix_batchnorm_statistics(self)
 
     def forward(self, bev):
         fine = self.fine(bev)

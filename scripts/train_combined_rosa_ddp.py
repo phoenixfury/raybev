@@ -38,7 +38,7 @@ from raybev.detection import make_targets, detection_loss, decode_detections
 from raybev.metrics import evaluate_detections,heading_diagnostics
 from raybev.heading_supervision import HeadingSupervision
 from raybev.rosa_dataset import RosaCombinedDataset, collate_samples
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score,initialize_recovery
 
 try:
     from tqdm.auto import tqdm
@@ -156,7 +156,7 @@ def make_flat_metrics(row):
              'train_regression_loss','val_loss','val_heatmap_loss','val_regression_loss',
              'seconds','world_size','global_batch_size','train_samples_seen')}
     for phase in ('train','val'):
-        for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction'):
+        for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction','heavy_classification'):
             key=f'{phase}_{component}_loss'
             if key in row:flat[key]=row[key]
     for key, value in metrics.items():
@@ -215,7 +215,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v4_r18_axis_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -256,6 +256,7 @@ def load_trusted_checkpoint(path, map_location):
 
 def main():
     args = build_parser().parse_args()
+    if args.resume and args.init_from:raise ValueError('--init-from and --resume are mutually exclusive')
     args.lidar_calibration = args.lidar_calibration or args.calibration
     if args.epochs < 1 or args.batch_size < 1 or args.accum_steps < 1 or args.workers < 0 or args.log_every < 1 or args.prefetch_factor < 1:
         raise ValueError('Invalid training controls')
@@ -273,10 +274,12 @@ def main():
         if device.type == 'cuda':
             torch.cuda.manual_seed_all(args.seed + rank)
             torch.backends.cudnn.benchmark = False  # conservative VRAM; enable only after profiling
-        cfg = ModelConfig(backbone=args.backbone).validate()
+        cfg = ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
+                          heavy_classification_weight=args.heavy_classification_weight).validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-            print(f'Task recipe 4: backbone={cfg.backbone}; heading={cfg.heading_encoding}; macro_losses={cfg.class_balanced_losses}; '
+            print(f'Task recipe 4.1: backbone={cfg.backbone}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+                  f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
                   f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
             print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
         ds_args = dict(root=args.root, box_frame=args.box_frame, z_reference=args.z_reference,cfg=cfg,
@@ -286,6 +289,7 @@ def main():
         if len(train) == 0 or len(val) == 0 or len(train) < world:
             raise ValueError('Empty/inadequate train or validation split')
         cfg=fit_training_config(cfg,train.boxes)
+        if primary:print(f'TRAIN mean objects/frame={cfg.mean_training_objects:.6f}; shared size reference={cfg.size_reference}',flush=True)
         heading_supervision=HeadingSupervision(train,cfg,args)
         if primary:print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
         if any(s['metainfo'].get('temporal_split')!='train' for s in train.rows):
@@ -311,13 +315,14 @@ def main():
         if ckpt is not None:check_resume(ckpt,cfg,args)
         if ckpt is not None and ckpt.get('world_size')!=world:
             raise ValueError('Resume world size differs from checkpoint')
-        model_options=dict(pretrained=not args.no_pretrained and not args.resume,
-                           backbone_weights=args.backbone_weights if not args.resume else None)
+        model_options=dict(pretrained=not args.no_pretrained and not args.resume and not args.init_from,
+                           backbone_weights=args.backbone_weights if not args.resume and not args.init_from else None)
         # Rank 0 populates the official weight cache before the second rank opens it.
         if primary:local_model=RayBEVLite(cfg,args.calibration,**model_options).to(device)
         dist.barrier()
         if not primary:local_model=RayBEVLite(cfg,args.calibration,**model_options).to(device)
         dist.barrier()
+        recovery=initialize_recovery(local_model,cfg,args) if args.init_from else (ckpt.get('warm_start') if ckpt else None)
         optimizer=build_optimizer(local_model,args.lr,args.weight_decay,args.backbone_lr_mult)
         scaler = create_grad_scaler(enabled=args.amp and pin)
         steps_per_epoch=math.ceil(len(train_loader)/args.accum_steps)
@@ -380,7 +385,7 @@ def main():
             model.train()
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
-            local_sums = [0.]*10
+            local_sums = [0.]*11
             optimizer.zero_grad(set_to_none=True)
             progress = Progress('train',epoch+1,args.epochs,len(train_loader),args.progress,args.log_every) if primary else None
             for i,(images,boxes,tokens) in enumerate(train_loader):
@@ -403,7 +408,7 @@ def main():
                 local_sums[1] += float(parts['heatmap']) * n
                 local_sums[2] += float(parts['regression']) * n
                 local_sums[3] += n
-                for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis'),4):
+                for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification'),4):
                     local_sums[j]+=float(parts[key])*n
                 if is_last_in_group:
                     scaler.unscale_(optimizer)
@@ -424,7 +429,7 @@ def main():
             # fixed multi-megabyte projection buffers.
             sync_bn_running_buffers(local_model)
             local_model.eval()
-            val_sums = [0.]*10
+            val_sums = [0.]*11
             local_predictions = []
             val_progress = Progress('val',epoch+1,args.epochs,len(val_loader),args.progress,args.log_every) if primary else None
             pos = 0
@@ -440,7 +445,7 @@ def main():
                     val_sums[1] += float(parts['heatmap']) * n
                     val_sums[2] += float(parts['regression']) * n
                     val_sums[3] += n
-                    for j,key in ((4,'heading_bin'),(5,'center_classification'),(6,'size_regression'),(9,'heading_axis')):
+                    for j,key in ((4,'heading_bin'),(5,'center_classification'),(6,'size_regression'),(9,'heading_axis'),(10,'heavy_classification')):
                         val_sums[j]+=float(parts[key])*n
                     decoded = decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                     # ExactEvalSampler yields rank, rank+world, rank+2*world...
@@ -491,7 +496,7 @@ def main():
                            train_samples_seen=int(totals[3]),metrics=metrics,
                            per_bag_metrics=per_bag,heading_diagnostics=diagnostics)
                 for phase,sums in (('train',totals),('val',val_totals)):
-                    for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis'),4):
+                    for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification'),4):
                         row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
                     row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
                 with (out/'history.jsonl').open('a') as fh:
@@ -527,6 +532,7 @@ def main():
                        'classes':list(CLASSES),'cfg':vars(cfg),
                        'metrics':metrics,'box_frame':args.box_frame,
                        'recipe':vars(args),
+                       'warm_start':recovery,
                        'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                        'calibration_sha256':calibration_sha256(args.calibration),
                        'backbone_initialization':ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,
