@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Paths and batch sizes can be customized using environment variables.
 ROOT="${ROOT:-/home/mustafa/mmdetection3d/data/raybev_4bags_native_800x640_v2}"
-OUT="${OUT:-work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar_2x3080ti}"
+OUT="${OUT:-work_dirs/raybev_v4_2_r18_fg_48m_clidar_2x3080ti}"
 HEADING_TEACHER="${HEADING_TEACHER:-teacher/raybev_heading_teacher_train.json}"
 BOX_FRAME="${BOX_FRAME:-CLIDAR}" # Source DetZero/ROSA labels; network targets use BASELINK.
 BATCH_SIZE="${BATCH_SIZE:-1}"       # per GPU microbatch
@@ -20,8 +20,8 @@ if [[ ! -f "$HEADING_TEACHER" ]]; then
   exit 1
 fi
 
-# Extra args pass through. --init-from migrates v4 weights into a NEW run;
-# --resume is only for an already-created v4.1 run with the same recipe.
+# Extra args pass through. --init-from migrates old weights into a NEW v4.2 run;
+# --resume is only for an already-created v4.2 run with the same recipe.
 torchrun --standalone --nnodes=1 --nproc_per_node=2 \
   scripts/train_combined_rosa_ddp.py \
   --root "$ROOT" --box-frame "$BOX_FRAME" \

@@ -46,7 +46,7 @@ def test_image_ray_geometry_reprojects_to_feature_centers():
 
 
 def test_large_vehicle_gaussian_and_far_range_round_trip():
-    cfg=replace(ModelConfig(),heading_bins=0,size_encoding='absolute')
+    cfg=replace(ModelConfig(),heading_bins=0,size_encoding='absolute',classification_mode='heatmap')
     assert gaussian_radius(12/.25,2.5/.25)>gaussian_radius(4/.25,1.8/.25)
     boxes=torch.tensor([[45.,-43.,1.7,12.,2.5,3.4,2.2,5.]])
     targets=make_targets([boxes],cfg)
@@ -68,7 +68,7 @@ def test_rotated_nms_preserves_crossed_vehicles_and_different_classes():
 
 
 def test_quality_controls_ranking_and_losses_have_finite_empty_gradients():
-    cfg=replace(ModelConfig().downscale(5),heading_bins=0)
+    cfg=replace(ModelConfig().downscale(5),heading_bins=0,classification_mode='heatmap')
     h,w=cfg.bev_height,cfg.bev_width
     heat=torch.full((1,6,h,w),-10.)
     heat[0,0,10,10]=heat[0,0,20,20]=5.

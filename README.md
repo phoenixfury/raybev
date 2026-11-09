@@ -1,12 +1,14 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
-**Current recipe: [TASK_V4_1.md](TASK_V4_1.md)** — fixes the v4 BEV BatchNorm
-train/inference mismatch, adds symmetric heavy-vehicle hard-negative ranking,
-and decodes physical dimensions independently of the predicted class.
+**Current recipe: [TASK_V4_2.md](TASK_V4_2.md)** — keeps fixed BEV normalization,
+separates object-center detection from foreground classification, removes the
+extra heavy-vs-car ranking penalty, and restores TRAIN-only class size priors.
 ResNet-18, continuous axis/facing, OpenCV/CLIDAR geometry and the TRAIN teacher remain.
-New output: `work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar_2x3080ti`.
-Recover v4 with `--init-from`, not `--resume`; the size projection is reset.
-Accuracy recovery and TDA4VH throughput still require measurement.
+New output: `work_dirs/raybev_v4_2_r18_fg_48m_clidar_2x3080ti`.
+Recover v4.1 `best_map.pt` with `--init-from`, not `--resume`.
+The shared-size experiment regressed rare-class dimensions; it is superseded.
+This changes the raw outputs/score contract. New accuracy and TDA4VH throughput
+still require measurement; source changes do not establish either.
 The [v4 heading/teacher guide](TASK_V4.md) remains relevant except where superseded.
 The MobileNet sections below are historical; their checkpoints remain readable.
 

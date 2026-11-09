@@ -126,6 +126,17 @@ def read_T_base_clidar(path=None):
     return T
 
 
+def photometric_augment(images):
+    """TRAIN-only appearance regularization; never move pixels or change the rig."""
+    cameras=len(images)
+    gain=images.new_empty(cameras,1,1,1).uniform_(.7,1.3)
+    contrast=images.new_empty(cameras,1,1,1).uniform_(.75,1.25)
+    color=images.new_empty(cameras,3,1,1).uniform_(.85,1.15)
+    gamma=images.new_empty(cameras,1,1,1).uniform_(.85,1.15)
+    mean=images.mean(dim=(1,2,3),keepdim=True)
+    return (((images-mean)*contrast+mean)*gain*color).clamp(0,1).pow(gamma)
+
+
 class RosaCombinedDataset(Dataset):
     def __init__(self,root,ann_file,box_frame=DEFAULT_BOX_FRAME,calibration=None,z_reference='center',
                  strict_size=True,expected_size=(800,640),cfg=None,augment=False):
@@ -176,9 +187,7 @@ class RosaCombinedDataset(Dataset):
         images=torch.stack(image_list)
         if self.augment:
             # Photometry only: pixel coordinates and the OpenCV LUT stay fixed.
-            gain=.9+.2*torch.rand(4,1,1,1)
-            color=.95+.1*torch.rand(4,3,1,1)
-            images=(images*gain*color).clamp(0,1)
+            images=photometric_augment(images)
         images=normalize_imagenet(images[None])[0]
         return images,self.boxes[index],str(sample['token'])
 

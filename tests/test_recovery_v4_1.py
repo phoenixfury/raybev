@@ -15,7 +15,9 @@ from raybev.training import fit_training_config,initialize_recovery,calibration_
 
 def config():
     return replace(ModelConfig().downscale(5),bev_x_min=-4.,bev_x_max=4.,
-                   bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.)
+                   bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,classification_mode='heatmap',
+                   foreground_label_smoothing=0.,center_classification_weight=.1,
+                   heavy_classification_weight=.2,size_encoding='shared_relative')
 
 
 def boxes(ci=5,x=1.5):

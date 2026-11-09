@@ -110,7 +110,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v4_2_r18_fg_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -127,10 +127,10 @@ def main():
     cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,
                     heavy_classification_weight=args.heavy_classification_weight).validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-    print(f'Task recipe 4.1: backbone={cfg.backbone}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+    print(f'Task recipe 4.2: backbone={cfg.backbone}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
           f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
           f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
-    print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
+    print(f'Score = objectness * conditional_class_probability * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
     ds_args=dict(root=args.root,box_frame=args.box_frame,z_reference=args.z_reference,cfg=cfg,
                  calibration=args.lidar_calibration if args.box_frame=='CLIDAR' else None)
     train=RosaCombinedDataset(ann_file=args.train_ann,augment=not args.no_augmentation,**ds_args)
@@ -190,7 +190,7 @@ def main():
           f'progress={args.progress}',flush=True)
     for epoch in range(start,args.epochs):
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
-        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification')}
+        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
         train_progress=BatchProgress('train',epoch+1,args.epochs,len(dl_train),args.progress,args.log_every)
         for images,boxes,tokens in dl_train:
@@ -215,7 +215,7 @@ def main():
                 'lr':f'{optimizer.param_groups[0]["lr"]:.2e}'})
         train_progress.close()
         model.eval();val_total=0.;val_heat=0.;val_reg=0.;predictions=[];ground_truth=[]
-        val_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_axis','heavy_classification')}
+        val_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_axis','heavy_classification','objectness')}
         val_progress=BatchProgress('val',epoch+1,args.epochs,len(dl_val),args.progress,args.log_every)
         with torch.no_grad():
             for images,boxes,_ in dl_val:

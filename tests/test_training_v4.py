@@ -52,7 +52,8 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     extra=[]
     if recovery:
         old_cfg=replace(fit_training_config(cfg,ds.boxes),bev_normalization='batchnorm',
-                        size_encoding='class_relative',heavy_classification_weight=0.,loss_normalization='batch_objects')
+                        size_encoding='shared_relative',heavy_classification_weight=.2,loss_normalization='batch_objects',
+                        classification_mode='heatmap',foreground_label_smoothing=0.,center_classification_weight=.1)
         old=RayBEVLite(old_cfg,DEFAULT_CALIBRATION)
         checkpoint=tmp_path/'v4.pt'
         torch.save(dict(cfg=vars(old_cfg),state_dict=old.state_dict(),epoch=20,classes=CLASSES,
@@ -81,7 +82,8 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     assert saved['last.pt']['cfg']['backbone']=='resnet18'
     assert saved['last.pt']['cfg']['heading_encoding']=='axis_direction'
     assert saved['last.pt']['cfg']['bev_normalization']=='frozen_batchnorm'
-    assert saved['last.pt']['cfg']['size_encoding']=='shared_relative'
+    assert saved['last.pt']['cfg']['size_encoding']=='class_relative'
+    assert saved['last.pt']['cfg']['classification_mode']=='objectness_softmax'
     assert saved['last.pt']['epoch']==1
     assert bool(saved['last.pt']['warm_start'])==recovery
     assert 'train_heavy_classification_loss' in row and 'val_heavy_classification_loss' in row

@@ -45,7 +45,9 @@ def main():
                       output_names=['feature_map','confidence_logits'],opset_version=17)
     cin=cfg.bev_input_channels
     axis_heading=cfg.heading_bins and cfg.heading_encoding=='axis_direction'
-    output_names=['heatmap_logits','regression','quality_logits']+(['facing_vector' if axis_heading else 'heading_logits'] if cfg.heading_bins else [])
+    decoupled=cfg.classification_mode=='objectness_softmax'
+    output_names=['class_logits' if decoupled else 'heatmap_logits','regression','quality_logits']+(['facing_vector' if axis_heading else 'heading_logits'] if cfg.heading_bins else [])
+    if decoupled:output_names.append('objectness_logits')
     torch.onnx.export(model.bev_detector,torch.zeros(1,cin,cfg.bev_height,cfg.bev_width),
                       str(out/'bev_detector.onnx'),input_names=['bev_features'],
                       output_names=output_names,opset_version=17)
@@ -69,7 +71,10 @@ def main():
              'feature_stride':8,'sample_align_corners':False,'height_planes_m':list(cfg.heights),
              'bev_input_channels':cin,
              'bev_layout':['height_pooled_features','per_height_coverage','normalized_mean_height','x_normalized','y_normalized','range_normalized'],
-             'quality_score':f'sigmoid(heatmap_logits) * sigmoid(quality_logits) ** {cfg.quality_score_power:g}',
+             'classification_mode':cfg.classification_mode,
+             'foreground_class_softmax_location':'host postprocess, NOT learned TIDL graph' if decoupled else None,
+             'output_names':output_names,
+             'quality_score':(('sigmoid(objectness_logits) * softmax(class_logits, class_axis) * ' if decoupled else 'sigmoid(heatmap_logits) * ')+f'sigmoid(quality_logits) ** {cfg.quality_score_power:g}'),
              'quality_score_power':cfg.quality_score_power,'score_peak_mode':cfg.score_peak_mode,
              'score_peak_order':'fuse_then_peak' if cfg.score_peak_mode=='fused' else 'heatmap_peak_then_fuse',
              'score_dtype':'float32',

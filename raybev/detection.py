@@ -70,6 +70,14 @@ def loss_denominator(mask,cfg):
     return mask.sum().clamp(min=1)
 
 
+def objectness_logits(output,cfg):
+    index=4 if cfg.heading_bins else 3
+    expected=(output[0].shape[0],1,*output[0].shape[2:])
+    if len(output)!=index+1 or tuple(output[index].shape)!=expected:
+        raise ValueError('objectness_softmax requires a separate one-channel objectness output')
+    return output[index].float()
+
+
 def heavy_vehicle_classification(logits,class_ids,weights,count):
     """Hard-negative vehicle ranking at GT centers, including light-car negatives.
 
@@ -174,11 +182,18 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     if heat_logits.shape != heat_target.shape or reg_pred.shape != reg_target.shape:
         raise ValueError('Mismatch between predictions and target map shapes')
     # CornerNet/CenterNet Gaussian focal loss in logit space for stability.
-    p=torch.sigmoid(heat_logits).clamp(1e-5,1-1e-5)
-    is_pos=(heat_target >= 1-1e-5)
+    foreground_pos=(heat_target>=1-1e-5)
+    decoupled=cfg.classification_mode=='objectness_softmax'
+    focal_logits=objectness_logits(output,cfg) if decoupled else heat_logits
+    focal_target=heat_target.amax(dim=1,keepdim=True) if decoupled else heat_target
+    p=torch.sigmoid(focal_logits).clamp(1e-5,1-1e-5)
+    is_pos=(focal_target >= 1-1e-5)
     is_neg=~is_pos
-    neg_w=(1-heat_target).pow(4)
+    neg_w=(1-focal_target).pow(4)
     class_weights=p.new_tensor(cfg.class_positive_weights)[None,:,None,None]
+    if decoupled:
+        classes=targets[3].clamp(min=0) if len(targets)==4 else heat_target.argmax(dim=1,keepdim=True)
+        class_weights=p.new_tensor(cfg.class_positive_weights)[classes]
     positive=-(torch.log(p) * (1-p).pow(2)*is_pos*class_weights)
     neg_loss=-(torch.log(1-p)*p.pow(2)*neg_w*is_neg).sum()
     if cfg.class_balanced_losses:
@@ -196,7 +211,7 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     if len(targets)==4:
         class_ids=targets[3][:,0][reg_mask[:,0]]
     else:
-        center_classes=is_pos.permute(0,2,3,1)[reg_mask[:,0]]
+        center_classes=foreground_pos.permute(0,2,3,1)[reg_mask[:,0]]
         class_aware=(cfg.class_balanced_losses or cfg.center_classification_weight>0 or cfg.heavy_classification_weight>0 or
                      tuple(cfg.class_regression_weights)!=(1.0,)*cfg.num_classes)
         if class_aware and bool((center_classes.sum(dim=1)!=1).any()):
@@ -237,8 +252,10 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         quality_loss=(F.binary_cross_entropy_with_logits(quality,quality_target,reduction='none')*object_weights).sum()/count
     # Explicit foreground class competition without adding inference softmax.
     center_logits=heat_logits.permute(0,2,3,1)[reg_mask[:,0]]
-    unique_center=(is_pos.permute(0,2,3,1)[reg_mask[:,0]].sum(dim=1)==1)
-    center_loss=(F.cross_entropy(center_logits,class_ids,reduction='none')*object_weights*unique_center).sum()/count
+    unique_center=(foreground_pos.permute(0,2,3,1)[reg_mask[:,0]].sum(dim=1)==1)
+    foreground_weights=center_logits.new_tensor(cfg.class_positive_weights)[class_ids] if decoupled else object_weights
+    center_loss=(F.cross_entropy(center_logits,class_ids,reduction='none',
+                               label_smoothing=cfg.foreground_label_smoothing)*foreground_weights*unique_center).sum()/count
     heavy_loss=heavy_vehicle_classification(center_logits,class_ids,object_weights*unique_center,count)
     classification=heat_loss+cfg.center_classification_weight*center_loss+cfg.heavy_classification_weight*heavy_loss
     return heat_weight*classification + regression_weight*reg_loss+cfg.quality_loss_weight*quality_loss+cfg.heading_loss_weight*heading_loss, {
@@ -246,6 +263,7 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         'quality':quality_loss.detach(),'yaw_norm':yaw_penalty.detach(),
         'heading_bin':heading_loss.detach(),'center_classification':center_loss.detach(),
         'heavy_classification':heavy_loss.detach(),
+        'objectness':heat_loss.detach(),
         'heading_axis':(weighted[:,6:8].sum(dim=1)*object_weights).sum().detach()/count,
         'size_regression':(weighted[:,3:6].sum(dim=1)*object_weights).sum().detach()/count,
     }
@@ -254,13 +272,23 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
 def detection_scores(output,cfg: ModelConfig):
     """Shared FP32 confidence/peak rule for decode, analysis and host deployment.
 
-    New runs: p_class * sqrt(p_quality), with peaks selected AFTER fusion.
-    Scores never exceed p_class. Difficulty weights affect losses, not scores.
+    Recipe 4.2: p_object * softmax(class) * sqrt(p_quality).
+    Old checkpoints retain sigmoid(class). Peaks follow score fusion; training
+    difficulty weights never multiply inference confidence.
     """
     heat_logits,reg=output[:2]
-    heat=heat_logits.float().sigmoid()
+    decoupled=cfg.classification_mode=='objectness_softmax'
+    if decoupled:
+        finite=torch.isfinite(heat_logits)
+        logits=torch.where(finite,heat_logits.float(),float('-inf'))
+        heat=torch.nan_to_num(logits.softmax(dim=1))
+    else:heat=heat_logits.float().sigmoid()
     score=heat
     valid=torch.isfinite(heat_logits)&torch.isfinite(reg).all(dim=1,keepdim=True)
+    if decoupled:
+        objects=objectness_logits(output,cfg)
+        valid=valid&torch.isfinite(objects)
+        score=score*objects.sigmoid()
     if len(output)>=3 and cfg.quality_score_power>0:
         quality_logits=output[2].float()
         score=score*quality_logits.sigmoid().pow(cfg.quality_score_power)

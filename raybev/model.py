@@ -210,6 +210,7 @@ class BEVDetector(nn.Module):
         def head(channels):
             return nn.Sequential(separable_block(h),nn.Conv2d(h,channels,1))
         self.heatmap = head(cfg.num_classes)
+        self.objectness = head(1) if cfg.classification_mode=='objectness_softmax' else None
         self.offset = head(2)
         self.height = head(1)
         self.size = head(3)
@@ -223,6 +224,9 @@ class BEVDetector(nn.Module):
         # the dense-negative spike produced by the old 10% prior on this grid.
         nn.init.normal_(self.heatmap[-1].weight,std=.001)
         nn.init.constant_(self.heatmap[-1].bias,math.log(.01/.99))
+        if self.objectness is not None:
+            nn.init.normal_(self.objectness[-1].weight,std=.001)
+            nn.init.constant_(self.objectness[-1].bias,math.log(.01/.99))
         if cfg.size_encoding in ('class_relative','shared_relative'):
             nn.init.zeros_(self.size[-1].weight)
             nn.init.zeros_(self.size[-1].bias)
@@ -246,7 +250,9 @@ class BEVDetector(nn.Module):
         regression = torch.cat((self.offset(features),self.height(features),
                                 self.size(features),self.yaw(features)),dim=1)
         outputs=(self.heatmap(features),regression,self.quality(features))
-        return outputs+(self.heading(features),) if self.heading is not None else outputs
+        if self.heading is not None:outputs=outputs+(self.heading(features),)
+        if self.objectness is not None:outputs=outputs+(self.objectness(features),)
+        return outputs
 
     def upsample(self, x, reference):
         if self.exact_pyramid:

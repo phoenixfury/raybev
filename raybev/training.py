@@ -12,7 +12,7 @@ from .detection import in_bev_range
 def add_training_options(parser):
     parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2'],default='resnet18')
     parser.add_argument('--bev-normalization',choices=['batchnorm','frozen_batchnorm'],default='frozen_batchnorm')
-    parser.add_argument('--heavy-classification-weight',type=float,default=.2)
+    parser.add_argument('--heavy-classification-weight',type=float,default=0.)
     parser.add_argument('--init-from',help='Trusted local checkpoint: weights-only recovery, new optimizer/schedule/output; NOT --resume')
     parser.add_argument('--heading-teacher',help='Verified TRAIN-only ROSA heading cache from prepare_heading_teacher.py')
     parser.add_argument('--heading-teacher-weight',type=float,default=.2)
@@ -62,7 +62,8 @@ def initialize_recovery(model,cfg,args):
     state=torch.load(source,map_location='cpu',weights_only=False)
     old=ModelConfig.from_checkpoint(state)
     allowed={'bev_normalization','heavy_classification_weight','loss_normalization',
-             'mean_training_objects','size_encoding','size_reference','class_size_priors'}
+             'mean_training_objects','size_encoding','size_reference','class_size_priors',
+             'classification_mode','foreground_label_smoothing','center_classification_weight'}
     differences={k for k,v in vars(cfg).items() if v!=getattr(old,k)}
     if differences-allowed:raise ValueError(f'Recovery architecture/data config mismatch: {sorted(differences-allowed)}')
     if (tuple(state.get('classes',()))!=CLASSES or state.get('box_frame')!=args.box_frame or
@@ -72,18 +73,29 @@ def initialize_recovery(model,cfg,args):
     if args.box_frame=='CLIDAR' and state.get('lidar_calibration_sha256')!=calibration_sha256(args.lidar_calibration or args.calibration):
         raise ValueError('Recovery CLIDAR calibration mismatch')
     weights=dict(state['state_dict']);current=model.state_dict()
+    added=[]
+    if old.classification_mode=='heatmap' and cfg.classification_mode=='objectness_softmax':
+        for key in current:
+            if key.startswith('bev_detector.objectness.'):
+                original=key.replace('bev_detector.objectness.','bev_detector.heatmap.',1)
+                value=weights[original]
+                if key in ('bev_detector.objectness.1.weight','bev_detector.objectness.1.bias'):
+                    value=value[0:1]  # warm-start generic centers from the learned Car detector
+                weights[key]=value.clone();added.append(key)
     if set(weights)!=set(current):raise ValueError('Recovery state keys differ; refusing partial model load')
     reset=[]
-    if old.size_encoding!=cfg.size_encoding or old.size_reference!=cfg.size_reference:
-        # Old relative-to-CLASS residuals cannot be converted by one constant.
-        # Retain size features, but relearn its last projection in physical size.
+    if (old.size_encoding!=cfg.size_encoding or
+            (cfg.size_encoding=='shared_relative' and old.size_reference!=cfg.size_reference) or
+            (cfg.size_encoding=='class_relative' and old.class_size_priors!=cfg.class_size_priors)):
+        # Switching shared/class priors isn't one constant across examples.
+        # Retain size features, but relearn the final residual projection.
         reset=['bev_detector.size.1.weight','bev_detector.size.1.bias']
-        if cfg.size_encoding!='shared_relative':raise ValueError('Recovery size migration only supports shared_relative')
+        if cfg.size_encoding not in ('shared_relative','class_relative'):raise ValueError('Unsupported recovery size migration')
         for key in reset:weights[key]=torch.zeros_like(current[key])
     model.load_state_dict(weights,strict=True)
     model.image_encoder.initialization=state.get('backbone_initialization','recovery_checkpoint')
     report=dict(checkpoint=str(source),sha256=calibration_sha256(source),epoch=state.get('epoch'),
-                changed_config=sorted(differences),reset_parameters=reset)
+                changed_config=sorted(differences),reset_parameters=reset,initialized_parameters=added)
     print('Weights-only recovery:',report,flush=True)
     return report
 

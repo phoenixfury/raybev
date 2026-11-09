@@ -13,7 +13,7 @@ def small_config():
     return replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,
                    bev_y_max=4.,bev_resolution=1.,heading_bins=0,normalize_yaw_loss=True,
                    class_balanced_losses=False,center_classification_weight=0.,
-                   size_encoding='absolute',single_label=False).validate()
+                   size_encoding='absolute',single_label=False,classification_mode='heatmap',foreground_label_smoothing=0.).validate()
 
 
 def outputs(cfg):

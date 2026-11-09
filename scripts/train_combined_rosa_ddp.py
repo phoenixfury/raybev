@@ -156,7 +156,7 @@ def make_flat_metrics(row):
              'train_regression_loss','val_loss','val_heatmap_loss','val_regression_loss',
              'seconds','world_size','global_batch_size','train_samples_seen')}
     for phase in ('train','val'):
-        for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction','heavy_classification'):
+        for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction','heavy_classification','objectness'):
             key=f'{phase}_{component}_loss'
             if key in row:flat[key]=row[key]
     for key, value in metrics.items():
@@ -215,7 +215,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v4_1_r18_norm_heavy_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v4_2_r18_fg_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -278,10 +278,10 @@ def main():
                           heavy_classification_weight=args.heavy_classification_weight).validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-            print(f'Task recipe 4.1: backbone={cfg.backbone}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
+            print(f'Task recipe 4.2: backbone={cfg.backbone}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '
                   f'size={cfg.size_encoding}; loss_norm={cfg.loss_normalization}; heavy_margin_weight={cfg.heavy_classification_weight}; macro_losses={cfg.class_balanced_losses}; '
                   f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
-            print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
+            print(f'Score = objectness * conditional_class_probability * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
         ds_args = dict(root=args.root, box_frame=args.box_frame, z_reference=args.z_reference,cfg=cfg,
                        calibration=args.lidar_calibration if args.box_frame == 'CLIDAR' else None)
         train = RosaCombinedDataset(ann_file=args.train_ann,augment=not args.no_augmentation,**ds_args)
@@ -385,7 +385,7 @@ def main():
             model.train()
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
-            local_sums = [0.]*11
+            local_sums = [0.]*12
             optimizer.zero_grad(set_to_none=True)
             progress = Progress('train',epoch+1,args.epochs,len(train_loader),args.progress,args.log_every) if primary else None
             for i,(images,boxes,tokens) in enumerate(train_loader):
@@ -408,7 +408,7 @@ def main():
                 local_sums[1] += float(parts['heatmap']) * n
                 local_sums[2] += float(parts['regression']) * n
                 local_sums[3] += n
-                for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification'),4):
+                for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness'),4):
                     local_sums[j]+=float(parts[key])*n
                 if is_last_in_group:
                     scaler.unscale_(optimizer)
@@ -429,7 +429,7 @@ def main():
             # fixed multi-megabyte projection buffers.
             sync_bn_running_buffers(local_model)
             local_model.eval()
-            val_sums = [0.]*11
+            val_sums = [0.]*12
             local_predictions = []
             val_progress = Progress('val',epoch+1,args.epochs,len(val_loader),args.progress,args.log_every) if primary else None
             pos = 0
@@ -445,7 +445,7 @@ def main():
                     val_sums[1] += float(parts['heatmap']) * n
                     val_sums[2] += float(parts['regression']) * n
                     val_sums[3] += n
-                    for j,key in ((4,'heading_bin'),(5,'center_classification'),(6,'size_regression'),(9,'heading_axis'),(10,'heavy_classification')):
+                    for j,key in ((4,'heading_bin'),(5,'center_classification'),(6,'size_regression'),(9,'heading_axis'),(10,'heavy_classification'),(11,'objectness')):
                         val_sums[j]+=float(parts[key])*n
                     decoded = decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                     # ExactEvalSampler yields rank, rank+world, rank+2*world...
@@ -496,7 +496,7 @@ def main():
                            train_samples_seen=int(totals[3]),metrics=metrics,
                            per_bag_metrics=per_bag,heading_diagnostics=diagnostics)
                 for phase,sums in (('train',totals),('val',val_totals)):
-                    for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification'),4):
+                    for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heavy_classification','objectness'),4):
                         row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
                     row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
                 with (out/'history.jsonl').open('a') as fh:

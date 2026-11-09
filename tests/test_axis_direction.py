@@ -33,7 +33,7 @@ def test_axis_target_is_continuous_across_old_bin_boundary_and_reversals():
 
 
 def test_facing_classifier_corrects_exact_180_reversal_without_changing_axis():
-    cfg=replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.)
+    cfg=replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,classification_mode='heatmap')
     gt=torch.tensor([[1.5,1.5,1.,10.,3.,3.5,math.pi,5.]])
     outputs=[torch.zeros(1,c,8,8) for c in (6,8,1,2)]
     outputs[1][:,7]=1.;outputs[3][:,1]=4.
@@ -46,7 +46,7 @@ def test_facing_classifier_corrects_exact_180_reversal_without_changing_axis():
 
 
 def test_axis_heading_size_decode_contract_keeps_nine_public_box_columns():
-    cfg=replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.)
+    cfg=replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,classification_mode='heatmap')
     gt=torch.tensor([[1.5,1.5,1.,10.,3.,3.5,2.4,5.]])
     heat,reg,mask,_=make_targets([gt],cfg,return_class_ids=True)
     yaw=gt[0,6];reg[0,6:8,2,2]=torch.stack(((2*yaw).sin(),(2*yaw).cos()))

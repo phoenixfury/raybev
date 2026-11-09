@@ -1,5 +1,9 @@
 # Recipe 4.1: consistent BEV normalization and heavy vehicles
 
+Historical recipe. Its frozen normalization is retained, but the shared-size
+and heavy-ranking changes did not recover rare-class validation performance.
+Use [TASK_V4_2.md](TASK_V4_2.md) for the CURRENT code, launcher and retraining.
+
 Keep ResNet-18, OpenCV fisheye calibration, CLIDAR labels converted once to
 BASELINK, +/-48 m, 0.25 m cells and the axis/facing heading outputs.
 These code changes are not a claim of improved validation AP or target throughput.

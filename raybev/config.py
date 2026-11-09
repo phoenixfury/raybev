@@ -22,6 +22,8 @@ class ModelConfig:
     head_channels: int = 32
     backbone: str = 'resnet18'
     bev_normalization: str = 'frozen_batchnorm'
+    classification_mode: str = 'objectness_softmax'
+    foreground_label_smoothing: float = 0.05
     mobile_width: float = 1.0
     # 96 m square, 384x384 output. The expensive BEV context runs at /2,/4,/8.
     bev_x_min: float = -48.0
@@ -50,12 +52,12 @@ class ModelConfig:
     # background. Macro averaging + difficulty weights + repeats collapsed v3
     # class scores. Retain the flag only to reproduce historical checkpoints.
     class_balanced_losses: bool = False
-    center_classification_weight: float = 0.1
-    heavy_classification_weight: float = 0.2
+    center_classification_weight: float = 1.0
+    heavy_classification_weight: float = 0.0
     # Fixed TRAIN mean makes accumulation independent of per-frame crowding.
     loss_normalization: str = 'fixed_train_mean'
     mean_training_objects: float = 1.0  # fitted before training
-    size_encoding: str = 'shared_relative'
+    size_encoding: str = 'class_relative'
     size_reference: tuple = (4.5,1.9,1.6)  # fitted from TRAIN, never predicted class
     # Replaced by TRAIN-ONLY medians before constructing the training model.
     class_size_priors: tuple = ((1.0,1.0,1.0),)*len(CLASSES)
@@ -115,6 +117,10 @@ class ModelConfig:
             raise ValueError('Invalid image backbone')
         if self.bev_normalization not in ('batchnorm','frozen_batchnorm'):
             raise ValueError('Invalid BEV normalization')
+        if self.classification_mode not in ('heatmap','objectness_softmax'):
+            raise ValueError('Invalid classification mode')
+        if not math.isfinite(self.foreground_label_smoothing) or not 0<=self.foreground_label_smoothing<1:
+            raise ValueError('Invalid foreground label smoothing')
         if (self.loss_normalization not in ('batch_objects','fixed_train_mean') or
                 not math.isfinite(self.mean_training_objects) or self.mean_training_objects<=0):
             raise ValueError('Invalid loss normalization')
@@ -145,6 +151,8 @@ class ModelConfig:
         values.setdefault('backbone','mobilenet_v2')
         values.setdefault('heading_encoding','binned_residual')
         values.setdefault('bev_normalization','batchnorm')
+        values.setdefault('classification_mode','heatmap')
+        values.setdefault('foreground_label_smoothing',0.)
         values.setdefault('heavy_classification_weight',0.)
         values.setdefault('loss_normalization','batch_objects')
         values.setdefault('mean_training_objects',1.)

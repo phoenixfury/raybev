@@ -66,7 +66,7 @@ def build_parser():
     a.add_argument('--epochs',type=int,default=10)
     a.add_argument('--batch-size',type=int,default=2)
     a.add_argument('--lr',type=float,default=2e-4)
-    a.add_argument('--checkpoint',default='raybev_v4_1_r18_norm_heavy.pt')
+    a.add_argument('--checkpoint',default='raybev_v4_2_r18_fg.pt')
     a.add_argument('--pretrained',action='store_true',help='Retained for compatibility; pretrained is now the default')
     add_training_options(a)
     return a

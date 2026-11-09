@@ -16,6 +16,7 @@ from raybev.model import BEVDetector
 def config():
     return replace(ModelConfig(),backbone='mobilenet_v2',heading_encoding='binned_residual',heading_bins=4,
         bev_normalization='batchnorm',size_encoding='class_relative',loss_normalization='batch_objects',heavy_classification_weight=0.,
+        classification_mode='heatmap',foreground_label_smoothing=0.,center_classification_weight=.1,
         bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,
         class_size_priors=((4.5,1.9,1.6),(.7,.7,1.7),(1.8,.7,1.6),(6.,2.5,2.8),(5.,2.,2.),(10.,2.8,3.5))).validate()
 
@@ -127,11 +128,12 @@ def test_object_sampling_repeats_bus_frames_even_when_frame_presence_exceeds_fiv
 def test_stable_defaults_do_not_stack_macro_loss_and_object_frequency_repeats():
     cfg=ModelConfig()
     assert not cfg.class_balanced_losses
-    assert cfg.center_classification_weight==pytest.approx(.1)
+    assert cfg.center_classification_weight==pytest.approx(1.)
     assert cfg.sampling_mode=='frame_presence'
     assert cfg.class_positive_weights[3]==cfg.class_positive_weights[5]==4.
     assert cfg.class_regression_weights[3]==cfg.class_regression_weights[5]==4.
-    assert cfg.heading_bins==2 and cfg.heading_encoding=='axis_direction' and cfg.size_encoding=='shared_relative'
+    assert cfg.heading_bins==2 and cfg.heading_encoding=='axis_direction' and cfg.size_encoding=='class_relative'
+    assert cfg.classification_mode=='objectness_softmax' and cfg.heavy_classification_weight==0
     assert cfg.bev_normalization=='frozen_batchnorm' and cfg.loss_normalization=='fixed_train_mean'
     assert cfg.backbone=='resnet18'
 
@@ -161,7 +163,7 @@ def test_global_focal_uses_one_object_denominator_for_positives_and_negatives():
 def test_car_bias_is_not_suppressed_by_stacked_rare_class_balancing():
     # Realistic early-training prior: many cars, a few heavy vehicles, and
     # slightly higher truck/bus probabilities across a dense 384x384 map.
-    cfg=ModelConfig();boxes=[]
+    cfg=replace(ModelConfig(),classification_mode='heatmap',foreground_label_smoothing=0.,center_classification_weight=.1);boxes=[]
     for i,ci in enumerate([0]*17+[1]*3+[3]*2+[5]):
         boxes.append([30.-(i//6)*10.,30.-(i%6)*10.,1.,*config().class_size_priors[ci],0.,ci])
     target=make_targets([torch.tensor(boxes)],cfg,return_class_ids=True)

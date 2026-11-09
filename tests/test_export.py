@@ -56,11 +56,14 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     metadata=json.loads((output/'metadata.json').read_text())
     assert metadata['backbone']=='resnet18' and metadata['heading_encoding']=='axis_direction'
     assert metadata['bev_normalization']=='frozen_batchnorm'
-    assert metadata['size_encoding']=='shared_relative'
-    assert 'independent of predicted class' in metadata['size_decode']
+    assert metadata['size_encoding']=='class_relative'
+    assert metadata['classification_mode']=='objectness_softmax'
+    assert 'sigmoid(objectness_logits)' in metadata['quality_score']
+    assert metadata['output_names'][-1]=='objectness_logits'
     assert metadata['regression_semantics'][-2:]==['sin_2yaw','cos_2yaw']
     assert '0.5*atan2' in metadata['heading_decode']
     import onnx
     graph=onnx.load(str(output/'bev_detector.onnx'))
-    assert graph.graph.output[-1].name=='facing_vector'
-    assert graph.graph.output[-1].type.tensor_type.shape.dim[1].dim_value==2
+    outputs={o.name:o for o in graph.graph.output}
+    assert outputs['facing_vector'].type.tensor_type.shape.dim[1].dim_value==2
+    assert outputs['objectness_logits'].type.tensor_type.shape.dim[1].dim_value==1
