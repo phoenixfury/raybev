@@ -14,11 +14,13 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--calibration',default='configs/calibration_baselink.json')
     parser.add_argument('--checkpoint')
+    parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2','yolo26n'],default='resnet18',
+                        help='Fresh model to profile when no checkpoint is supplied')
     parser.add_argument('--output',default='model_profile.json')
     args=parser.parse_args()
     torch.set_num_threads(2)
     state=torch.load(args.checkpoint,map_location='cpu',weights_only=False) if args.checkpoint else None
-    cfg=ModelConfig.from_checkpoint(state) if state else ModelConfig()
+    cfg=ModelConfig.from_checkpoint(state) if state else ModelConfig(backbone=args.backbone)
     model=RayBEVLite(cfg,args.calibration).eval()
     if state:model.load_state_dict(state['state_dict'])
     macs={'image_encoder':0,'bev_detector':0}

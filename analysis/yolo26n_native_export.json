@@ -1,0 +1,87 @@
+{
+  "type": "native_shape_structural_export_check_NOT_trained_model",
+  "image_encoder": {
+    "operators": [
+      "Add",
+      "Clip",
+      "Concat",
+      "Constant",
+      "Conv",
+      "Identity",
+      "MaxPool",
+      "Mul",
+      "Resize",
+      "Sigmoid",
+      "Slice",
+      "Split"
+    ],
+    "max_absolute_errors": [
+      1.7881393432617188e-06,
+      6.258487701416016e-07
+    ],
+    "output_shapes": [
+      [
+        1,
+        32,
+        80,
+        100
+      ],
+      [
+        1,
+        4,
+        80,
+        100
+      ]
+    ]
+  },
+  "bev_detector": {
+    "operators": [
+      "Add",
+      "Clip",
+      "Concat",
+      "Constant",
+      "Conv",
+      "Identity",
+      "Resize"
+    ],
+    "max_absolute_errors": [
+      3.337860107421875e-06,
+      1.043081283569336e-07,
+      4.842877388000488e-08,
+      5.820766091346741e-10,
+      2.86102294921875e-06
+    ],
+    "output_shapes": [
+      [
+        1,
+        6,
+        384,
+        384
+      ],
+      [
+        1,
+        8,
+        384,
+        384
+      ],
+      [
+        1,
+        1,
+        384,
+        384
+      ],
+      [
+        1,
+        2,
+        384,
+        384
+      ],
+      [
+        1,
+        1,
+        384,
+        384
+      ]
+    ]
+  }
+}

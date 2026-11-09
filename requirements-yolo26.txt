@@ -1,0 +1,3 @@
+# Optional YOLO26n backbone. Tested with the existing Torch 2.4 / Python 3.8 env.
+# Do not upgrade torch/torchvision/numpy in a working MMDetection environment.
+ultralytics==8.4.182

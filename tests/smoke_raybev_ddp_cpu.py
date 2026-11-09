@@ -16,7 +16,7 @@ def main():
     dist.init_process_group('gloo')
     try:
         torch.manual_seed(21)
-        cfg=ModelConfig().downscale(5)
+        cfg=ModelConfig(backbone=os.environ.get('RAYBEV_BACKBONE','resnet18')).downscale(5)
         model=RayBEVLite(cfg,str(Path(__file__).resolve().parents[1]/'configs/calibration_baselink.json'))
         mode=os.environ.get('RAYBEV_FREEZE_IMAGE_STAGES','none')
         configure_image_training(model,mode)

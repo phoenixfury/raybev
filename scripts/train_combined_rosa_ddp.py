@@ -332,6 +332,7 @@ def main():
         recovery=initialize_recovery(local_model,cfg,args) if args.init_from else (ckpt.get('warm_start') if ckpt else None)
         configure_image_training(local_model,args.freeze_image_stages)
         annotation_sha=annotation_hashes(train,val)
+        if primary:print('Backbone initialization:',ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,flush=True)
         if primary:print('Image stage freeze:',args.freeze_image_stages,'annotation SHA256:',annotation_sha,flush=True)
         optimizer=build_optimizer(local_model,args.lr,args.weight_decay,args.backbone_lr_mult)
         scaler = create_grad_scaler(enabled=args.amp and pin)

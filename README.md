@@ -1,5 +1,10 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**YOLO26n pretrained backbone option: [TASK_V5_YOLO26N.md](TASK_V5_YOLO26N.md).**
+The TDA-oriented convolutional subset retains official YOLO26n layers 0–9,
+omitting C2PSA/2D heads. Start fresh with `scripts/launch_v5_yolo26n.sh`;
+do not resume R18/MobileNet weights into it. Current runs/defaults are unchanged.
+
 **V4.3 results and next opt-in experiments: [TASK_V4_4.md](TASK_V4_4.md).**
 Best v4.3 is epoch 6 (5.31% internal mAP). The approved label-review fork
 corrects cargo trucks mislabeled Bus, keeps trams as Bus, and leaves TRAIN

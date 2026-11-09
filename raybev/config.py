@@ -117,8 +117,10 @@ class ModelConfig:
             raise ValueError('Invalid quality score power or peak mode')
         if not 0 <= self.nms_iou_threshold <= 1 or self.max_detections < 1:
             raise ValueError('Invalid NMS configuration')
-        if self.backbone not in ('mobilenet_v2','resnet18'):
+        if self.backbone not in ('mobilenet_v2','resnet18','yolo26n'):
             raise ValueError('Invalid image backbone')
+        if self.backbone=='yolo26n' and self.feature_pixel_origin!=0.:
+            raise ValueError('YOLO26n stride-8 feature lattice requires feature_pixel_origin=0')
         if self.bev_normalization not in ('batchnorm','frozen_batchnorm'):
             raise ValueError('Invalid BEV normalization')
         if (not math.isfinite(self.feature_pixel_origin) or self.height_fusion not in ('pooled','concat')

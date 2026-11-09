@@ -1,0 +1,170 @@
+{
+  "cfg": {
+    "image_width": 800,
+    "image_height": 640,
+    "architecture_version": 2,
+    "feature_channels": 32,
+    "bev_channels": 64,
+    "head_channels": 32,
+    "backbone": "yolo26n",
+    "bev_normalization": "frozen_batchnorm",
+    "classification_mode": "objectness_softmax",
+    "foreground_label_smoothing": 0.05,
+    "feature_pixel_origin": 0.0,
+    "height_fusion": "concat",
+    "facing_loss": "unit_vector",
+    "mobile_width": 1.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "bev_resolution": 0.25,
+    "heights": [
+      0.4,
+      1.4,
+      2.4,
+      3.4
+    ],
+    "theta_max_degrees": 105.0,
+    "num_classes": 6,
+    "gaussian_overlap": 0.1,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "class_regression_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "regression_weights": [
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "quality_loss_weight": 0.5,
+    "yaw_norm_weight": 0.1,
+    "quality_score_power": 0.5,
+    "score_peak_mode": "fused",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 2,
+    "heading_loss_weight": 1.0,
+    "normalize_yaw_loss": false,
+    "class_balanced_losses": false,
+    "center_classification_weight": 1.0,
+    "heavy_classification_weight": 0.0,
+    "loss_normalization": "fixed_train_mean",
+    "mean_training_objects": 1.0,
+    "size_encoding": "class_relative",
+    "size_reference": [
+      4.5,
+      1.9,
+      1.6
+    ],
+    "class_size_priors": [
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0,
+        1.0,
+        1.0
+      ]
+    ],
+    "training_class_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "sampling_mode": "frame_presence",
+    "single_label": true,
+    "nms_iou_threshold": 0.25,
+    "max_detections": 150
+  },
+  "parameters": 1299249,
+  "convolution_MACs_per_four_camera_frame": {
+    "image_encoder": 7340800000,
+    "bev_detector": 3498467328
+  },
+  "total_convolution_GMACs": 10.839267328,
+  "output_shapes": [
+    [
+      1,
+      6,
+      384,
+      384
+    ],
+    [
+      1,
+      8,
+      384,
+      384
+    ],
+    [
+      1,
+      1,
+      384,
+      384
+    ],
+    [
+      1,
+      2,
+      384,
+      384
+    ],
+    [
+      1,
+      1,
+      384,
+      384
+    ]
+  ],
+  "transport_output_elements": 20054016,
+  "transport_output_MiB_by_dtype": {
+    "int8": 19.125,
+    "fp16": 38.25,
+    "fp32": 76.5
+  },
+  "fixed_geometry_MiB_fp32": 29.6640625,
+  "largest_conv_output_elements_batch_four_cameras": 8192000,
+  "host_CPU_reference_forward_seconds": 0.8593214390020876,
+  "limits": "MAC count excludes transport, resize, elementwise operations and NMS. Tensor sizes are not peak memory. CPU timing is not TDA4VH latency.",
+  "TDA4VH_status": "requires matching TIDL SDK compile/offload report, INT8 accuracy evaluation and device latency/memory measurements"
+}

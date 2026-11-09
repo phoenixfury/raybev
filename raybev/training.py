@@ -10,7 +10,7 @@ from .detection import in_bev_range
 
 
 def add_training_options(parser):
-    parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2'],default='resnet18')
+    parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2','yolo26n'],default='resnet18')
     parser.add_argument('--bev-normalization',choices=['batchnorm','frozen_batchnorm'],default='frozen_batchnorm')
     parser.add_argument('--height-fusion',choices=['pooled','concat'],default='concat',
                         help='Separate normalized height evidence; pooled is a lower-memory ablation')
@@ -20,7 +20,7 @@ def add_training_options(parser):
     parser.add_argument('--heading-teacher-weight',type=float,default=.2)
     parser.add_argument('--track-heading-weight',type=float,default=.1)
     parser.add_argument('--no-pretrained',action='store_true',help='Explicit random image initialization (ablation only)')
-    parser.add_argument('--backbone-weights',help='Matching TorchVision ResNet-18 or MobileNetV2 state_dict for offline training')
+    parser.add_argument('--backbone-weights',help='Trusted local TorchVision state_dict or official unfused COCO yolo26n.pt; no network needed')
     parser.add_argument('--backbone-lr-mult',type=float,default=.5)
     parser.add_argument('--freeze-image-stages',choices=['none','early','all'],default='none',
                         help='Generalization ablation: early freezes /8 and /16 backbone stages INCLUDING their BN statistics')
@@ -65,6 +65,8 @@ def initialize_recovery(model,cfg,args):
     if getattr(args,'resume',None):raise ValueError('--init-from and --resume are mutually exclusive')
     state=torch.load(source,map_location='cpu',weights_only=False)
     old=ModelConfig.from_checkpoint(state)
+    if old.backbone!=cfg.backbone:
+        raise ValueError('Backbone change requires a NEW pretrained run, without --init-from or --resume')
     allowed={'bev_normalization','heavy_classification_weight','loss_normalization',
              'mean_training_objects','size_encoding','size_reference','class_size_priors',
              'classification_mode','foreground_label_smoothing','center_classification_weight',

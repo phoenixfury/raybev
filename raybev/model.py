@@ -1,4 +1,4 @@
-"""RayBEV: ResNet-18 (or legacy MobileNetV2), fisheye height planes and 3D head.
+"""RayBEV: YOLO26n / ResNet-18 / MobileNetV2, fisheye planes and 3D head.
 
 The geometric view transform is a reference PyTorch implementation using
 fixed projection grids. It is NOT claimed to be TIDL-compatible as a graph;
@@ -141,6 +141,29 @@ class ResNet18Encoder(MobileNetEncoder):
         self.init_pyramid(cfg,128,256,512)
 
 
+class YOLO26nEncoder(MobileNetEncoder):
+    """Pretrained nano CNN stages + the shared geometry-conditioned RayBEV FPN.
+
+    The external RGB/ImageNet input contract remains identical to legacy models.
+    Restore RGB [0,1] BEFORE the YOLO stages, with no BGR swap or letterboxing.
+    Only layers 0..9 are retained: no self-attention or YOLO 2D detector.
+    """
+    def __init__(self,cfg,pretrained=False,backbone_weights=None):
+        nn.Module.__init__(self)
+        from .yolo26 import build_backbone,PROFILE
+        backbone,self.initialization=build_backbone(pretrained,backbone_weights)
+        self.backbone_profile=dict(PROFILE)
+        self.stage8=backbone[:5]
+        self.stage16=nn.Sequential(*list(backbone.children())[5:7])
+        self.stage32=nn.Sequential(*list(backbone.children())[7:10])
+        self.register_buffer('input_mean',torch.tensor([.485,.456,.406]).view(1,3,1,1),persistent=False)
+        self.register_buffer('input_std',torch.tensor([.229,.224,.225]).view(1,3,1,1),persistent=False)
+        self.init_pyramid(cfg,128,128,256)
+
+    def forward_single(self,x,geometry):
+        return super().forward_single(x*self.input_std+self.input_mean,geometry)
+
+
 class FisheyeRayTransport(nn.Module):
     def __init__(self, cfg, calibration_path):
         super().__init__()
@@ -273,7 +296,8 @@ class RayBEVLite(nn.Module):
     def __init__(self, cfg: ModelConfig, calibration_path, pretrained=False, backbone_weights=None):
         super().__init__()
         self.cfg = cfg.validate()
-        encoder=ResNet18Encoder if cfg.backbone=='resnet18' else MobileNetEncoder
+        encoder={'resnet18':ResNet18Encoder,'mobilenet_v2':MobileNetEncoder,
+                 'yolo26n':YOLO26nEncoder}[cfg.backbone]
         self.image_encoder = encoder(cfg,pretrained=pretrained,backbone_weights=backbone_weights)
         self.transport = FisheyeRayTransport(cfg, calibration_path)
         self.bev_detector = BEVDetector(cfg)

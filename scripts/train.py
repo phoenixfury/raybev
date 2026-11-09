@@ -89,6 +89,7 @@ def main():
     model=RayBEVLite(cfg,args.calibration,pretrained=not args.no_pretrained and not args.init_from,
                      backbone_weights=args.backbone_weights if not args.init_from else None).to(device)
     recovery=initialize_recovery(model,cfg,args)
+    print('Backbone initialization:',model.image_encoder.initialization,flush=True)
     loader=DataLoader(dataset,batch_size=args.batch_size,
                       shuffle=True,collate_fn=lambda examples:([x[0] for x in examples],
                                                                  [x[1] for x in examples]))

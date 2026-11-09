@@ -167,6 +167,7 @@ def main():
                      backbone_weights=args.backbone_weights if not args.resume and not args.init_from else None).to(device)
     recovery=initialize_recovery(model,cfg,args) if args.init_from else (state.get('warm_start') if state else None)
     initialization=state.get('backbone_initialization') if state else model.image_encoder.initialization
+    print('Backbone initialization:',initialization,flush=True)
     configure_image_training(model,args.freeze_image_stages)
     annotation_sha=annotation_hashes(train,val)
     print('Image stage freeze:',args.freeze_image_stages,'annotation SHA256:',annotation_sha,flush=True)

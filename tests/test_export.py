@@ -6,11 +6,13 @@ import torch
 from raybev import ModelConfig,RayBEVLite
 
 
-def test_exported_subgraphs_match_torch(tmp_path):
+@pytest.mark.parametrize('backbone',['resnet18','yolo26n'])
+def test_exported_subgraphs_match_torch(tmp_path,backbone):
     onnx=pytest.importorskip('onnx')
     ort=pytest.importorskip('onnxruntime')
     torch.set_num_threads(2)
-    cfg=ModelConfig().downscale(5)
+    if backbone=='yolo26n':pytest.importorskip('ultralytics')
+    cfg=ModelConfig(backbone=backbone).downscale(5)
     model=RayBEVLite(cfg,Path(__file__).parents[1]/'configs/calibration_baselink.json').eval()
     class RegisteredEncoder(torch.nn.Module):
         def __init__(self):
@@ -28,6 +30,9 @@ def test_exported_subgraphs_match_torch(tmp_path):
         graph=onnx.load(path);onnx.checker.check_model(graph)
         operators={n.op_type for n in graph.graph.node}
         assert not operators.intersection({'GridSample','LayerNormalization','Softmax','Attention'})
+        if name=='image' and backbone=='yolo26n':
+            assert not operators.intersection({'Shape','Gather','Div','MatMul'})
+            assert 'Split' in operators
         if name=='bev':assert not operators.intersection({'ReduceMean','ReduceSum','InstanceNormalization','BatchNormalization'})
         session=ort.InferenceSession(path,options,providers=['CPUExecutionProvider'])
         actual=session.run(None,{n:v.numpy() for n,v in zip(input_names,inputs)})
@@ -35,13 +40,15 @@ def test_exported_subgraphs_match_torch(tmp_path):
         for a,e in zip(actual,expected):np.testing.assert_allclose(a,e.numpy(),atol=1e-5,rtol=1e-4)
 
 
-def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monkeypatch):
+@pytest.mark.parametrize('backbone',['resnet18','yolo26n'])
+def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monkeypatch,backbone):
     pytest.importorskip('onnx')
     import importlib.util
     import json
     import sys
     torch.set_num_threads(2)
-    cfg=ModelConfig().downscale(5)
+    if backbone=='yolo26n':pytest.importorskip('ultralytics')
+    cfg=ModelConfig(backbone=backbone).downscale(5)
     calibration=Path(__file__).parents[1]/'configs/calibration_baselink.json'
     model=RayBEVLite(cfg,calibration).eval()
     checkpoint=tmp_path/'test.pt'
@@ -54,7 +61,11 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
                                   '--calibration',str(calibration),'--output',str(output)])
     export.main()
     metadata=json.loads((output/'metadata.json').read_text())
-    assert metadata['backbone']=='resnet18' and metadata['heading_encoding']=='axis_direction'
+    assert metadata['backbone']==backbone and metadata['heading_encoding']=='axis_direction'
+    if backbone=='yolo26n':
+        assert metadata['backbone_profile']['feature_layers']==[4,6,9]
+        assert metadata['backbone_profile']['self_attention'] is False
+        assert '[0,1]' in metadata['backbone_profile']['encoder_input']
     assert metadata['bev_normalization']=='frozen_batchnorm'
     assert metadata['height_fusion']=='concat' and metadata['feature_pixel_origin']==0
     assert metadata['facing_loss']=='unit_vector'
