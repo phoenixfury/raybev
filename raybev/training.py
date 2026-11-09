@@ -15,6 +15,8 @@ def add_training_options(parser):
     parser.add_argument('--height-fusion',choices=['pooled','concat'],default='concat',
                         help='Separate normalized height evidence; pooled is a lower-memory ablation')
     parser.add_argument('--heavy-classification-weight',type=float,default=0.)
+    parser.add_argument('--facing-loss',choices=['contrast','unit_vector','circular_bins'],default='unit_vector',
+                        help='Circular bins: 8-bin multimodal facing + continuous doubled-angle axis; host-only decoding')
     parser.add_argument('--init-from',help='Trusted local checkpoint: weights-only recovery, new optimizer/schedule/output; NOT --resume')
     parser.add_argument('--heading-teacher',help='Verified TRAIN-only ROSA heading cache from prepare_heading_teacher.py')
     parser.add_argument('--heading-teacher-weight',type=float,default=.2)
@@ -70,7 +72,10 @@ def initialize_recovery(model,cfg,args):
     allowed={'bev_normalization','heavy_classification_weight','loss_normalization',
              'mean_training_objects','size_encoding','size_reference','class_size_priors',
              'classification_mode','foreground_label_smoothing','center_classification_weight',
-             'feature_pixel_origin','height_fusion','facing_loss'}
+             'feature_pixel_origin','height_fusion','facing_loss','training_class_counts'}
+    circular_migration=(old.heading_encoding==cfg.heading_encoding=='axis_direction' and
+                        old.heading_bins==2 and cfg.heading_bins==8 and cfg.facing_loss=='circular_bins')
+    if circular_migration:allowed.add('heading_bins')
     differences={k for k,v in vars(cfg).items() if v!=getattr(old,k)}
     if differences-allowed:raise ValueError(f'Recovery architecture/data config mismatch: {sorted(differences-allowed)}')
     if (tuple(state.get('classes',()))!=CLASSES or state.get('box_frame')!=args.box_frame or
@@ -101,14 +106,18 @@ def initialize_recovery(model,cfg,args):
                 weights[key]=value.clone();added.append(key)
     if set(weights)!=set(current):raise ValueError('Recovery state keys differ; refusing partial model load')
     reset=[]
+    if circular_migration:
+        reset=['bev_detector.heading.1.weight','bev_detector.heading.1.bias']
+        for key in reset:weights[key]=current[key].clone()
     if (old.size_encoding!=cfg.size_encoding or
             (cfg.size_encoding=='shared_relative' and old.size_reference!=cfg.size_reference) or
             (cfg.size_encoding=='class_relative' and old.class_size_priors!=cfg.class_size_priors)):
         # Switching shared/class priors isn't one constant across examples.
         # Retain size features, but relearn the final residual projection.
-        reset=['bev_detector.size.1.weight','bev_detector.size.1.bias']
+        size_reset=['bev_detector.size.1.weight','bev_detector.size.1.bias']
+        reset+=size_reset
         if cfg.size_encoding not in ('shared_relative','class_relative'):raise ValueError('Unsupported recovery size migration')
-        for key in reset:weights[key]=torch.zeros_like(current[key])
+        for key in size_reset:weights[key]=torch.zeros_like(current[key])
     model.load_state_dict(weights,strict=True)
     model.image_encoder.initialization=state.get('backbone_initialization','recovery_checkpoint')
     report=dict(checkpoint=str(source),sha256=calibration_sha256(source),epoch=state.get('epoch'),

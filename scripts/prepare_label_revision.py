@@ -32,6 +32,7 @@ def gt_signature(document):
         value=[token,str(meta['sequence_id']),meta['temporal_split'],
                np.asarray(ann['gt_boxes'],dtype=float).tolist(),names_to_ids(ann['gt_names']).tolist(),
                list(map(str,ann['gt_ids']))]
+        if 'gt_ignore' in ann:value.append(np.asarray(ann['gt_ignore'],dtype=bool).tolist())
         digest.update(json.dumps(value,separators=(',',':'),allow_nan=False).encode());digest.update(b'\n')
     return digest.hexdigest()
 
@@ -70,7 +71,7 @@ def revise_document(document,rules,split):
 
 
 def counts(document,T):
-    raw=Counter();roi=Counter()
+    raw=Counter();roi=Counter();trainable=Counter();ignored=0
     for row in document['data_list']:
         ann=row['annos'];ids=names_to_ids(ann['gt_names'])
         boxes=boxes_to_baselink(np.asarray(ann['gt_boxes'])[:,:7],'CLIDAR',T)
@@ -78,7 +79,30 @@ def counts(document,T):
         keep=valid&(boxes[:,0]>=-48)&(boxes[:,0]<48)&(boxes[:,1]>=-48)&(boxes[:,1]<48)
         raw.update(CLASSES[int(i)] for i in ids)
         roi.update(CLASSES[int(i)] for i in ids[keep])
-    return dict(raw= dict(raw),in_range=dict(roi))
+        ignore=np.asarray(ann.get('gt_ignore',np.zeros(len(ids),dtype=bool)),dtype=bool)
+        trainable.update(CLASSES[int(i)] for i in ids[keep&~ignore]);ignored+=int((keep&ignore).sum())
+    return dict(raw=dict(raw),in_range=dict(roi),trainable_in_range=dict(trainable),ignored_in_range=ignored)
+
+
+def ignore_uncertain_tracks(document,rules,split):
+    """Preserve uncertain raw boxes; exclude TRAIN targets, never validation GT."""
+    counts=Counter();records=[]
+    lookup={(str(r['sequence_id']),str(r['track_id'])):r for r in rules}
+    if len(lookup)!=len(rules):raise ValueError('Duplicate ignore-track rule')
+    for row in document['data_list']:
+        ann=row['annos'];flags=np.asarray(ann.get('gt_ignore',np.zeros(len(ann['gt_ids']),dtype=bool)),dtype=bool).copy()
+        for i,uid in enumerate(ann['gt_ids']):
+            key=(str(row['metainfo']['sequence_id']),str(uid))
+            if key not in lookup:continue
+            if split!='train':raise ValueError('Ignore review may not alter validation GT')
+            if flags[i]:raise ValueError('Ignore review overlaps an existing ignore flag')
+            flags[i]=True;counts[key]+=1
+            records.append(dict(token=str(row['token']),track_id=key[1],sequence_id=key[0],box_index=i))
+        if flags.any():ann['gt_ignore']=flags
+    if split=='train':
+        for key,rule in lookup.items():
+            if counts[key]!=rule['expected_train_boxes']:raise ValueError(f'Ignore-track count mismatch: {key}')
+    return records
 
 
 def create_revision(root,rules_path,output,calibration=DEFAULT_CALIBRATION,write=False):
@@ -91,11 +115,12 @@ def create_revision(root,rules_path,output,calibration=DEFAULT_CALIBRATION,write
     if any((str(r['sequence_id']),str(r['track_id'])) in keep for r in rules):
         raise ValueError('Review attempts to change an explicitly protected Bus/Tram track')
     report=dict(type='raybev_annotation_revision_v1',rules_sha256=sha(rules_path),calibration_sha256=sha(calibration),
-                note='Class-only reviewed annotation fork; original geometry, images, tokens, IDs and splits unchanged.',splits={})
+                note='Reviewed classes and optional TRAIN ignore flags; original geometry, images, tokens, IDs and splits unchanged.',splits={})
     payloads={}
     for split in ('train','val'):
         source=root/('rosa/fisheye3dod_infos_'+split+'.pkl')
         original=load_annotations(source);revised,changes=revise_document(original,rules,split)
+        ignored=ignore_uncertain_tracks(revised,review.get('ignore_tracks',[]),split)
         # Make accidental box/token mutation a hard failure before publishing.
         for a,b in zip(original['data_list'],revised['data_list']):
             if a['token']!=b['token'] or not np.array_equal(a['annos']['gt_boxes'],b['annos']['gt_boxes']):
@@ -103,10 +128,10 @@ def create_revision(root,rules_path,output,calibration=DEFAULT_CALIBRATION,write
         before=counts(original,T);after=counts(revised,T)
         report['splits'][split]=dict(source=str(source),source_sha256=sha(source),raw_changes=len(changes),
                                     source_semantic_sha256=gt_signature(original),
-                                    before=before,after=after,changes=changes)
-        if changes:
+                                    before=before,after=after,changes=changes,ignored_boxes=ignored)
+        if changes or ignored:
             revised.setdefault('metainfo',{})['label_review_sha256']=report['rules_sha256']
-        payloads[split]=(source,revised,changes)
+        payloads[split]=(source,revised,changes or ignored)
     if write:
         output.mkdir(parents=True)
         for split,(source,revised,changes) in payloads.items():
@@ -144,7 +169,11 @@ def main():
     if a.write and a.verify:p.error('--write and --verify are mutually exclusive')
     report=verify_revision(a.root,a.output,a.calibration) if a.verify else create_revision(a.root,a.rules,a.output,a.calibration,a.write)
     print('VERIFIED' if a.verify else 'WROTE' if a.write else 'DRY RUN',a.output)
-    for split,r in report['splits'].items():print(split,'raw class changes',r['raw_changes'],'ROI counts',r['before']['in_range'],'->',r['after']['in_range'])
+    for split,r in report['splits'].items():
+        print(split,'raw class changes',r['raw_changes'],'ROI counts',r['before']['in_range'],'->',r['after']['in_range'])
+        if r['after'].get('ignored_in_range',0):
+            print(split,'trainable ROI counts',r['after']['trainable_in_range'],
+                  'ignored raw/ROI boxes',len(r.get('ignored_boxes',[])),r['after']['ignored_in_range'])
 
 
 if __name__=='__main__':main()

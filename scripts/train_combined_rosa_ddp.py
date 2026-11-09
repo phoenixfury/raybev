@@ -282,6 +282,7 @@ def main():
             torch.cuda.manual_seed_all(args.seed + rank)
             torch.backends.cudnn.benchmark = False  # conservative VRAM; enable only after profiling
         cfg = ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
+                          facing_loss=args.facing_loss,heading_bins=8 if args.facing_loss=='circular_bins' else 2,
                           heavy_classification_weight=args.heavy_classification_weight).validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)

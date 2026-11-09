@@ -6,13 +6,13 @@ import torch
 from raybev import ModelConfig,RayBEVLite
 
 
-@pytest.mark.parametrize('backbone',['resnet18','yolo26n'])
-def test_exported_subgraphs_match_torch(tmp_path,backbone):
+@pytest.mark.parametrize('backbone,facing',[('resnet18','unit_vector'),('yolo26n','unit_vector'),('yolo26n','circular_bins')])
+def test_exported_subgraphs_match_torch(tmp_path,backbone,facing):
     onnx=pytest.importorskip('onnx')
     ort=pytest.importorskip('onnxruntime')
     torch.set_num_threads(2)
     if backbone=='yolo26n':pytest.importorskip('ultralytics')
-    cfg=ModelConfig(backbone=backbone).downscale(5)
+    cfg=ModelConfig(backbone=backbone,facing_loss=facing,heading_bins=8 if facing=='circular_bins' else 2).downscale(5)
     model=RayBEVLite(cfg,Path(__file__).parents[1]/'configs/calibration_baselink.json').eval()
     class RegisteredEncoder(torch.nn.Module):
         def __init__(self):
@@ -40,15 +40,15 @@ def test_exported_subgraphs_match_torch(tmp_path,backbone):
         for a,e in zip(actual,expected):np.testing.assert_allclose(a,e.numpy(),atol=1e-5,rtol=1e-4)
 
 
-@pytest.mark.parametrize('backbone',['resnet18','yolo26n'])
-def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monkeypatch,backbone):
+@pytest.mark.parametrize('backbone,facing',[('resnet18','unit_vector'),('yolo26n','unit_vector'),('yolo26n','circular_bins')])
+def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monkeypatch,backbone,facing):
     pytest.importorskip('onnx')
     import importlib.util
     import json
     import sys
     torch.set_num_threads(2)
     if backbone=='yolo26n':pytest.importorskip('ultralytics')
-    cfg=ModelConfig(backbone=backbone).downscale(5)
+    cfg=ModelConfig(backbone=backbone,facing_loss=facing,heading_bins=8 if facing=='circular_bins' else 2).downscale(5)
     calibration=Path(__file__).parents[1]/'configs/calibration_baselink.json'
     model=RayBEVLite(cfg,calibration).eval()
     checkpoint=tmp_path/'test.pt'
@@ -73,7 +73,7 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
         assert '[0,1]' in metadata['backbone_profile']['encoder_input']
     assert metadata['bev_normalization']=='frozen_batchnorm'
     assert metadata['height_fusion']=='concat' and metadata['feature_pixel_origin']==0
-    assert metadata['facing_loss']=='unit_vector'
+    assert metadata['facing_loss']==facing
     assert metadata['bev_input_channels']==136
     assert metadata['size_encoding']=='class_relative'
     assert metadata['classification_mode']=='objectness_softmax'
@@ -84,5 +84,6 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     import onnx
     graph=onnx.load(str(output/'bev_detector.onnx'))
     outputs={o.name:o for o in graph.graph.output}
-    assert outputs['facing_vector'].type.tensor_type.shape.dim[1].dim_value==2
+    facing_name='facing_bin_logits' if facing=='circular_bins' else 'facing_vector'
+    assert outputs[facing_name].type.tensor_type.shape.dim[1].dim_value==cfg.heading_bins
     assert outputs['objectness_logits'].type.tensor_type.shape.dim[1].dim_value==1

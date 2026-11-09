@@ -1,0 +1,514 @@
+{
+  "type": "raybev_track_class_review_v1",
+  "approved": true,
+  "approval": "User requested TRAIN Bus/Truck label correction; cargo trucks -> Truck and trams -> Bus were explicitly approved. Only visually identified cargo trucks are changed; no inferred geometry/heading corrections or deletions. Uncertain TRAIN targets are preserved with gt_ignore flags, not deleted or treated as background.",
+  "taxonomy": {
+    "tram": "Bus",
+    "cargo_truck": "Truck"
+  },
+  "evidence": "analysis/v5_train_review_evidence/evidence.json; 159 TRAIN track contact-sheet candidates inspected and 41 tracks checked across up to three frames.",
+  "rules": [
+    {
+      "sequence_id": "17_09",
+      "track_id": "932",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 0,
+        "val": 10
+      },
+      "reason": "Previously approved validation cargo-truck correction; unchanged."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2722",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 0,
+        "val": 43
+      },
+      "reason": "Previously approved validation cargo-truck correction; unchanged."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2724",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 0,
+        "val": 5
+      },
+      "reason": "Previously approved validation cargo-truck correction; unchanged."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1366",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 9,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck; three-frame visual review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1378",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 2,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck visible in both observations."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1411",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 9,
+        "val": 0
+      },
+      "reason": "Rear of white box-bodied cargo truck; three-frame visual review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1442",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 18,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck; three-frame visual review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1444",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 5,
+        "val": 0
+      },
+      "reason": "Moving white box-bodied cargo truck; central frame resolves body; end observations partly occluded."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1755",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 2,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck visible in both observations."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1832",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 12,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck, not passenger bus; later view occluded."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "2008",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 7,
+        "val": 0
+      },
+      "reason": "Red fire/service cargo truck, no passenger body; three-frame visual review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "2099",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 9,
+        "val": 0
+      },
+      "reason": "Heavy utility/cargo truck, not passenger bus; three-frame visual review."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "612",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 1,
+        "val": 0
+      },
+      "reason": "White box-bodied cargo truck in native single observation."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "694",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 8,
+        "val": 0
+      },
+      "reason": "Blue tank/utility truck with white cab, not bus; later view occluded."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2203",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 6,
+        "val": 0
+      },
+      "reason": "Dark box-bodied cargo truck; three-frame visual review."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2231",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 1,
+        "val": 0
+      },
+      "reason": "Black tanker truck with visible chassis and tank, not bus."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2234",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 3,
+        "val": 0
+      },
+      "reason": "Orange dump/cargo truck; all three observations inspected."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2237",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 5,
+        "val": 0
+      },
+      "reason": "Long cargo truck/trailer, not passenger bus; three-frame review."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2254",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 4,
+        "val": 0
+      },
+      "reason": "Red tractor/trailer cab, not bus; subsequent views occluded."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2259",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 8,
+        "val": 0
+      },
+      "reason": "White semi tractor/trailer, not passenger bus; clear central view."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2298",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 12,
+        "val": 0
+      },
+      "reason": "SITRAK heavy cargo truck, front visible in central/final observations."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2303",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 17,
+        "val": 0
+      },
+      "reason": "SITRAK heavy cargo truck, front visible across three observations."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2305",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 20,
+        "val": 0
+      },
+      "reason": "SITRAK heavy cargo truck, front visible across three observations."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2306",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 13,
+        "val": 0
+      },
+      "reason": "SITRAK heavy cargo truck, front visible across three observations."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2308",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 19,
+        "val": 0
+      },
+      "reason": "SITRAK heavy cargo truck, front visible in early/central observations; final view occluded."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2453",
+      "from": "Bus",
+      "to": "Truck",
+      "expected_raw_changes": {
+        "train": 1,
+        "val": 0
+      },
+      "reason": "Crane/utility truck cab and chassis, not passenger bus."
+    }
+  ],
+  "keep_bus_tracks": [
+    {
+      "sequence_id": "17_09",
+      "track_id": "910"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "914"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "980"
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1218"
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1302"
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1600"
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "2083"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "370"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "415"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "496"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "505"
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "771"
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2204"
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2273"
+    }
+  ],
+  "unresolved_do_not_change": [
+    {
+      "sequence_id": "16_09",
+      "track_id": "1193",
+      "reason": "Track appears on different Car/Van vehicles across observations; cannot apply one track-wide class correction."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1220",
+      "reason": "Car in one observation but changing dimensions/vehicle association elsewhere; needs per-frame 3D review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1467",
+      "reason": "Cargo truck/van occlusion and changing target association; not certified track-wide."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1469",
+      "reason": "Cargo truck behind a van; later projections have insufficient support for track-wide correction."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1700",
+      "reason": "Projections drift onto trees/road; do not invent a replacement class or delete without 3D review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "2087",
+      "reason": "Cargo truck visible but projections/heading drift across observations; needs per-frame geometry review."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "175",
+      "reason": "Projection moves between truck and foreground car; no track-wide class correction."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "430",
+      "reason": "Orange construction vehicle; exact subtype/taxonomy unresolved."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "448",
+      "reason": "Orange construction vehicle; exact subtype/taxonomy unresolved."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "507",
+      "reason": "Car-like crop but large fluctuating pseudo dimensions and target drift; needs per-frame review."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2191",
+      "reason": "Track appears on van and Car in different observations; no track-wide correction."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2608",
+      "reason": "Foreground car with large bus-sized box; cannot repair geometry from crops alone."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2616",
+      "reason": "SUV-like appearance but 12m bus-sized geometry; per-frame geometry review required."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "1003",
+      "reason": "Previously unresolved validation facade projection; untouched."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "1008",
+      "reason": "Previously unresolved validation occlusion; untouched."
+    }
+  ],
+  "limits": "This is a conservative class-only correction, not certification of every TRAIN annotation. Contact-sheet-only tracks, occluded boxes, unreviewed geometry and direction labels remain unchanged. No validation labels are used to fit the network or priors. Thirteen explicitly unresolved TRAIN tracks are ignored for foreground and dense-background loss in a conservative footprint envelope; validation ignores are forbidden.",
+  "ignore_tracks": [
+    {
+      "sequence_id": "16_09",
+      "track_id": "1193",
+      "expected_train_boxes": 45,
+      "reason": "Track appears on different Car/Van vehicles across observations; cannot apply one track-wide class correction."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1220",
+      "expected_train_boxes": 8,
+      "reason": "Car in one observation but changing dimensions/vehicle association elsewhere; needs per-frame 3D review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1467",
+      "expected_train_boxes": 13,
+      "reason": "Cargo truck/van occlusion and changing target association; not certified track-wide."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1469",
+      "expected_train_boxes": 10,
+      "reason": "Cargo truck behind a van; later projections have insufficient support for track-wide correction."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "1700",
+      "expected_train_boxes": 7,
+      "reason": "Projections drift onto trees/road; do not invent a replacement class or delete without 3D review."
+    },
+    {
+      "sequence_id": "16_09",
+      "track_id": "2087",
+      "expected_train_boxes": 13,
+      "reason": "Cargo truck visible but projections/heading drift across observations; needs per-frame geometry review."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "175",
+      "expected_train_boxes": 6,
+      "reason": "Projection moves between truck and foreground car; no track-wide class correction."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "430",
+      "expected_train_boxes": 1,
+      "reason": "Orange construction vehicle; exact subtype/taxonomy unresolved."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "448",
+      "expected_train_boxes": 6,
+      "reason": "Orange construction vehicle; exact subtype/taxonomy unresolved."
+    },
+    {
+      "sequence_id": "17_09",
+      "track_id": "507",
+      "expected_train_boxes": 3,
+      "reason": "Car-like crop but large fluctuating pseudo dimensions and target drift; needs per-frame review."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2191",
+      "expected_train_boxes": 14,
+      "reason": "Track appears on van and Car in different observations; no track-wide correction."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2608",
+      "expected_train_boxes": 5,
+      "reason": "Foreground car with large bus-sized box; cannot repair geometry from crops alone."
+    },
+    {
+      "sequence_id": "30_09",
+      "track_id": "2616",
+      "expected_train_boxes": 1,
+      "reason": "SUV-like appearance but 12m bus-sized geometry; per-frame geometry review required."
+    }
+  ]
+}

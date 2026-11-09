@@ -1,0 +1,211 @@
+{
+  "type": "three_step_structural_smoke_NOT_accuracy",
+  "cfg": {
+    "image_width": 800,
+    "image_height": 640,
+    "architecture_version": 2,
+    "feature_channels": 32,
+    "bev_channels": 64,
+    "head_channels": 32,
+    "backbone": "yolo26n",
+    "bev_normalization": "frozen_batchnorm",
+    "classification_mode": "objectness_softmax",
+    "foreground_label_smoothing": 0.05,
+    "feature_pixel_origin": 0.0,
+    "height_fusion": "concat",
+    "facing_loss": "circular_bins",
+    "mobile_width": 1.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "bev_resolution": 0.25,
+    "heights": [
+      0.4,
+      1.4,
+      2.4,
+      3.4
+    ],
+    "theta_max_degrees": 105.0,
+    "num_classes": 6,
+    "gaussian_overlap": 0.1,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "class_regression_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "regression_weights": [
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "quality_loss_weight": 0.5,
+    "yaw_norm_weight": 0.1,
+    "quality_score_power": 0.5,
+    "score_peak_mode": "fused",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 8,
+    "heading_loss_weight": 1.0,
+    "normalize_yaw_loss": false,
+    "class_balanced_losses": false,
+    "center_classification_weight": 1.0,
+    "heavy_classification_weight": 0.0,
+    "loss_normalization": "fixed_train_mean",
+    "mean_training_objects": 10.947451808819647,
+    "size_encoding": "class_relative",
+    "size_reference": [
+      4.468478202819824,
+      1.8792428970336914,
+      1.6321632862091064
+    ],
+    "class_size_priors": [
+      [
+        4.471713066101074,
+        1.8805935382843018,
+        1.6249220371246338
+      ],
+      [
+        0.6595679521560669,
+        0.6366538405418396,
+        1.75
+      ],
+      [
+        2.11226224899292,
+        0.7368677258491516,
+        1.48087739944458
+      ],
+      [
+        5.877209186553955,
+        2.2231996059417725,
+        2.307284116744995
+      ],
+      [
+        4.548810005187988,
+        2.074049949645996,
+        2.057434558868408
+      ],
+      [
+        12.008541107177734,
+        3.01151704788208,
+        3.4954521656036377
+      ]
+    ],
+    "training_class_counts": [
+      38155,
+      1849,
+      144,
+      915,
+      58,
+      337
+    ],
+    "sampling_mode": "frame_presence",
+    "single_label": true,
+    "nms_iou_threshold": 0.25,
+    "max_detections": 150
+  },
+  "warm_start": {
+    "checkpoint": "work_dirs/raybev_v5_yolo26n_48m_clidar_2x3080ti/best_heading.pt",
+    "sha256": "c356c06986f578e22065fd053cadf6e1c6bfe1c863bdb5d278ee7b7a9acf0e4f",
+    "epoch": 3,
+    "changed_config": [
+      "class_size_priors",
+      "facing_loss",
+      "heading_bins",
+      "mean_training_objects",
+      "size_reference",
+      "training_class_counts"
+    ],
+    "reset_parameters": [
+      "bev_detector.heading.1.weight",
+      "bev_detector.heading.1.bias",
+      "bev_detector.size.1.weight",
+      "bev_detector.size.1.bias"
+    ],
+    "initialized_parameters": []
+  },
+  "steps": [
+    {
+      "index": 3269,
+      "token": "1790763355298697113",
+      "loss": 4.587407112121582,
+      "gradient_norm": 22.73341178894043,
+      "loss_scale": 8192.0,
+      "teacher_centers": 7,
+      "track_centers": 8,
+      "ignored_boxes": 0,
+      "heading_shape": [
+        1,
+        8,
+        384,
+        384
+      ]
+    },
+    {
+      "index": 1459,
+      "token": "1789634266170344804",
+      "loss": 7.6467437744140625,
+      "gradient_norm": 22.014768600463867,
+      "loss_scale": 8192.0,
+      "teacher_centers": 5,
+      "track_centers": 9,
+      "ignored_boxes": 0,
+      "heading_shape": [
+        1,
+        8,
+        384,
+        384
+      ]
+    },
+    {
+      "index": 96,
+      "token": "1789552788129372680",
+      "loss": 5.055768013000488,
+      "gradient_norm": 24.78656768798828,
+      "loss_scale": 8192.0,
+      "teacher_centers": 4,
+      "track_centers": 4,
+      "ignored_boxes": 1,
+      "heading_shape": [
+        1,
+        8,
+        384,
+        384
+      ]
+    }
+  ],
+  "amp_backoffs": [
+    {
+      "index": 3269,
+      "old_scale": 65536.0,
+      "new_scale": 32768.0
+    },
+    {
+      "index": 3269,
+      "old_scale": 32768.0,
+      "new_scale": 16384.0
+    },
+    {
+      "index": 3269,
+      "old_scale": 16384.0,
+      "new_scale": 8192.0
+    }
+  ],
+  "frozen_weights_and_BN_unchanged": true,
+  "peak_cuda_allocated_MiB": 1558.8857421875
+}

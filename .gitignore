@@ -1,4 +1,5 @@
 __pycache__
 *.pyc
 work_dirs
-teacher
+# Keep compact heading caches in Git; exclude bulky raw ROSA audit outputs.
+/teacher/*_rosa_inference/

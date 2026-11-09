@@ -76,6 +76,7 @@ def main():
     args=build_parser().parse_args()
     args.lidar_calibration=args.lidar_calibration or args.calibration
     cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
+                    facing_loss=args.facing_loss,heading_bins=8 if args.facing_loss=='circular_bins' else 2,
                     heavy_classification_weight=args.heavy_classification_weight).validate()
     if args.heading_teacher:raise ValueError('NPZ inputs lack tokens/track poses; use the combined trainer for ROSA distillation')
     print(f'Backbone={cfg.backbone}; heading={cfg.heading_encoding}; NPZ teacher/track supervision unavailable',flush=True)

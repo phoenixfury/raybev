@@ -45,8 +45,9 @@ def main():
                       output_names=['feature_map','confidence_logits'],opset_version=17)
     cin=cfg.bev_input_channels
     axis_heading=cfg.heading_bins and cfg.heading_encoding=='axis_direction'
+    circular_heading=axis_heading and cfg.facing_loss=='circular_bins'
     decoupled=cfg.classification_mode=='objectness_softmax'
-    output_names=['class_logits' if decoupled else 'heatmap_logits','regression','quality_logits']+(['facing_vector' if axis_heading else 'heading_logits'] if cfg.heading_bins else [])
+    output_names=['class_logits' if decoupled else 'heatmap_logits','regression','quality_logits']+(['facing_bin_logits' if circular_heading else 'facing_vector' if axis_heading else 'heading_logits'] if cfg.heading_bins else [])
     if decoupled:output_names.append('objectness_logits')
     torch.onnx.export(model.bev_detector,torch.zeros(1,cin,cfg.bev_height,cfg.bev_width),
                       str(out/'bev_detector.onnx'),input_names=['bev_features'],
@@ -90,9 +91,12 @@ def main():
              'bev_normalization':cfg.bev_normalization,
              'heading_bins':cfg.heading_bins,
              'facing_loss':cfg.facing_loss,
-             'heading_decode':('axis=0.5*atan2(sin_2yaw,cos_2yaw); yaw=wrap(axis + pi if dot(facing_vector,[sin(axis),cos(axis)])<0 else axis)' if axis_heading else
+             'heading_bin_centers_radians':([i*2*np.pi/cfg.heading_bins for i in range(cfg.heading_bins)] if circular_heading else None),
+             'heading_decode':('axis=0.5*atan2(sin_2yaw,cos_2yaw); mode=argmax(facing_bin_logits)*2*pi/heading_bins; yaw=wrap(axis + pi if cos(mode-axis)<0 else axis)' if circular_heading else
+                 'axis=0.5*atan2(sin_2yaw,cos_2yaw); yaw=wrap(axis + pi if dot(facing_vector,[sin(axis),cos(axis)])<0 else axis)' if axis_heading else
                  'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)'),
-             'heading_confidence':('sigmoid(2*abs(dot(facing_vector,[sin(axis),cos(axis)]))); uncalibrated, separate from object score' if axis_heading else
+             'heading_confidence':('p=sum(softmax(facing_bin_logits)[cos(bin_center-axis)>=0]); p if cos(mode-axis)>=0 else 1-p; uncalibrated, host-only, separate from object score' if circular_heading else
+                 'sigmoid(2*abs(dot(facing_vector,[sin(axis),cos(axis)]))); uncalibrated, separate from object score' if axis_heading else
                  'max(softmax(heading_logits)); separate from object score' if cfg.heading_bins else 'not available'),
              'training_only_components_excluded':['ROSA teacher','track IDs','world poses','heading distillation','track consistency'],
              'size_encoding':cfg.size_encoding,'class_size_priors_LWH_m':cfg.class_size_priors,

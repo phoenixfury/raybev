@@ -1,5 +1,11 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
+**V5 results / next paired experiment: [TASK_V5_1.md](TASK_V5_1.md).**
+V5 peaks at 6.24% mAP but overfits Truck/Bus and has front/back errors. V5.1
+adds a reviewed TRAIN fork with safe ignore masks and opt-in circular facing;
+`scripts/launch_v5_1_review_heading.sh [control|heading]` uses a separate output
+and weights-only recovery from v5 epoch 3. Existing runs/defaults are preserved.
+
 **YOLO26n pretrained backbone option: [TASK_V5_YOLO26N.md](TASK_V5_YOLO26N.md).**
 The TDA-oriented convolutional subset retains official YOLO26n layers 0–9,
 omitting C2PSA/2D heads. Start fresh with `scripts/launch_v5_yolo26n.sh`;

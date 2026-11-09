@@ -127,6 +127,7 @@ def main():
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
     if torch.cuda.is_available():torch.cuda.manual_seed_all(args.seed)
     cfg=ModelConfig(backbone=args.backbone,bev_normalization=args.bev_normalization,height_fusion=args.height_fusion,
+                    facing_loss=args.facing_loss,heading_bins=8 if args.facing_loss=='circular_bins' else 2,
                     heavy_classification_weight=args.heavy_classification_weight).validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
     print(f'Task recipe 4.3: backbone={cfg.backbone}; lattice_origin={cfg.feature_pixel_origin}; heights={cfg.height_fusion}; facing_loss={cfg.facing_loss}; classification={cfg.classification_mode}; heading={cfg.heading_encoding}; BEV_norm={cfg.bev_normalization}; '

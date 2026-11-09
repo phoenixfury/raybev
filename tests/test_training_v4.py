@@ -31,9 +31,10 @@ def script(name):
 @pytest.mark.parametrize('recovery',[False,True])
 @pytest.mark.parametrize('freeze',['none','early'])
 @pytest.mark.parametrize('backbone',['resnet18','yolo26n'])
-def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch,recovery,freeze,backbone):
+@pytest.mark.parametrize('facing',['unit_vector','circular_bins'])
+def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_contract(tmp_path,monkeypatch,recovery,freeze,backbone,facing):
     if backbone=='yolo26n':pytest.importorskip('ultralytics')
-    cfg=ModelConfig(backbone=backbone).downscale(5);rows=[]
+    cfg=ModelConfig(backbone=backbone,facing_loss=facing,heading_bins=8 if facing=='circular_bins' else 2).downscale(5);rows=[]
     for i in range(3):
         cameras={}
         for j,cam in enumerate(CAMERAS):
@@ -75,6 +76,7 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     monkeypatch.setattr(sys,'argv',['train','--root',str(tmp_path),'--train-ann','train.pkl','--val-ann','val.pkl',
         '--epochs','1','--batch-size','1','--workers','0','--no-balance','--no-augmentation',
         '--backbone',backbone,
+        '--facing-loss',facing,
         '--freeze-image-stages',freeze,
         '--warmup-steps','0','--heading-teacher',str(cachefile),'--out',str(out),'--progress','off']+
         (extra if recovery else ['--no-pretrained']))

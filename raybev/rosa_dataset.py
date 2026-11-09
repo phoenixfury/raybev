@@ -91,7 +91,7 @@ def boxes_to_baselink(boxes,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_ref
     return boxes
 
 
-def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_reference='center'):
+def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_reference='center',only_ignored=False):
     annos=sample.get('annos',{})
     for key in ('gt_boxes','gt_boxes_3d','boxes_3d'):
         if key in annos:
@@ -111,6 +111,11 @@ def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,
     boxes=boxes_to_baselink(arr,box_frame,T_base_clidar,z_reference)
     # Local visibility is clipped later by target encoder, but remove malformed boxes.
     keep=np.isfinite(boxes).all(axis=1)&(boxes[:,3:6]>0).all(axis=1)
+    ignored=np.asarray(annos.get('gt_ignore',np.zeros(len(boxes),dtype=bool)),dtype=bool)
+    if ignored.shape!=(len(boxes),):raise ValueError('gt_ignore must match annotation boxes')
+    if ignored.any() and sample.get('metainfo',{}).get('temporal_split')!='train':
+        raise ValueError('Ignored annotations are TRAIN-only; validation GT must remain complete')
+    keep&=ignored if only_ignored else ~ignored
     out=np.concatenate((boxes[keep],labels[keep,None].astype(np.float64)),axis=1)
     return torch.as_tensor(out,dtype=torch.float32)
 
@@ -154,14 +159,16 @@ class RosaCombinedDataset(Dataset):
         self.range_filtered_boxes=0
         self.gt_counts={name:0 for name in CLASSES}
         # Precache compact GT tensors; this also rejects mismatched taxonomies before training.
-        self.boxes=[]
+        self.boxes=[];self.ignore_boxes=[]
         for s in self.rows:
             b=parse_box_annotations(s,self.box_frame,self.T_base_clidar,self.z_reference)
+            ignored=parse_box_annotations(s,self.box_frame,self.T_base_clidar,self.z_reference,only_ignored=True)
             if cfg is not None:
                 keep=in_bev_range(b,cfg)
                 self.range_filtered_boxes+=int((~keep).sum())
                 b=b[keep]
             self.boxes.append(b)
+            self.ignore_boxes.append(ignored)
             for i in range(len(CLASSES)):
                 self.gt_counts[CLASSES[i]]+=int((b[:,-1]==i).sum())
 
@@ -190,7 +197,14 @@ class RosaCombinedDataset(Dataset):
             # Photometry only: pixel coordinates and the OpenCV LUT stay fixed.
             images=photometric_augment(images)
         images=normalize_imagenet(images[None])[0]
-        return images,self.boxes[index],str(sample['token'])
+        boxes=self.boxes[index]
+        if len(self.ignore_boxes[index]):
+            # Internal -1 sentinel reaches target construction ONLY, never class
+            # priors, metrics or teacher matching. Do not turn uncertain GT into
+            # either foreground supervision or a dense background penalty.
+            ignored=self.ignore_boxes[index].clone();ignored[:,7]=-1
+            boxes=torch.cat((boxes,ignored))
+        return images,boxes,str(sample['token'])
 
 
 def collate_samples(examples):

@@ -250,7 +250,8 @@ class BEVDetector(nn.Module):
         self.quality = head(1)
         # Regression channels: offset_r,c (2), z (1), log_lwh (3),
         # sin(2*yaw),cos(2*yaw) axis in recipe 4, local bin residual in v3,
-        # global sin/cos for legacy v2. Facing features are a separate output.
+        # global sin/cos for legacy v2. Facing is a separate two-vector or an
+        # opt-in eight-bin distribution; circular decoding runs on the host.
         # At 384x384 most cells are background. A 1% initial probability avoids
         # the dense-negative spike produced by the old 10% prior on this grid.
         nn.init.normal_(self.heatmap[-1].weight,std=.001)

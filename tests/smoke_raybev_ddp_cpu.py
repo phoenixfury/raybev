@@ -16,7 +16,9 @@ def main():
     dist.init_process_group('gloo')
     try:
         torch.manual_seed(21)
-        cfg=ModelConfig(backbone=os.environ.get('RAYBEV_BACKBONE','resnet18')).downscale(5)
+        facing=os.environ.get('RAYBEV_FACING_LOSS','unit_vector')
+        cfg=ModelConfig(backbone=os.environ.get('RAYBEV_BACKBONE','resnet18'),facing_loss=facing,
+                        heading_bins=8 if facing=='circular_bins' else 2).downscale(5)
         model=RayBEVLite(cfg,str(Path(__file__).resolve().parents[1]/'configs/calibration_baselink.json'))
         mode=os.environ.get('RAYBEV_FREEZE_IMAGE_STAGES','none')
         configure_image_training(model,mode)
@@ -26,6 +28,8 @@ def main():
             ddp.zero_grad(set_to_none=True)
             box=[4.,1.,1.6,10.,2.8,3.5,.1,5.] if step==0 else [4.,1.,1.3,7.,2.5,2.8,.1,3.]
             gt=[torch.tensor([box]) if (rank+step)%2==0 else torch.empty(0,8)]
+            if os.environ.get('RAYBEV_IGNORE_SMOKE')=='1':
+                gt=[torch.cat((gt[0],torch.tensor([[-5.,-4.,1.,8.,3.,3.,.2,-1.]])))]
             output=ddp(x)
             targets=make_targets(gt,cfg,return_class_ids=True)
             loss,_=detection_loss(output,targets,cfg=cfg)

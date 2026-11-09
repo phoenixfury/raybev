@@ -6,7 +6,7 @@ across DDP ranks, including an empty validation shard, without averaging ratios.
 import math
 import torch
 from .config import CLASSES
-from .detection import decode_heading,decode_sizes
+from .detection import decode_heading,decode_sizes,facing_direction
 
 
 @torch.no_grad()
@@ -31,6 +31,7 @@ def center_statistics(output,targets,cfg):
     actual_l=decode_sizes(pred[:,3:6],winner,cfg)[:,0]/gt_size[:,0]
     perp=norm=wrong=unstable=torch.zeros_like(obj)
     if cfg.heading_bins and cfg.heading_encoding=='axis_direction':
+        facing=facing_direction(facing,cfg)
         projection=(facing*truth[:,6:8]).sum(-1)
         perp=(facing*torch.stack((truth[:,7],-truth[:,6]),-1)).sum(-1).abs()
         norm=facing.norm(dim=-1);wrong=(projection<0).float()

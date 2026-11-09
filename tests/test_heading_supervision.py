@@ -68,6 +68,37 @@ def test_track_reference_rotates_world_heading_back_into_current_baselink(scene)
         assert abs(math.atan2(math.sin(yaw-expected),math.cos(yaw-expected)))<.002
 
 
+def test_reviewed_teacher_rebind_remaps_only_classes_drops_ignored_and_preserves_yaws(scene,tmp_path):
+    from copy import deepcopy
+    ds,cfg,args,_,_,_,original=scene
+    path=Path(__file__).parents[1]/'scripts/rebind_heading_teacher.py'
+    spec=importlib.util.spec_from_file_location('rebind_test',path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    doc=deepcopy(ds.annotation);doc['data_list'][0]['annos']['gt_ignore']=[True]
+    doc['data_list'][1]['annos']['gt_names']=['Truck']
+    ann=tmp_path/'reviewed.pkl'
+    with ann.open('wb') as f:pickle.dump(doc,f)
+    revised=RosaCombinedDataset(tmp_path,ann,calibration=DEFAULT_CALIBRATION,cfg=cfg)
+    assert revised.gt_counts['car']==0 and revised.gt_counts['truck']==1 and len(revised.ignore_boxes[0])==1
+    cache=module.rebind(ds,revised,args.heading_teacher)
+    assert cache['frames']['0']==[] and cache['frames']['1'][0]['gt'][7]==3
+    assert cache['frames']['1'][0]['yaw']==original['frames']['1'][0]['yaw']
+    assert cache['teacher_checkpoint_sha256']==original['teacher_checkpoint_sha256']
+    assert cache['predictions_sha256']==original['predictions_sha256']
+    assert cache['reviewed_rebind']['remapped_class_records']==cache['reviewed_rebind']['dropped_ignored_records']==1
+    rebound=tmp_path/'rebound.json';rebound.write_text(json.dumps(cache));args.heading_teacher=str(rebound)
+    circular=replace(cfg,facing_loss='circular_bins',heading_bins=8)
+    supervisor=HeadingSupervision(revised,circular,args)
+    output=[torch.zeros(2,c,cfg.bev_height,cfg.bev_width,requires_grad=True) for c in (6,8,1,8)]
+    targets=make_targets(revised.boxes,circular,return_class_ids=True)
+    loss,parts=supervisor.loss(output,targets,['0','1']);loss.backward()
+    assert parts['teacher_centers']==1 and output[3].grad.abs().sum()>0 and torch.isfinite(output[3].grad).all()
+    # Rebinding cannot be used as a way to bless a changed box or token.
+    revised.rows[1]['annos']['gt_boxes'][0,0]+=.1
+    with pytest.raises(ValueError,match='geometry'):
+        module.rebind(ds,revised,Path(scene[2].heading_teacher).parent/'teacher.json')
+
+
 @pytest.mark.parametrize('field,value',[
     ('split','val'),('training_boxes_sha256','wrong'),('camera_calibration_sha256','wrong'),
     ('lidar_calibration_sha256','wrong'),('box_frame','BASELINK'),('z_reference','bottom')])

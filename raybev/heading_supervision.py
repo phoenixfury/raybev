@@ -28,6 +28,7 @@ def track_references(dataset,calibration):
         base=boxes_to_baselink(raw,dataset.box_frame,dataset.T_base_clidar,dataset.z_reference)
         classes=names_to_ids(row['annos']['gt_names'])
         keep=np.isfinite(base).all(1)&(base[:,3:6]>0).all(1)
+        keep&=~np.asarray(row['annos'].get('gt_ignore',np.zeros(len(base),dtype=bool)),dtype=bool)
         ids=np.asarray(row['annos']['gt_ids'])
         if len(ids)!=len(base):raise ValueError('Heading track ID/box length mismatch')
         R=(np.asarray(meta['T_world_CLIDAR'])@np.linalg.inv(base_from_lidar))[:3,:3]

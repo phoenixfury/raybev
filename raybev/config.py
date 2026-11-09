@@ -49,7 +49,7 @@ class ModelConfig:
     score_peak_mode: str = 'fused'
     # Recipe 4: continuous sin(2*yaw),cos(2*yaw) axis + facing classifier.
     heading_encoding: str = 'axis_direction'
-    heading_bins: int = 2  # facing-vector channels; legacy bins remain 0/4
+    heading_bins: int = 2  # unit-facing: 2; opt-in circular modes: 8; legacy bins: 0/4
     heading_loss_weight: float = 1.0
     normalize_yaw_loss: bool = False
     # Task recipe 3.1: keep the same object denominator for foreground and
@@ -124,7 +124,7 @@ class ModelConfig:
         if self.bev_normalization not in ('batchnorm','frozen_batchnorm'):
             raise ValueError('Invalid BEV normalization')
         if (not math.isfinite(self.feature_pixel_origin) or self.height_fusion not in ('pooled','concat')
-                or self.facing_loss not in ('contrast','unit_vector')):
+                or self.facing_loss not in ('contrast','unit_vector','circular_bins')):
             raise ValueError('Invalid feature lattice, height fusion or facing loss')
         if self.classification_mode not in ('heatmap','objectness_softmax'):
             raise ValueError('Invalid classification mode')
@@ -137,8 +137,10 @@ class ModelConfig:
             raise ValueError('Invalid shared size reference')
         if self.heading_encoding not in ('axis_direction','binned_residual'):
             raise ValueError('Invalid heading encoding')
-        if (self.heading_bins not in (0,2,4) or
-                (self.heading_bins and self.heading_bins!=(2 if self.heading_encoding=='axis_direction' else 4)) or
+        expected_heading=8 if self.facing_loss=='circular_bins' else (2 if self.heading_encoding=='axis_direction' else 4)
+        if (self.heading_bins not in (0,2,4,8) or
+                (self.heading_bins and self.heading_bins!=expected_heading) or
+                (self.facing_loss=='circular_bins' and (self.heading_encoding!='axis_direction' or self.heading_bins!=8)) or
                 self.size_encoding not in ('absolute','class_relative','shared_relative')):
             raise ValueError('Invalid heading bins or size encoding')
         if (len(self.class_size_priors)!=len(CLASSES) or

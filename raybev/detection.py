@@ -34,6 +34,17 @@ def heading_targets(yaw,cfg):
     return bins,torch.stack((delta.sin(),delta.cos()),dim=-1)
 
 
+def facing_direction(logits,cfg):
+    """Selected facing mode, not the mean of potentially opposite directions.
+
+    Circular-bin probabilities can retain front/back ambiguity without averaging
+    their two unit vectors to zero. All bin decoding stays in host postprocess.
+    """
+    if cfg.facing_loss!='circular_bins':return logits.float()
+    angle=logits.argmax(dim=-1).to(torch.float32)*(2*math.pi/cfg.heading_bins)
+    return torch.stack((angle.sin(),angle.cos()),dim=-1)
+
+
 def decode_heading(vectors,bin_logits,cfg):
     """Decode radians and a separate bin confidence; never boost object scores."""
     angle=torch.atan2(vectors[...,0],vectors[...,1])
@@ -44,9 +55,17 @@ def decode_heading(vectors,bin_logits,cfg):
         unit=torch.stack((angle.sin(),angle.cos()),dim=-1)
         # Two continuous facing features form a binary front/back classifier
         # along the predicted axis. No discontinuous global quadrant targets.
-        facing=(bin_logits.float()*unit).sum(dim=-1)
+        facing=(facing_direction(bin_logits,cfg)*unit).sum(dim=-1)
         angle=angle+(facing<0).to(angle.dtype)*math.pi
-        confidence=(2*facing.abs()).sigmoid()
+        if cfg.facing_loss=='circular_bins':
+            centers=torch.arange(cfg.heading_bins,device=unit.device,dtype=torch.float32)*(2*math.pi/cfg.heading_bins)
+            directions=torch.stack((centers.sin(),centers.cos()),dim=-1)
+            same=(unit[...,None,:]*directions).sum(-1)>=0
+            hemisphere=(bin_logits.float().softmax(-1)*same).sum(-1)
+            # Confidence must describe the hemisphere actually selected by the
+            # strongest mode, not whichever hemisphere has more total mass.
+            confidence=torch.where(facing>=0,hemisphere,1-hemisphere)
+        else:confidence=(2*facing.abs()).sigmoid()
         return torch.atan2(angle.sin(),angle.cos()),confidence
     if cfg.heading_bins:
         if bin_logits is None:raise ValueError('Binned-heading config requires heading logits')
@@ -63,6 +82,18 @@ def facing_vector_loss(prediction,target,cfg):
     onto GT can still flip the decoder when its predicted axis has a small error.
     Raw (not normalized) regression retains gradients at a 180-degree reversal.
     """
+    if cfg.facing_loss=='circular_bins':
+        # Adjacent-bin interpolation is continuous through every bin boundary,
+        # including -pi/pi and 0/2pi. CE models a distribution instead of forcing
+        # a mean vector that cancels when front/rear evidence is ambiguous.
+        yaw=torch.atan2(target[...,0],target[...,1])
+        location=torch.remainder(yaw,2*math.pi)*(cfg.heading_bins/(2*math.pi))
+        lower=location.floor().long()%cfg.heading_bins
+        fraction=location-location.floor()
+        logp=prediction.log_softmax(-1)
+        a=logp.gather(-1,lower[...,None])[...,0]
+        b=logp.gather(-1,((lower+1)%cfg.heading_bins)[...,None])[...,0]
+        return -(1-fraction)*a-fraction*b
     if cfg.facing_loss == 'unit_vector':
         return F.smooth_l1_loss(prediction,target,reduction='none').sum(dim=-1)
     projection=2*(prediction*target).sum(dim=-1)
@@ -136,6 +167,9 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
     centers). Trainers use this to weight the exact regression owner, even
     when different classes share one cell. Three-target callers remain valid
     when the class at each regression center is unambiguous.
+    Explicit TRAIN-only ignored boxes use class_id=-1 and require
+    return_class_ids=True. They append a fifth valid-background mask, but never
+    create a foreground/regression target or remove an overlapping known center.
     Avoid redundant targets when multiple objects share a cell by retaining
     the closer center to the cell midpoint.
     """
@@ -144,6 +178,8 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
     # Construct sparse labels on CPU, then transfer once. Per-cell CUDA writes
     # and float(tensor) synchronizations made large-grid target creation costly.
     heat = torch.zeros((b,cfg.num_classes,h,w),dtype=torch.float32)
+    valid_background=torch.ones((b,1,h,w),dtype=torch.bool)
+    has_ignored=False
     regression = torch.zeros((b,8,h,w),dtype=torch.float32)
     mask = torch.zeros((b,1,h,w),dtype=torch.bool)
     owners = torch.full((b,1,h,w),-1,dtype=torch.long) if return_class_ids else None
@@ -158,6 +194,20 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
             if len(box) != 8:
                 raise ValueError("Each box must be [x,y,z,length,width,height,yaw,class_id] (8 values); velocities are not used")
             x,y,z,l,width,height,yaw,cls = (float(v) for v in box)
+            if cls==-1:
+                if not return_class_ids:raise ValueError('Ignored TRAIN boxes require return_class_ids=True')
+                if not all(math.isfinite(v) for v in box) or min(l,width,height)<=0:
+                    raise ValueError('Invalid ignored TRAIN box')
+                has_ignored=True
+                # Conservative rotated-footprint envelope plus one cell; no
+                # positive/regression target and no false background inside it.
+                dx=(abs(math.cos(yaw))*l+abs(math.sin(yaw))*width)/2+cfg.bev_resolution
+                dy=(abs(math.sin(yaw))*l+abs(math.cos(yaw))*width)/2+cfg.bev_resolution
+                r0,c0=metric_to_cell(x+dx,y+dy,cfg);r1,c1=metric_to_cell(x-dx,y-dy,cfg)
+                r0=max(0,math.floor(r0));c0=max(0,math.floor(c0))
+                r1=min(h,math.ceil(r1)+1);c1=min(w,math.ceil(c1)+1)
+                if r1>r0 and c1>c0:valid_background[batch,:,r0:r1,c0:c1]=False
+                continue
             if not all(math.isfinite(v) for v in box):
                 continue
             k=int(cls)
@@ -185,7 +235,8 @@ def make_targets(batch_boxes, cfg: ModelConfig, device='cpu',return_class_ids=Fa
                 r-i,c-j,z,math.log(l)-float(log_priors[k,0]),math.log(width)-float(log_priors[k,1]),math.log(height)-float(log_priors[k,2]),
                 math.sin(yaw),math.cos(yaw)],dtype=torch.float32)
     targets=(heat.to(device),regression.to(device),mask.to(device))
-    return targets+(owners.to(device),) if return_class_ids else targets
+    if return_class_ids:targets=targets+(owners.to(device),)
+    return targets+(valid_background.to(device),) if has_ignored else targets
 
 
 def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=None):
@@ -205,10 +256,11 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     neg_w=(1-focal_target).pow(4)
     class_weights=p.new_tensor(cfg.class_positive_weights)[None,:,None,None]
     if decoupled:
-        classes=targets[3].clamp(min=0) if len(targets)==4 else heat_target.argmax(dim=1,keepdim=True)
+        classes=targets[3].clamp(min=0) if len(targets)>=4 else heat_target.argmax(dim=1,keepdim=True)
         class_weights=p.new_tensor(cfg.class_positive_weights)[classes]
     positive=-(torch.log(p) * (1-p).pow(2)*is_pos*class_weights)
-    neg_loss=-(torch.log(1-p)*p.pow(2)*neg_w*is_neg).sum()
+    background=targets[4] if len(targets)==5 else 1.
+    neg_loss=-(torch.log(1-p)*p.pow(2)*neg_w*is_neg*background).sum()
     if cfg.class_balanced_losses:
         # Historical v3 only; new runs use global normalization below. Mixing
         # macro positives with globally normalized negatives distorts priors.
@@ -221,7 +273,7 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     pred=reg_pred.permute(0,2,3,1)[reg_mask[:,0]]
     truth=reg_target.permute(0,2,3,1)[reg_mask[:,0]]
     count=loss_denominator(reg_mask,cfg)
-    if len(targets)==4:
+    if len(targets)>=4:
         class_ids=targets[3][:,0][reg_mask[:,0]]
     else:
         center_classes=foreground_pos.permute(0,2,3,1)[reg_mask[:,0]]
