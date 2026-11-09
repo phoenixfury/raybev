@@ -52,12 +52,25 @@ https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt
 SHA256: 9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef
 ```
 
-The optional dependency is pinned in `requirements-yolo26.txt` to
-`ultralytics==8.4.182`, tested with Python 3.8 / Torch 2.4 / TorchVision 0.19.
-It is already installed in the local `openmmlab` environment. Install/verify it
+The reference dependency is pinned in `requirements-yolo26.txt` to
+`ultralytics==8.4.182`. The adapter also supports **8.4.208**, tested separately
+with Python 3.8 / Torch 2.4 / TorchVision 0.19. If your server already has
+8.4.208, keep it: update the RayBEV source; no downgrade is needed. Other package
+versions still fail explicitly until tested. Actual runtime versions are recorded
+in checkpoint/export profiles, separately from original pretrained provenance.
+8.4.182 is installed in the local `openmmlab` environment. Install/verify it
 in a separate or cloned server environment before switching jobs; do not upgrade
 Torch/NumPy/MMCV in an environment being used by the running training process.
 Legacy backbones do not import Ultralytics.
+
+If startup reports `requires ultralytics==8.4.182; found 8.4.208`, the server
+has the original exact-version guard. Sync the updated `raybev/` and `scripts/`
+source; leave 8.4.208 installed and rerun the fresh launch without `--resume`.
+The Ultralytics Settings creation message is harmless. Verification includes
+36 targeted tests per package release, two-rank CPU DDP under 8.4.208, and
+bit-for-bit identical full-resolution outputs after strict cross-version reload
+(`analysis/yolo26n_version_compatibility.json`). No installed environment was
+changed to perform these checks; 8.4.208 was tested via an isolated wheel.
 
 ## Start a new training run
 

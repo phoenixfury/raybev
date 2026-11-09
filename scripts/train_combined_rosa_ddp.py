@@ -561,6 +561,7 @@ def main():
                        'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                        'calibration_sha256':calibration_sha256(args.calibration),
                        'backbone_initialization':ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,
+                       'backbone_profile':getattr(local_model.image_encoder,'backbone_profile',None),
                        'heading_teacher_sha256':heading_supervision.teacher_sha256,
                        'heading_diagnostics':diagnostics,
                        'annotation_sha256':annotation_sha,

@@ -14,6 +14,7 @@ from torch import nn
 
 
 ULTRALYTICS_VERSION = '8.4.182'
+SUPPORTED_ULTRALYTICS_VERSIONS = (ULTRALYTICS_VERSION,'8.4.208')
 WEIGHTS_URL = 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt'
 WEIGHTS_SHA256 = '9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef'
 DEFAULT_WEIGHTS = Path(__file__).resolve().parents[1]/'weights/yolo26n.pt'
@@ -32,7 +33,7 @@ BACKBONE = [
     [-1,2,'C3k2',[1024,True]],
     [-1,1,'SPPF',[1024,5,3,True]],
 ]
-PROFILE = dict(name='yolo26n_conv_sppf',ultralytics_version=ULTRALYTICS_VERSION,
+PROFILE = dict(name='yolo26n_conv_sppf',tested_ultralytics_versions=list(SUPPORTED_ULTRALYTICS_VERSIONS),
                retained_layers=list(range(10)),feature_layers=[4,6,9],
                feature_strides=[8,16,32],feature_channels=[128,128,256],
                excluded_layers='C2PSA (10), YOLO PAN neck and all 2D Detect heads (11+)',
@@ -78,12 +79,14 @@ def build_backbone(pretrained=False,backbone_weights=None):
         from ultralytics.utils.torch_utils import initialize_weights
     except ImportError as error:
         raise ImportError('YOLO26n requires requirements-yolo26.txt; legacy backbones do not.') from error
-    if ultralytics.__version__!=ULTRALYTICS_VERSION:
-        raise RuntimeError(f'YOLO26n checkpoint architecture requires ultralytics=={ULTRALYTICS_VERSION}; '
-                           f'found {ultralytics.__version__}. Install requirements-yolo26.txt.')
+    runtime_version=ultralytics.__version__
+    if runtime_version not in SUPPORTED_ULTRALYTICS_VERSIONS:
+        raise RuntimeError(f'YOLO26n supports tested Ultralytics versions {SUPPORTED_ULTRALYTICS_VERSIONS}; '
+                           f'found {runtime_version}. Install requirements-yolo26.txt.')
     definition=dict(nc=80,scale='n',scales={'n':[.5,.25,1024]},
                     backbone=deepcopy(BACKBONE),head=[])
     backbone,_=parse_model(definition,ch=3,verbose=False)
+    backbone.ultralytics_version=runtime_version
     # BN eps/momentum are NOT in state_dict. Match official DetectionModel init.
     initialize_weights(backbone)
     # Ultralytics' own export uses explicit constant splits instead of chunk.
@@ -110,5 +113,5 @@ def build_backbone(pretrained=False,backbone_weights=None):
         digest=sha256(path)
         source='official_COCO' if digest==WEIGHTS_SHA256 else 'trusted_local_architecture_verified'
         initialization=(f'YOLO26N_{source}_conv_sppf; path={path}; sha256={digest}; '
-                        f'ultralytics={ULTRALYTICS_VERSION}; layers=0..9; taps=4,6,9; no_C2PSA_no_2D_head')
+                        f'ultralytics={runtime_version}; layers=0..9; taps=4,6,9; no_C2PSA_no_2D_head')
     return backbone,initialization

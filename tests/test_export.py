@@ -52,7 +52,9 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     calibration=Path(__file__).parents[1]/'configs/calibration_baselink.json'
     model=RayBEVLite(cfg,calibration).eval()
     checkpoint=tmp_path/'test.pt'
-    torch.save({'cfg':vars(cfg),'state_dict':model.state_dict()},checkpoint)
+    training_profile=dict(model.image_encoder.backbone_profile,ultralytics_version='8.4.182') if backbone=='yolo26n' else None
+    torch.save({'cfg':vars(cfg),'state_dict':model.state_dict(),
+                'backbone_profile':training_profile},checkpoint)
     source=Path(__file__).parents[1]/'scripts/export_onnx.py'
     spec=importlib.util.spec_from_file_location('test_export_script',source)
     export=importlib.util.module_from_spec(spec);spec.loader.exec_module(export)
@@ -63,6 +65,9 @@ def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monke
     metadata=json.loads((output/'metadata.json').read_text())
     assert metadata['backbone']==backbone and metadata['heading_encoding']=='axis_direction'
     if backbone=='yolo26n':
+        import ultralytics
+        assert metadata['backbone_profile']['ultralytics_version']==ultralytics.__version__
+        assert metadata['training_backbone_profile']['ultralytics_version']=='8.4.182'
         assert metadata['backbone_profile']['feature_layers']==[4,6,9]
         assert metadata['backbone_profile']['self_attention'] is False
         assert '[0,1]' in metadata['backbone_profile']['encoder_input']

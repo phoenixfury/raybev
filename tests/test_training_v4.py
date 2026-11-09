@@ -69,7 +69,7 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     monkeypatch.setattr(train,'RosaCombinedDataset',dataset)
     saved={}
     def save(state,path):
-        saved[Path(path).name]={k:state[k] for k in ('cfg','heading_teacher_sha256','epoch','best_heading_aoe','heading_diagnostics','warm_start')}
+        saved[Path(path).name]={k:state[k] for k in ('cfg','heading_teacher_sha256','epoch','best_heading_aoe','heading_diagnostics','warm_start','backbone_profile')}
     monkeypatch.setattr(train.torch,'save',save)
     out=tmp_path/'run'
     monkeypatch.setattr(sys,'argv',['train','--root',str(tmp_path),'--train-ann','train.pkl','--val-ann','val.pkl',
@@ -88,6 +88,9 @@ def test_combined_training_connects_teacher_track_diagnostics_and_checkpoint_con
     assert row['center_diagnostics']['val']['truck']['class_accuracy'] is None
     assert 'bag' in row['heading_diagnostics']['by_sequence']
     assert saved['last.pt']['cfg']['backbone']==backbone
+    if backbone=='yolo26n':
+        import ultralytics
+        assert saved['last.pt']['backbone_profile']['ultralytics_version']==ultralytics.__version__
     assert saved['last.pt']['cfg']['heading_encoding']=='axis_direction'
     assert saved['last.pt']['cfg']['bev_normalization']=='frozen_batchnorm'
     assert saved['last.pt']['cfg']['size_encoding']=='class_relative'

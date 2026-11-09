@@ -152,7 +152,7 @@ class YOLO26nEncoder(MobileNetEncoder):
         nn.Module.__init__(self)
         from .yolo26 import build_backbone,PROFILE
         backbone,self.initialization=build_backbone(pretrained,backbone_weights)
-        self.backbone_profile=dict(PROFILE)
+        self.backbone_profile=dict(PROFILE,ultralytics_version=backbone.ultralytics_version)
         self.stage8=backbone[:5]
         self.stage16=nn.Sequential(*list(backbone.children())[5:7])
         self.stage32=nn.Sequential(*list(backbone.children())[7:10])

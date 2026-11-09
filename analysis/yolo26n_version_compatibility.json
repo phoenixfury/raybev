@@ -1,0 +1,52 @@
+{
+  "type": "cross_version_structural_parity_NOT_accuracy",
+  "reference_version": "8.4.182",
+  "runtime_version": "8.4.208",
+  "image_shape": [
+    1,
+    4,
+    3,
+    640,
+    800
+  ],
+  "output_shapes": [
+    [
+      1,
+      6,
+      384,
+      384
+    ],
+    [
+      1,
+      8,
+      384,
+      384
+    ],
+    [
+      1,
+      1,
+      384,
+      384
+    ],
+    [
+      1,
+      2,
+      384,
+      384
+    ],
+    [
+      1,
+      1,
+      384,
+      384
+    ]
+  ],
+  "max_absolute_errors": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "strict_checkpoint_reload": true
+}

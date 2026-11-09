@@ -118,6 +118,7 @@ def main():
                     'box_frame':args.box_frame,
                     'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                     'backbone_initialization':model.image_encoder.initialization,'warm_start':recovery,
+                    'backbone_profile':getattr(model.image_encoder,'backbone_profile',None),
                     'calibration_sha256':calibration_sha256(args.calibration)},args.checkpoint)
 
 if __name__=='__main__':main()

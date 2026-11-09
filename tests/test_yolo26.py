@@ -50,6 +50,9 @@ def test_pretrained_stages_and_normalization_equal_official_yolo(cfg,official):
     for handle in handles:handle.remove()
     assert features.shape==(4,32,16,20) and confidence.shape==(4,4,16,20)
     assert 'sha256='+WEIGHTS_SHA256 in encoder.initialization
+    import ultralytics
+    assert 'ultralytics='+ultralytics.__version__+';' in encoder.initialization
+    assert encoder.backbone_profile['ultralytics_version']==ultralytics.__version__
     # Every retained parameter/buffer has its pretrained value, not only conv1.
     for actual,expected in zip((encoder.stage8,encoder.stage16,encoder.stage32),
                                (official.model[:5],official.model[5:7],official.model[7:10])):
@@ -151,3 +154,23 @@ def test_cli_and_explicit_no_cross_backbone_recovery(cfg,tmp_path):
         initialize_recovery(None,cfg,SimpleNamespace(init_from=str(checkpoint),resume=None))
     with pytest.raises(ValueError,match='feature_pixel_origin=0'):
         replace(cfg,feature_pixel_origin=3.5).validate()
+
+
+@pytest.mark.parametrize('version',['8.4.182','8.4.208'])
+def test_supported_version_gate_and_runtime_metadata(cfg,monkeypatch,version):
+    # This checks the gate/provenance, not cross-release numerical compatibility.
+    # The same suite is separately run under each real package release.
+    import ultralytics
+    monkeypatch.setattr(ultralytics,'__version__',version)
+    encoder=YOLO26nEncoder(cfg)
+    assert encoder.backbone_profile['ultralytics_version']==version
+
+
+def test_unknown_version_fails_before_architecture_parsing(monkeypatch):
+    import ultralytics
+    import ultralytics.nn.tasks as tasks
+    monkeypatch.setattr(ultralytics,'__version__','8.4.999')
+    def forbidden(*args,**kwargs):raise AssertionError('Unknown version must fail before parse_model')
+    monkeypatch.setattr(tasks,'parse_model',forbidden)
+    with pytest.raises(RuntimeError,match='supports tested Ultralytics versions'):
+        build_backbone()

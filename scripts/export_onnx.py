@@ -85,6 +85,7 @@ def main():
              'single_label_per_cell':cfg.single_label,
              'backbone':cfg.backbone,'heading_encoding':cfg.heading_encoding,
              'backbone_profile':getattr(model.image_encoder,'backbone_profile',None),
+             'training_backbone_profile':state.get('backbone_profile'),
              'backbone_initialization':state.get('backbone_initialization'),
              'bev_normalization':cfg.bev_normalization,
              'heading_bins':cfg.heading_bins,

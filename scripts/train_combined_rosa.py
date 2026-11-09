@@ -330,6 +330,7 @@ def main():
                'epoch':epoch+1,'best_map':max(best,metrics['mAP']),'classes':list(CLASSES),
                'cfg':vars(cfg),'metrics':metrics,'box_frame':args.box_frame,'recipe':vars(args),'world_size':1,
                'scaler':scaler.state_dict(),'backbone_initialization':initialization,'warm_start':recovery,
+               'backbone_profile':getattr(model.image_encoder,'backbone_profile',None),
                'heading_teacher_sha256':heading_supervision.teacher_sha256,
                'heading_diagnostics':diagnostics,
                'annotation_sha256':annotation_sha,
