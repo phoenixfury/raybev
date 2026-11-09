@@ -1,5 +1,8 @@
 # MobileNet task recipe 3.1: heading, heavy-vehicle size and classification
 
+Historical MobileNet recipe. The current ResNet-18/axis-facing recipe and
+teacher preparation instructions are in [TASK_V4.md](TASK_V4.md).
+
 This is the current training/head contract. The backbone/BEV architecture
 remains v2: MobileNetV2-1.0, OpenCV fisheye, CLIDAR input labels converted once
 to BASELINK, 800x640 images, +/-48 m, 0.25 m cells. All retained MobileNet

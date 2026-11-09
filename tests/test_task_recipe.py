@@ -14,7 +14,8 @@ from raybev.model import BEVDetector
 
 
 def config():
-    return replace(ModelConfig(),bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,
+    return replace(ModelConfig(),backbone='mobilenet_v2',heading_encoding='binned_residual',heading_bins=4,
+        bev_x_min=-4.,bev_x_max=4.,bev_y_min=-4.,bev_y_max=4.,bev_resolution=1.,
         class_size_priors=((4.5,1.9,1.6),(.7,.7,1.7),(1.8,.7,1.6),(6.,2.5,2.8),(5.,2.,2.),(10.,2.8,3.5))).validate()
 
 
@@ -129,7 +130,8 @@ def test_stable_defaults_do_not_stack_macro_loss_and_object_frequency_repeats():
     assert cfg.sampling_mode=='frame_presence'
     assert cfg.class_positive_weights[3]==cfg.class_positive_weights[5]==4.
     assert cfg.class_regression_weights[3]==cfg.class_regression_weights[5]==4.
-    assert cfg.heading_bins==4 and cfg.size_encoding=='class_relative'
+    assert cfg.heading_bins==2 and cfg.heading_encoding=='axis_direction' and cfg.size_encoding=='class_relative'
+    assert cfg.backbone=='resnet18'
 
 
 def test_failed_v3_recipe_is_loadable_but_cannot_resume_with_corrected_defaults():
@@ -165,7 +167,7 @@ def test_car_bias_is_not_suppressed_by_stacked_rare_class_balancing():
     gradients=[]
     for recipe in (cfg,replace(cfg,class_balanced_losses=True,center_classification_weight=.5)):
         heat=torch.logit(probabilities)[None,:,None,None].expand(1,6,384,384).clone().requires_grad_()
-        pred=[heat]+[torch.zeros(1,c,384,384,requires_grad=True) for c in (8,1,4)]
+        pred=[heat]+[torch.zeros(1,c,384,384,requires_grad=True) for c in (8,1,cfg.heading_bins)]
         loss,_=detection_loss(pred,target,cfg=recipe);loss.backward()
         gradients.append(float(heat.grad[:,0].sum()))
         for ci in (3,5):

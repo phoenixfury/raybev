@@ -44,7 +44,8 @@ def main():
                       str(out/'image_encoder.onnx'),input_names=['image','geometry'],
                       output_names=['feature_map','confidence_logits'],opset_version=17)
     cin=cfg.bev_input_channels
-    output_names=['heatmap_logits','regression','quality_logits']+(['heading_logits'] if cfg.heading_bins else [])
+    axis_heading=cfg.heading_bins and cfg.heading_encoding=='axis_direction'
+    output_names=['heatmap_logits','regression','quality_logits']+(['facing_vector' if axis_heading else 'heading_logits'] if cfg.heading_bins else [])
     torch.onnx.export(model.bev_detector,torch.zeros(1,cin,cfg.bev_height,cfg.bev_width),
                       str(out/'bev_detector.onnx'),input_names=['bev_features'],
                       output_names=output_names,opset_version=17)
@@ -73,9 +74,13 @@ def main():
              'score_peak_order':'fuse_then_peak' if cfg.score_peak_mode=='fused' else 'heatmap_peak_then_fuse',
              'score_dtype':'float32',
              'single_label_per_cell':cfg.single_label,
+             'backbone':cfg.backbone,'heading_encoding':cfg.heading_encoding,
              'heading_bins':cfg.heading_bins,
-             'heading_decode':'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)',
-             'heading_confidence':'max(softmax(heading_logits)); separate from object score' if cfg.heading_bins else 'not available',
+             'heading_decode':('axis=0.5*atan2(sin_2yaw,cos_2yaw); yaw=wrap(axis + pi if dot(facing_vector,[sin(axis),cos(axis)])<0 else axis)' if axis_heading else
+                 'wrap(argmax(heading_logits) * 2*pi/heading_bins + atan2(sin_residual,cos_residual))' if cfg.heading_bins else 'atan2(sin_yaw,cos_yaw)'),
+             'heading_confidence':('sigmoid(2*abs(dot(facing_vector,[sin(axis),cos(axis)]))); uncalibrated, separate from object score' if axis_heading else
+                 'max(softmax(heading_logits)); separate from object score' if cfg.heading_bins else 'not available'),
+             'training_only_components_excluded':['ROSA teacher','track IDs','world poses','heading distillation','track consistency'],
              'size_encoding':cfg.size_encoding,'class_size_priors_LWH_m':cfg.class_size_priors,
              'size_decode':'exp(clamp(size_residual + log(class_prior[predicted_class]), -3, 5))' if cfg.size_encoding=='class_relative' else 'exp(clamp(log_size, -3, 5))',
              'invalid_candidate_handling':'mask nonfinite class, used quality, and regression values before peaks/topk; exclude zero scores',
@@ -88,7 +93,7 @@ def main():
              'regression_channels': 8,
              'regression_semantics': ['offset_row','offset_col','z']+(
                  ['log_length_relative_to_class','log_width_relative_to_class','log_height_relative_to_class'] if cfg.size_encoding=='class_relative' else ['log_length','log_width','log_height'])+(
-                 ['sin_heading_residual','cos_heading_residual'] if cfg.heading_bins else ['sin_yaw','cos_yaw']),
+                 ['sin_2yaw','cos_2yaw'] if axis_heading else ['sin_heading_residual','cos_heading_residual'] if cfg.heading_bins else ['sin_yaw','cos_yaw']),
              'decoded_detection_semantics': ['x','y','z','length','width','height','yaw','class_id','confidence'],
              'bev_x_range_m': [cfg.bev_x_min, cfg.bev_x_max],
              'bev_y_range_m': [cfg.bev_y_min, cfg.bev_y_max],

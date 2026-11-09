@@ -5,6 +5,7 @@ ROSA `data_list` layout without rewriting boxes or creating pseudo labels.
 """
 from __future__ import annotations
 import json
+import hashlib
 import math
 from pathlib import Path
 import pickle
@@ -36,6 +37,21 @@ def load_annotations(path):
     if not isinstance(obj,dict) or not isinstance(obj.get('data_list'),list):
         raise ValueError(f'Expected trusted ROSA dict with data_list: {path}')
     return obj
+
+
+def training_boxes_sha256(dataset):
+    """Portable TRAIN-label identity: token + ordered BASELINK boxes, not paths.
+
+    Preserve box order because ties in shared regression cells use that order.
+    Ignore pickle protocol, row ordering and camera/source paths across machines.
+    """
+    digest=hashlib.sha256()
+    digest.update(json.dumps([list(CLASSES),dataset.box_frame,dataset.z_reference],separators=(',',':')).encode())
+    for i in sorted(range(len(dataset.rows)),key=lambda i:str(dataset.rows[i]['token'])):
+        row=[str(dataset.rows[i]['token']),dataset.boxes[i].tolist()]
+        digest.update(json.dumps(row,separators=(',',':'),allow_nan=False).encode())
+        digest.update(b'\n')
+    return digest.hexdigest()
 
 
 def names_to_ids(names):
@@ -114,13 +130,15 @@ class RosaCombinedDataset(Dataset):
     def __init__(self,root,ann_file,box_frame=DEFAULT_BOX_FRAME,calibration=None,z_reference='center',
                  strict_size=True,expected_size=(800,640),cfg=None,augment=False):
         self.root=Path(root).resolve()
-        self.annotation=load_annotations(self.root/ann_file if not Path(ann_file).is_absolute() else ann_file)
+        self.annotation_path=self.root/ann_file if not Path(ann_file).is_absolute() else Path(ann_file)
+        self.annotation=load_annotations(self.annotation_path)
         self.rows=self.annotation['data_list']
         self.box_frame=box_frame.upper()
         self.z_reference=z_reference
         self.T_base_clidar=read_T_base_clidar(calibration) if self.box_frame=='CLIDAR' else None
         self.strict_size=strict_size;self.expected_size=expected_size
         self.augment=augment
+        self.cfg=cfg
         self.range_filtered_boxes=0
         self.gt_counts={name:0 for name in CLASSES}
         # Precache compact GT tensors; this also rejects mismatched taxonomies before training.

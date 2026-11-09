@@ -28,8 +28,9 @@ from raybev import CLASSES,ModelConfig,RayBEVLite
 from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets,detection_loss,decode_detections
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
-from raybev.metrics import evaluate_detections
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config
+from raybev.metrics import evaluate_detections,heading_diagnostics
+from raybev.heading_supervision import HeadingSupervision
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score
 
 
 class BatchProgress:
@@ -109,7 +110,7 @@ def build_parser():
                    help='tqdm bars in a terminal; periodic logs in non-interactive output')
     p.add_argument('--log-every',type=int,default=50,
                    help='print progress every N batches if bars are disabled (default: 50)')
-    p.add_argument('--out',default='work_dirs/raybev_v3_1_tasks_48m_clidar')
+    p.add_argument('--out',default='work_dirs/raybev_v4_r18_axis_48m_clidar')
     p.add_argument('--resume',default=None)
     add_training_options(p)
     return p
@@ -122,9 +123,9 @@ def main():
         raise ValueError('Invalid training controls')
     random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
     if torch.cuda.is_available():torch.cuda.manual_seed_all(args.seed)
-    cfg=ModelConfig().validate()
+    cfg=ModelConfig(backbone=args.backbone).validate()
     print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-    print(f'Task recipe 3.1: macro_losses={cfg.class_balanced_losses}; '
+    print(f'Task recipe 4: backbone={cfg.backbone}; heading={cfg.heading_encoding}; macro_losses={cfg.class_balanced_losses}; '
           f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
     print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
     ds_args=dict(root=args.root,box_frame=args.box_frame,z_reference=args.z_reference,cfg=cfg,
@@ -133,6 +134,7 @@ def main():
     val=RosaCombinedDataset(ann_file=args.val_ann,**ds_args)
     if not train or not val:raise ValueError('Empty train/val split')
     cfg=fit_training_config(cfg,train.boxes)
+    heading_supervision=HeadingSupervision(train,cfg,args)
     print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
     print('Train boxes:',train.gt_counts,flush=True)
     print('Validation boxes:',val.gt_counts,flush=True)
@@ -169,7 +171,7 @@ def main():
         from torch.utils.tensorboard import SummaryWriter
         writer=SummaryWriter(str(out/'tensorboard'))
     except ImportError:pass
-    best=-1.0;start=0
+    best=-1.0;start=0;best_heading=float('inf')
     if args.resume:
         if tuple(state['classes'])!=CLASSES:raise ValueError('Checkpoint class list mismatch')
         if state.get('box_frame')!=args.box_frame:raise ValueError('Checkpoint box frame mismatch')
@@ -177,20 +179,23 @@ def main():
         scheduler.load_state_dict(state['scheduler'])
         if 'scaler' in state:scaler.load_state_dict(state['scaler'])
         start=int(state['epoch']);best=float(state['best_map'])
+        best_heading=state.get('best_heading_aoe',float('inf'))
     print(f'Device={device}; train={len(train)} frames/{len(dl_train)} batches; '
           f'val={len(val)} frames/{len(dl_val)} batches; epochs={args.epochs}; '
           f'progress={args.progress}',flush=True)
     for epoch in range(start,args.epochs):
         t0=time.monotonic();model.train();train_total=0.;train_heat=0.;train_reg=0.
-        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression')}
+        train_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis')}
         if pin: torch.cuda.reset_peak_memory_stats(device)
         train_progress=BatchProgress('train',epoch+1,args.epochs,len(dl_train),args.progress,args.log_every)
-        for images,boxes,_ in dl_train:
+        for images,boxes,tokens in dl_train:
             images=images.to(device,non_blocking=pin)
             targets=make_targets(boxes,cfg,device=device,return_class_ids=True)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type,enabled=args.amp and pin):
                 output=model(images);loss,parts=detection_loss(output,targets,cfg=cfg)
+                auxiliary,aux_parts=heading_supervision.loss(output,targets,tokens)
+                loss=loss+auxiliary;parts.update(aux_parts)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(),10.)
@@ -205,7 +210,7 @@ def main():
                 'lr':f'{optimizer.param_groups[0]["lr"]:.2e}'})
         train_progress.close()
         model.eval();val_total=0.;val_heat=0.;val_reg=0.;predictions=[];ground_truth=[]
-        val_aux={k:0. for k in train_aux}
+        val_aux={k:0. for k in ('heading_bin','center_classification','size_regression','heading_axis')}
         val_progress=BatchProgress('val',epoch+1,args.epochs,len(dl_val),args.progress,args.log_every)
         with torch.no_grad():
             for images,boxes,_ in dl_val:
@@ -224,6 +229,8 @@ def main():
         print(f'[Epoch {epoch+1}/{args.epochs}] Computing mAP and 3D errors from '
               f'{len(predictions)} validation frames...',flush=True)
         metrics=evaluate_detections(predictions,ground_truth,score_threshold=args.score_threshold)
+        diagnostics=heading_diagnostics(predictions,ground_truth,[str(r['metainfo']['sequence_id']) for r in val.rows])
+        heading_score=heading_selection_score(diagnostics)
         print(f'[Epoch {epoch+1}/{args.epochs}] Global mAP={metrics["mAP"]:.4f}; computing per-bag results...',flush=True)
         # Optional per-bag diagnostics, never mix their per-bag class sets into the global mAP.
         bag_groups={}
@@ -239,11 +246,16 @@ def main():
         row={'epoch':epoch+1,'lr':optimizer.param_groups[0]['lr'],
              'train_loss':train_total/steps,'train_heatmap_loss':train_heat/steps,'train_regression_loss':train_reg/steps,
              'val_loss':val_total/vs,'val_heatmap_loss':val_heat/vs,'val_regression_loss':val_reg/vs,
-             'seconds':time.monotonic()-t0,**metrics,'per_bag_metrics':per_bag}
+             'seconds':time.monotonic()-t0,**metrics,'per_bag_metrics':per_bag,'heading_diagnostics':diagnostics}
         for phase,values,denom in (('train',train_aux,steps),('val',val_aux,vs)):
             row.update({f'{phase}_{key}_loss':value/denom for key,value in values.items()})
+            row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
         with (out/'history.jsonl').open('a') as f:f.write(json.dumps(row,allow_nan=False)+'\n')
-        flat={k:v for k,v in row.items() if k not in ('class_results','active_classes','excluded_classes','AP_distance_thresholds','per_bag_metrics')}
+        flat={k:v for k,v in row.items() if k not in ('class_results','active_classes','excluded_classes','AP_distance_thresholds','per_bag_metrics','heading_diagnostics')}
+        for score,classes in diagnostics['by_score'].items():
+            for cname,values in classes.items():
+                for key in ('matched_count','AOE_deg','axis_AOE_deg','flip_rate','recall'):
+                    flat[f'heading_score{score}_{key}_{cname}']=values[key]
         for bag,bm in per_bag.items():
             flat[f'bag_{bag}_mAP']=bm['mAP']
             flat[f'bag_{bag}_mATE']=bm['mATE']
@@ -280,6 +292,7 @@ def main():
         ap_summary=' '.join(f'{name}={result["AP"]:.3f}' if result['AP'] is not None else f'{name}=N/A'
                             for name,result in metrics['class_results'].items())
         print(f'[Epoch {epoch+1}/{args.epochs}] Per-class AP: {ap_summary}',flush=True)
+        print('Heading car score>=0.3:',diagnostics['by_score']['0.3']['car'],flush=True)
         print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
               ' '.join(f'{name}={result["prediction_count"]}/{result["gt_count"]}'
                        for name,result in metrics['class_results'].items()),flush=True)
@@ -288,11 +301,16 @@ def main():
                'epoch':epoch+1,'best_map':max(best,metrics['mAP']),'classes':list(CLASSES),
                'cfg':vars(cfg),'metrics':metrics,'box_frame':args.box_frame,'recipe':vars(args),'world_size':1,
                'scaler':scaler.state_dict(),'backbone_initialization':initialization,
+               'heading_teacher_sha256':heading_supervision.teacher_sha256,
+               'heading_diagnostics':diagnostics,
+               'best_heading_aoe':min(best_heading,heading_score),
                'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                'calibration_sha256':calibration_sha256(args.calibration)}
         torch.save(state,out/'last.pt')
         if metrics['mAP']>best:
             best=metrics['mAP'];torch.save(state,out/'best_map.pt')
+        if heading_score<best_heading:
+            best_heading=heading_score;torch.save(state,out/'best_heading.pt')
         if pin:
             print(f'[Epoch {epoch+1}/{args.epochs}] CUDA peak allocated: '
                   f'{torch.cuda.max_memory_allocated(device)/1024**2:.0f} MiB',flush=True)

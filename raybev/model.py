@@ -1,4 +1,4 @@
-"""RayBEV-Lite: MobileNetV2 + fisheye ray-aware height planes + dense 3D head.
+"""RayBEV: ResNet-18 (or legacy MobileNetV2), fisheye height planes and 3D head.
 
 The geometric view transform is a reference PyTorch implementation using
 fixed projection grids. It is NOT claimed to be TIDL-compatible as a graph;
@@ -8,7 +8,7 @@ import math
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torchvision.models import MobileNet_V2_Weights, mobilenet_v2
+from torchvision.models import MobileNet_V2_Weights, mobilenet_v2, ResNet18_Weights, resnet18
 
 from .config import ModelConfig
 from .geometry import build_image_geometry, build_projection_lut, load_cameras
@@ -59,6 +59,9 @@ class MobileNetEncoder(nn.Module):
             z = max(8, int(ch * cfg.mobile_width + 4) // 8 * 8)
             return z + 8 if z < .9 * ch * cfg.mobile_width else z
         c8, c16, c32 = round8(32), round8(96), round8(320)
+        self.init_pyramid(cfg,c8,c16,c32)
+
+    def init_pyramid(self,cfg,c8,c16,c32):
         self.lat8 = conv_bn_relu(c8, cfg.feature_channels, 1)
         self.lat16 = conv_bn_relu(c16, cfg.feature_channels, 1)
         self.lat32 = conv_bn_relu(c32, cfg.feature_channels, 1)
@@ -99,6 +102,22 @@ class MobileNetEncoder(nn.Module):
         features, logits = self.forward_single(images.reshape(b*n,c,h,w),cues)
         return (features.reshape(b,n,*features.shape[1:]),
                 logits.reshape(b,n,*logits.shape[1:]))
+
+
+class ResNet18Encoder(MobileNetEncoder):
+    """Shared /8,/16,/32 geometry pyramid; conventional ImageNet ResNet-18."""
+    def __init__(self,cfg,pretrained=False,backbone_weights=None):
+        nn.Module.__init__(self)
+        weights=ResNet18_Weights.IMAGENET1K_V1 if pretrained and not backbone_weights else None
+        network=resnet18(weights=weights)
+        if backbone_weights:
+            state=torch.load(backbone_weights,map_location='cpu',weights_only=True)
+            network.load_state_dict(state.get('state_dict',state),strict=True)
+        self.initialization=str(backbone_weights) if backbone_weights else ('RESNET18_IMAGENET1K_V1' if pretrained else 'random_explicit')
+        self.stage8=nn.Sequential(network.conv1,network.bn1,network.relu,network.maxpool,network.layer1,network.layer2)
+        self.stage16=network.layer3
+        self.stage32=network.layer4
+        self.init_pyramid(cfg,128,256,512)
 
 
 class FisheyeRayTransport(nn.Module):
@@ -177,7 +196,8 @@ class BEVDetector(nn.Module):
         self.heading = head(cfg.heading_bins) if cfg.heading_bins else None
         self.quality = head(1)
         # Regression channels: offset_r,c (2), z (1), log_lwh (3),
-        # Local sin/cos residual for binned heading; global sin/cos for legacy.
+        # sin(2*yaw),cos(2*yaw) axis in recipe 4, local bin residual in v3,
+        # global sin/cos for legacy v2. Facing features are a separate output.
         # At 384x384 most cells are background. A 1% initial probability avoids
         # the dense-negative spike produced by the old 10% prior on this grid.
         nn.init.normal_(self.heatmap[-1].weight,std=.001)
@@ -216,7 +236,8 @@ class RayBEVLite(nn.Module):
     def __init__(self, cfg: ModelConfig, calibration_path, pretrained=False, backbone_weights=None):
         super().__init__()
         self.cfg = cfg.validate()
-        self.image_encoder = MobileNetEncoder(cfg,pretrained=pretrained,backbone_weights=backbone_weights)
+        encoder=ResNet18Encoder if cfg.backbone=='resnet18' else MobileNetEncoder
+        self.image_encoder = encoder(cfg,pretrained=pretrained,backbone_weights=backbone_weights)
         self.transport = FisheyeRayTransport(cfg, calibration_path)
         self.bev_detector = BEVDetector(cfg)
 

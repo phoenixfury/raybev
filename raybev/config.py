@@ -20,6 +20,7 @@ class ModelConfig:
     feature_channels: int = 32
     bev_channels: int = 64
     head_channels: int = 32
+    backbone: str = 'resnet18'
     mobile_width: float = 1.0
     # 96 m square, 384x384 output. The expensive BEV context runs at /2,/4,/8.
     bev_x_min: float = -48.0
@@ -39,8 +40,9 @@ class ModelConfig:
     yaw_norm_weight: float = 0.1
     quality_score_power: float = 0.5
     score_peak_mode: str = 'fused'
-    # Task recipe 3: lightweight direction classification + local residual.
-    heading_bins: int = 4
+    # Recipe 4: continuous sin(2*yaw),cos(2*yaw) axis + facing classifier.
+    heading_encoding: str = 'axis_direction'
+    heading_bins: int = 2  # facing-vector channels; legacy bins remain 0/4
     heading_loss_weight: float = 1.0
     normalize_yaw_loss: bool = False
     # Task recipe 3.1: keep the same object denominator for foreground and
@@ -103,7 +105,13 @@ class ModelConfig:
             raise ValueError('Invalid quality score power or peak mode')
         if not 0 <= self.nms_iou_threshold <= 1 or self.max_detections < 1:
             raise ValueError('Invalid NMS configuration')
-        if self.heading_bins not in (0,4) or self.size_encoding not in ('absolute','class_relative'):
+        if self.backbone not in ('mobilenet_v2','resnet18'):
+            raise ValueError('Invalid image backbone')
+        if self.heading_encoding not in ('axis_direction','binned_residual'):
+            raise ValueError('Invalid heading encoding')
+        if (self.heading_bins not in (0,2,4) or
+                (self.heading_bins and self.heading_bins!=(2 if self.heading_encoding=='axis_direction' else 4)) or
+                self.size_encoding not in ('absolute','class_relative')):
             raise ValueError('Invalid heading bins or size encoding')
         if (len(self.class_size_priors)!=len(CLASSES) or
                 any(len(p)!=3 or not all(math.isfinite(v) and v>0 for v in p) for p in self.class_size_priors)):
@@ -121,6 +129,8 @@ class ModelConfig:
         if 'cfg' not in state or state['cfg'].get('architecture_version') != 2:
             raise ValueError('Checkpoint predates RayBEV v2; start fresh with pretrained image weights')
         values=dict(state['cfg'])
+        values.setdefault('backbone','mobilenet_v2')
+        values.setdefault('heading_encoding','binned_residual')
         # Historical v2 weights must keep their original losses and score rule.
         values.setdefault('class_regression_weights',(1.0,)*len(CLASSES))
         values.setdefault('quality_score_power',1.0)

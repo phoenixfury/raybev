@@ -26,6 +26,8 @@ def in_bev_range(boxes, cfg):
 
 def heading_targets(yaw,cfg):
     """Nearest coarse direction and a local unit residual (within half a bin)."""
+    if cfg.heading_encoding!='binned_residual' or not cfg.heading_bins:
+        raise ValueError('heading_targets is only for historical binned-residual headings')
     step=2*math.pi/cfg.heading_bins
     bins=torch.remainder(torch.floor(torch.remainder(yaw+step/2,2*math.pi)/step).long(),cfg.heading_bins)
     delta=yaw-bins.to(yaw.dtype)*step
@@ -36,6 +38,16 @@ def decode_heading(vectors,bin_logits,cfg):
     """Decode radians and a separate bin confidence; never boost object scores."""
     angle=torch.atan2(vectors[...,0],vectors[...,1])
     confidence=torch.ones_like(angle)
+    if cfg.heading_bins and cfg.heading_encoding=='axis_direction':
+        if bin_logits is None:raise ValueError('Axis heading requires facing vectors')
+        angle=angle*.5
+        unit=torch.stack((angle.sin(),angle.cos()),dim=-1)
+        # Two continuous facing features form a binary front/back classifier
+        # along the predicted axis. No discontinuous global quadrant targets.
+        facing=(bin_logits.float()*unit).sum(dim=-1)
+        angle=angle+(facing<0).to(angle.dtype)*math.pi
+        confidence=(2*facing.abs()).sigmoid()
+        return torch.atan2(angle.sin(),angle.cos()),confidence
     if cfg.heading_bins:
         if bin_logits is None:raise ValueError('Binned-heading config requires heading logits')
         bins=bin_logits.argmax(dim=-1)
@@ -171,9 +183,18 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
     if cfg.heading_bins:
         if len(output)<4:raise ValueError('Binned-heading loss requires heading logits')
         heading_logits=output[3].float().permute(0,2,3,1)[reg_mask[:,0]]
-        bin_target,residual_target=heading_targets(torch.atan2(truth[:,6],truth[:,7]),cfg)
-        truth=torch.cat((truth[:,:6],residual_target),dim=1)
-        heading_loss=(F.cross_entropy(heading_logits,bin_target,reduction='none')*object_weights).sum()/count
+        yaw=torch.atan2(truth[:,6],truth[:,7])
+        if cfg.heading_encoding=='axis_direction':
+            # Binary contrast GT-front versus GT-rear, expressed continuously:
+            # logit = 2 * dot(facing_vector, [sin(yaw),cos(yaw)]).
+            # The gradient remains nonzero for an exact 180-degree reversal.
+            facing_logit=2*(heading_logits*truth[:,6:8]).sum(dim=1)
+            heading_loss=(F.binary_cross_entropy_with_logits(facing_logit,torch.ones_like(facing_logit),reduction='none')*object_weights).sum()/count
+            truth=torch.cat((truth[:,:6],torch.stack(((2*yaw).sin(),(2*yaw).cos()),dim=1)),dim=1)
+        else:
+            bin_target,residual_target=heading_targets(yaw,cfg)
+            truth=torch.cat((truth[:,:6],residual_target),dim=1)
+            heading_loss=(F.cross_entropy(heading_logits,bin_target,reduction='none')*object_weights).sum()/count
     weighted=F.smooth_l1_loss(regression_prediction,truth,reduction='none')*pred.new_tensor(cfg.regression_weights)
     # Divide by the unweighted object count: a single Bus retains its 4x
     # gradient instead of its weight cancelling in a weighted denominator.
@@ -196,6 +217,7 @@ def detection_loss(output, targets, heat_weight=1., regression_weight=2., cfg=No
         'heatmap': classification.detach(), 'regression': reg_loss.detach(),
         'quality':quality_loss.detach(),'yaw_norm':yaw_penalty.detach(),
         'heading_bin':heading_loss.detach(),'center_classification':center_loss.detach(),
+        'heading_axis':(weighted[:,6:8].sum(dim=1)*object_weights).sum().detach()/count,
         'size_regression':(weighted[:,3:6].sum(dim=1)*object_weights).sum().detach()/count,
     }
 

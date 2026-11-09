@@ -51,6 +51,55 @@ def _match_class(pred_list,gt_list,distance_threshold):
 def _yaw_err(a,b):return abs(math.atan2(math.sin(float(a)-float(b)),math.cos(float(a)-float(b))))
 
 
+def heading_diagnostics(predictions,ground_truth,sequences=None,score_thresholds=(.01,.1,.3)):
+    """True matched heading stats by object score/range/sequence; no placeholders.
+
+    Match globally before grouping pairs by GT distance. Never relabel a wrong
+    class or drop difficult GT to improve the reported heading mean.
+    """
+    if len(predictions)!=len(ground_truth):raise ValueError('Heading frame counts differ')
+    if sequences is not None and len(sequences)!=len(predictions):raise ValueError('Heading sequence counts differ')
+    def summary(pairs):
+        errors=np.array([_yaw_err(p[6],g[6]) for p,g,_ in pairs])
+        return dict(matched_count=len(errors),AOE=float(errors.mean()) if len(errors) else None,
+            AOE_deg=float(np.degrees(errors.mean())) if len(errors) else None,
+            median_AOE_deg=float(np.degrees(np.median(errors))) if len(errors) else None,
+            axis_AOE_deg=float(np.degrees(np.minimum(errors,math.pi-errors).mean())) if len(errors) else None,
+            flip_rate=float((errors>math.pi/2).mean()) if len(errors) else None,
+            within15_rate=float((errors<math.pi/12).mean()) if len(errors) else None)
+    def group(indices):
+        by_score={};by_distance={}
+        gts=[{} for _ in CLASSES];prs=[[] for _ in CLASSES]
+        for i in indices:
+            gs=np.asarray(ground_truth[i]).reshape(-1,8)
+            ps=np.asarray(predictions[i]).reshape(-1,9)
+            for ci in range(len(CLASSES)):
+                gts[ci][i]=gs[gs[:,7]==ci,:7]
+                prs[ci].extend((i,p[:7],float(p[8])) for p in ps if int(p[7])==ci)
+        for threshold in score_thresholds:
+            key=f'{threshold:g}';by_score[key]={};by_distance[key]={}
+            for ci,name in enumerate(CLASSES):
+                selected=[p for p in prs[ci] if p[2]>=threshold]
+                tp,fp,pairs=_match_class(selected,gts[ci],2.)
+                n_gt=sum(map(len,gts[ci].values()))
+                by_score[key][name]=dict(**summary(pairs),gt_count=n_gt,prediction_count=len(selected),
+                    precision=sum(tp)/max(1,len(tp)),recall=sum(tp)/max(1,n_gt))
+                by_distance[key][name]={}
+                for label,lo,hi in (('0_20m',0.,20.),('20_35m',20.,35.),('35_68m',35.,float('inf'))):
+                    within=[pair for pair in pairs if lo<=np.linalg.norm(pair[1][:2])<hi]
+                    count=sum(int(((np.linalg.norm(g[:,:2],axis=1)>=lo)&(np.linalg.norm(g[:,:2],axis=1)<hi)).sum()) for g in gts[ci].values())
+                    by_distance[key][name][label]=dict(**summary(within),gt_count=count,recall=len(within)/max(1,count))
+        return dict(by_score=by_score,by_distance=by_distance)
+    result=group(range(len(predictions)))
+    result['by_sequence']={}
+    if sequences is not None:
+        for seq in sorted(set(sequences)):
+            result['by_sequence'][str(seq)]=group([i for i,s in enumerate(sequences) if s==seq])
+    result['matching_distance_m']=2.
+    result['confidence']='object confidence, not a calibrated facing probability'
+    return result
+
+
 def evaluate_detections(predictions,ground_truth,score_threshold=.3):
     """predictions: list [M,9] (xyz,lwh,yaw,class,score), GT [N,8].
 

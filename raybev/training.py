@@ -10,8 +10,12 @@ from .detection import in_bev_range
 
 
 def add_training_options(parser):
+    parser.add_argument('--backbone',choices=['resnet18','mobilenet_v2'],default='resnet18')
+    parser.add_argument('--heading-teacher',help='Verified TRAIN-only ROSA heading cache from prepare_heading_teacher.py')
+    parser.add_argument('--heading-teacher-weight',type=float,default=.2)
+    parser.add_argument('--track-heading-weight',type=float,default=.1)
     parser.add_argument('--no-pretrained',action='store_true',help='Explicit random image initialization (ablation only)')
-    parser.add_argument('--backbone-weights',help='Local TorchVision MobileNetV2-1.0 state_dict for offline training')
+    parser.add_argument('--backbone-weights',help='Matching TorchVision ResNet-18 or MobileNetV2 state_dict for offline training')
     parser.add_argument('--backbone-lr-mult',type=float,default=.5)
     parser.add_argument('--warmup-steps',type=int,default=500,help='Optimizer steps, not microbatches')
     parser.add_argument('--no-balance',action='store_true')
@@ -76,7 +80,7 @@ def build_optimizer(model,lr,weight_decay,backbone_lr_mult=.5):
         raise ValueError('Invalid optimizer controls')
     groups={}
     for name,param in model.named_parameters():
-        # Only the pretrained MobileNet stages use the reduced learning rate.
+        # Only the pretrained image stages use the reduced learning rate.
         backbone=name.startswith(('image_encoder.stage8.','image_encoder.stage16.','image_encoder.stage32.'))
         decay=0. if param.ndim==1 or name.endswith('.bias') else weight_decay
         key=(backbone,decay)
@@ -101,6 +105,9 @@ def check_resume(state,cfg,args):
     restored=ModelConfig.from_checkpoint(state)
     if restored!=cfg:
         raise ValueError('Resume config differs from checkpoint')
+    teacher=getattr(args,'heading_teacher',None)
+    if state.get('heading_teacher_sha256')!=(calibration_sha256(teacher) if teacher else None):
+        raise ValueError('Resume heading teacher differs from checkpoint')
     if state.get('calibration_sha256')!=calibration_sha256(args.calibration):
         raise ValueError('Resume camera calibration differs from checkpoint; start a fresh run without --resume')
     if state.get('box_frame')!=args.box_frame:
@@ -112,10 +119,17 @@ def check_resume(state,cfg,args):
     recipe=state.get('recipe',{})
     for key in ('epochs','warmup_steps','batch_size','accum_steps','no_balance',
                 'no_augmentation','backbone_lr_mult','lr','weight_decay','z_reference',
-                'seed','root','train_ann','val_ann'):
+                'seed','root','train_ann','val_ann','heading_teacher_weight','track_heading_weight','backbone'):
         if key in recipe and recipe[key]!=getattr(args,key,None):
             raise ValueError(f'Resume {key} differs from checkpoint recipe; use the original value')
 
 
 def calibration_sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def heading_selection_score(diagnostics):
+    """High-confidence car heading checkpoint, guarded against tiny recall."""
+    car=diagnostics['by_score']['0.3']['car']
+    if car['matched_count']<50 or car['recall']<.1 or car['AOE'] is None:return float('inf')
+    return car['AOE']

@@ -35,9 +35,10 @@ from torch.utils.data.distributed import DistributedSampler
 from raybev import CLASSES, ModelConfig, RayBEVLite
 from raybev.config import DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
 from raybev.detection import make_targets, detection_loss, decode_detections
-from raybev.metrics import evaluate_detections
+from raybev.metrics import evaluate_detections,heading_diagnostics
+from raybev.heading_supervision import HeadingSupervision
 from raybev.rosa_dataset import RosaCombinedDataset, collate_samples
-from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config
+from raybev.training import add_training_options,balanced_training_view,build_optimizer,build_scheduler,check_resume,calibration_sha256,fit_training_config,heading_selection_score
 
 try:
     from tqdm.auto import tqdm
@@ -155,7 +156,7 @@ def make_flat_metrics(row):
              'train_regression_loss','val_loss','val_heatmap_loss','val_regression_loss',
              'seconds','world_size','global_batch_size','train_samples_seen')}
     for phase in ('train','val'):
-        for component in ('heading_bin','center_classification','size_regression'):
+        for component in ('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis','heading_direction'):
             key=f'{phase}_{component}_loss'
             if key in row:flat[key]=row[key]
     for key, value in metrics.items():
@@ -171,6 +172,10 @@ def make_flat_metrics(row):
             flat[f'{key}_{name}'] = cm.get(key)
         for threshold, ap in (cm.get('AP_by_distance') or {}).items():
             flat[f'AP_{name}_at_{threshold}m'] = ap
+    for score,classes in row.get('heading_diagnostics',{}).get('by_score',{}).items():
+        for name,values in classes.items():
+            for key in ('matched_count','AOE_deg','axis_AOE_deg','flip_rate','recall'):
+                flat[f'heading_score{score}_{key}_{name}']=values[key]
     return flat
 
 
@@ -210,7 +215,7 @@ def build_parser():
     p.add_argument('--amp', action='store_true')
     p.add_argument('--progress', choices=['auto','always','off'], default='auto')
     p.add_argument('--log-every', type=int, default=50)
-    p.add_argument('--out', default='work_dirs/raybev_v3_1_tasks_48m_clidar_ddp')
+    p.add_argument('--out', default='work_dirs/raybev_v4_r18_axis_48m_clidar_ddp')
     p.add_argument('--resume', default=None)
     p.add_argument('--allow-cpu', action='store_true', help=argparse.SUPPRESS)
     add_training_options(p)
@@ -268,10 +273,10 @@ def main():
         if device.type == 'cuda':
             torch.cuda.manual_seed_all(args.seed + rank)
             torch.backends.cudnn.benchmark = False  # conservative VRAM; enable only after profiling
-        cfg = ModelConfig().validate()
+        cfg = ModelConfig(backbone=args.backbone).validate()
         if primary:
             print('Foreground/box class weights:',dict(zip(CLASSES,zip(cfg.class_positive_weights,cfg.class_regression_weights))),flush=True)
-            print(f'Task recipe 3.1: macro_losses={cfg.class_balanced_losses}; '
+            print(f'Task recipe 4: backbone={cfg.backbone}; heading={cfg.heading_encoding}; macro_losses={cfg.class_balanced_losses}; '
                   f'center_CE={cfg.center_classification_weight}; sampling={cfg.sampling_mode}',flush=True)
             print(f'Score = class_confidence * quality ** {cfg.quality_score_power}; peaks={cfg.score_peak_mode}',flush=True)
         ds_args = dict(root=args.root, box_frame=args.box_frame, z_reference=args.z_reference,cfg=cfg,
@@ -281,6 +286,7 @@ def main():
         if len(train) == 0 or len(val) == 0 or len(train) < world:
             raise ValueError('Empty/inadequate train or validation split')
         cfg=fit_training_config(cfg,train.boxes)
+        heading_supervision=HeadingSupervision(train,cfg,args)
         if primary:print('TRAIN-only class size priors:',dict(zip(CLASSES,cfg.class_size_priors)),flush=True)
         if any(s['metainfo'].get('temporal_split')!='train' for s in train.rows):
             raise ValueError('Train/validation leakage in training annotation PKL')
@@ -323,6 +329,7 @@ def main():
                 raise FileExistsError(f'Existing metrics at {out}; use a fresh --out or --resume')
         dist.barrier()
         best, start = -1.0, 0
+        best_heading=float('inf')
         if args.resume:
             if tuple(ckpt['classes']) != CLASSES:
                 raise ValueError('Checkpoint class list does not match model')
@@ -334,6 +341,7 @@ def main():
             if 'scaler' in ckpt:
                 scaler.load_state_dict(ckpt['scaler'])
             start, best = int(ckpt['epoch']), float(ckpt['best_map'])
+            best_heading=ckpt.get('best_heading_aoe',float('inf'))
         # The non-persistent geometric LUT buffers are large and fixed. They are
         # identical on every rank, so DO NOT broadcast them on every forward.
         model = DDP(local_model, device_ids=[local_rank] if pin else None,
@@ -372,10 +380,10 @@ def main():
             model.train()
             if pin:
                 torch.cuda.reset_peak_memory_stats(device)
-            local_sums = [0.]*7
+            local_sums = [0.]*10
             optimizer.zero_grad(set_to_none=True)
             progress = Progress('train',epoch+1,args.epochs,len(train_loader),args.progress,args.log_every) if primary else None
-            for i,(images,boxes,_) in enumerate(train_loader):
+            for i,(images,boxes,tokens) in enumerate(train_loader):
                 images = images.to(device, non_blocking=pin)
                 targets = make_targets(boxes, cfg, device=device,return_class_ids=True)
                 group_start = (i // args.accum_steps) * args.accum_steps
@@ -387,13 +395,15 @@ def main():
                     with cuda_autocast(enabled=args.amp and pin):
                         output = model(images)
                         loss, parts = detection_loss(output, targets,cfg=cfg)
+                        auxiliary,aux_parts=heading_supervision.loss(output,targets,tokens)
+                        loss=loss+auxiliary;parts.update(aux_parts)
                     scaler.scale(loss/group_size).backward()
                 n = len(images)
                 local_sums[0] += float(loss.detach()) * n
                 local_sums[1] += float(parts['heatmap']) * n
                 local_sums[2] += float(parts['regression']) * n
                 local_sums[3] += n
-                for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis'),4):
                     local_sums[j]+=float(parts[key])*n
                 if is_last_in_group:
                     scaler.unscale_(optimizer)
@@ -414,7 +424,7 @@ def main():
             # fixed multi-megabyte projection buffers.
             sync_bn_running_buffers(local_model)
             local_model.eval()
-            val_sums = [0.]*7
+            val_sums = [0.]*10
             local_predictions = []
             val_progress = Progress('val',epoch+1,args.epochs,len(val_loader),args.progress,args.log_every) if primary else None
             pos = 0
@@ -430,7 +440,7 @@ def main():
                     val_sums[1] += float(parts['heatmap']) * n
                     val_sums[2] += float(parts['regression']) * n
                     val_sums[3] += n
-                    for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                    for j,key in ((4,'heading_bin'),(5,'center_classification'),(6,'size_regression'),(9,'heading_axis')):
                         val_sums[j]+=float(parts[key])*n
                     decoded = decode_detections(output,cfg,score_threshold=args.map_min_score,topk=args.eval_topk)
                     # ExactEvalSampler yields rank, rank+world, rank+2*world...
@@ -458,6 +468,8 @@ def main():
                       f'mAP on {len(val)} distinct validation frames...',flush=True)
                 metrics = evaluate_detections(predictions,ground_truth,
                                               score_threshold=args.score_threshold)
+                diagnostics=heading_diagnostics(predictions,ground_truth,[str(r['metainfo']['sequence_id']) for r in val.rows])
+                heading_score=heading_selection_score(diagnostics)
                 bag_groups = defaultdict(list)
                 for idx,sample in enumerate(val.rows):
                     bag_groups[str(sample['metainfo']['sequence_id'])].append(idx)
@@ -477,10 +489,11 @@ def main():
                            seconds=elapsed,world_size=world,
                            global_batch_size=world*args.batch_size*args.accum_steps,
                            train_samples_seen=int(totals[3]),metrics=metrics,
-                           per_bag_metrics=per_bag)
+                           per_bag_metrics=per_bag,heading_diagnostics=diagnostics)
                 for phase,sums in (('train',totals),('val',val_totals)):
-                    for j,key in enumerate(('heading_bin','center_classification','size_regression'),4):
+                    for j,key in enumerate(('heading_bin','center_classification','size_regression','heading_teacher','heading_track','heading_axis'),4):
                         row[f'{phase}_{key}_loss']=sums[j]/max(sums[3],1)
+                    row[f'{phase}_heading_direction_loss']=row[f'{phase}_heading_bin_loss']
                 with (out/'history.jsonl').open('a') as fh:
                     fh.write(json.dumps(row,allow_nan=False)+'\n')
                 flat = make_flat_metrics(row)
@@ -502,6 +515,7 @@ def main():
                 print('AP per class:', ' '.join(f'{name}={value["AP"]:.4f}'
                       if value['AP'] is not None else f'{name}=N/A'
                       for name,value in metrics['class_results'].items()),flush=True)
+                print('Heading car score>=0.3:',diagnostics['by_score']['0.3']['car'],flush=True)
                 print(f'Prediction/GT counts (decode floor={args.map_min_score}):',
                       ' '.join(f'{name}={value["prediction_count"]}/{value["gt_count"]}'
                                for name,value in metrics['class_results'].items()),flush=True)
@@ -516,11 +530,16 @@ def main():
                        'lidar_calibration_sha256':calibration_sha256(args.lidar_calibration) if args.box_frame=='CLIDAR' else None,
                        'calibration_sha256':calibration_sha256(args.calibration),
                        'backbone_initialization':ckpt.get('backbone_initialization') if ckpt else local_model.image_encoder.initialization,
+                       'heading_teacher_sha256':heading_supervision.teacher_sha256,
+                       'heading_diagnostics':diagnostics,
+                       'best_heading_aoe':min(best_heading,heading_score),
                        'world_size':world,'global_batch_size':world*args.batch_size*args.accum_steps}
                 save_checkpoint(out/'last.pt',state)
                 if metrics['mAP']>best:
                     best=metrics['mAP']
                     save_checkpoint(out/'best_map.pt',state)
+                if heading_score<best_heading:
+                    best_heading=heading_score;save_checkpoint(out/'best_heading.pt',state)
                 if pin:
                     print(f'[GPU0] CUDA peak allocated: '
                           f'{torch.cuda.max_memory_allocated(device)/1024**2:.0f} MiB',flush=True)

@@ -1,6 +1,12 @@
 # RayBEV-Lite v2 — 800×640 input, ±48 m BEV at 0.25 m, six classes
 
-**Current MobileNet heading/size/classification recipe: [TASK_V3.md](TASK_V3.md).**
+**Current recipe: [TASK_V4.md](TASK_V4.md)** — ResNet-18, continuous axis/facing
+heading, TRAIN-only ROSA response distillation and pose-aware track references.
+New output: `work_dirs/raybev_v4_r18_axis_48m_clidar_2x3080ti`. Do not resume
+MobileNet checkpoints into this recipe. TDA4VH throughput is not yet measured.
+The MobileNet sections below are historical; their checkpoints remain readable.
+
+**Historical MobileNet heading/size/classification recipe: [TASK_V3.md](TASK_V3.md).**
 It supersedes the loss, sampler and three-output head contracts below. Train
 fresh into `work_dirs/raybev_v3_1_tasks_48m_clidar_2x3080ti`; do not resume the old
 v2 or failed v3 task checkpoint. Recipe 3.1 restores global loss normalization,
@@ -8,7 +14,7 @@ reduces auxiliary class CE and uses milder frame-presence repeats after v3
 collapsed to zero validation AP. The OpenCV calibration, CLIDAR input convention and BEV
 geometry are unchanged. The new head adds four heading-bin logits.
 
-**Current architecture and training/deployment guide: [V2.md](V2.md).** Start a fresh v2 run: the existing v1 checkpoints cannot resume this network. Source changes do not establish trained accuracy or TDA4VH throughput. Older dataset/history sections below describe the original integration.
+**Earlier architecture and training/deployment guide: [V2.md](V2.md).** Existing v1 checkpoints cannot resume this network. Source changes do not establish trained accuracy or TDA4VH throughput. Older dataset/history sections below describe the original integration.
 
 **Calibration correction:** the four-bag source labels are CLIDAR (now the
 default), converted once to BASELINK inside the loader. The active camera

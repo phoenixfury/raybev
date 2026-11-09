@@ -32,3 +32,31 @@ def test_exported_subgraphs_match_torch(tmp_path):
         actual=session.run(None,{n:v.numpy() for n,v in zip(input_names,inputs)})
         with torch.no_grad():expected=module(*inputs)
         for a,e in zip(actual,expected):np.testing.assert_allclose(a,e.numpy(),atol=1e-5,rtol=1e-4)
+
+
+def test_recipe4_export_metadata_records_axis_and_facing_contract(tmp_path,monkeypatch):
+    pytest.importorskip('onnx')
+    import importlib.util
+    import json
+    import sys
+    torch.set_num_threads(2)
+    cfg=ModelConfig().downscale(5)
+    calibration=Path(__file__).parents[1]/'configs/calibration_baselink.json'
+    model=RayBEVLite(cfg,calibration).eval()
+    checkpoint=tmp_path/'test.pt'
+    torch.save({'cfg':vars(cfg),'state_dict':model.state_dict()},checkpoint)
+    source=Path(__file__).parents[1]/'scripts/export_onnx.py'
+    spec=importlib.util.spec_from_file_location('test_export_script',source)
+    export=importlib.util.module_from_spec(spec);spec.loader.exec_module(export)
+    output=tmp_path/'export'
+    monkeypatch.setattr(sys,'argv',['export','--checkpoint',str(checkpoint),
+                                  '--calibration',str(calibration),'--output',str(output)])
+    export.main()
+    metadata=json.loads((output/'metadata.json').read_text())
+    assert metadata['backbone']=='resnet18' and metadata['heading_encoding']=='axis_direction'
+    assert metadata['regression_semantics'][-2:]==['sin_2yaw','cos_2yaw']
+    assert '0.5*atan2' in metadata['heading_decode']
+    import onnx
+    graph=onnx.load(str(output/'bev_detector.onnx'))
+    assert graph.graph.output[-1].name=='facing_vector'
+    assert graph.graph.output[-1].type.tensor_type.shape.dim[1].dim_value==2
