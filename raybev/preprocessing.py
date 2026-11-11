@@ -4,6 +4,21 @@ import torch.nn.functional as F
 from .geometry import letterbox_params
 
 
+def resize_camera_image(image,target_width=800,target_height=640):
+    """Host preprocessing shared by native-image training and validation.
+
+    PIL bilinear downsampling, exact integer letterbox and black RGB padding.
+    Projection uses the identical transform in resized_camera_intrinsics.
+    """
+    from PIL import Image
+    width,height,left,top=letterbox_params(image.width,image.height,target_width,target_height)
+    resized=image.convert('RGB').resize((width,height),Image.Resampling.BILINEAR)
+    if (width,height)==(target_width,target_height):return resized
+    output=Image.new('RGB',(target_width,target_height),(0,0,0))
+    output.paste(resized,(left,top))
+    return output
+
+
 def letterbox_images(images: torch.Tensor, target_width=800, target_height=640):
     """Resize unnormalized float raw camera images without anisotropic stretching.
 

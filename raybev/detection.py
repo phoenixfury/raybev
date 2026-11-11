@@ -62,6 +62,10 @@ def decode_heading(vectors,bin_logits,cfg):
             directions=torch.stack((centers.sin(),centers.cos()),dim=-1)
             same=(unit[...,None,:]*directions).sum(-1)>=0
             hemisphere=(bin_logits.float().softmax(-1)*same).sum(-1)
+            if getattr(cfg,'architecture_version',0)>=5:
+                # Bayes decision for the supervised binary hemisphere event.
+                facing=2*hemisphere-1
+                angle=.5*torch.atan2(vectors[...,0],vectors[...,1])+(facing<0).to(angle.dtype)*math.pi
             # Confidence must describe the hemisphere actually selected by the
             # strongest mode, not whichever hemisphere has more total mass.
             confidence=torch.where(facing>=0,hemisphere,1-hemisphere)

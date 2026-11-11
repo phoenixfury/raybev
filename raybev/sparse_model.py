@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .config import DEFAULT_CALIBRATION
-from .geometry import load_cameras,letterbox_params
+from .geometry import load_cameras,letterbox_params,resized_camera_intrinsics
 from .detection import decode_heading,rotated_bev_nms,in_bev_range
 from .model import conv_bn_relu
 from .sparse_config import SparseConfig
@@ -24,6 +24,12 @@ class YOLOPyramid(nn.Module):
         self.stage8=network[:5]
         self.stage16=nn.Sequential(*list(network.children())[5:7])
         self.stage32=nn.Sequential(*list(network.children())[7:10])
+        self.stride4=cfg.stride4
+        if cfg.stride4:
+            self.adapter4=conv_bn_relu(64,cfg.channels,1)
+            self.top_down4=nn.Conv2d(cfg.channels,cfg.channels,1,bias=False)
+            nn.init.zeros_(self.top_down4.weight)
+            self.backbone_profile.update(feature_layers=[2,4,6,9],feature_strides=[4,8,16,32],feature_channels=[64,128,128,256])
         self.adapters=nn.ModuleList(nn.Sequential(conv_bn_relu(n,cfg.channels,1),
             nn.Conv2d(cfg.channels,cfg.channels,3,padding=1,groups=cfg.channels,bias=False),
             nn.BatchNorm2d(cfg.channels),nn.ReLU6()) for n in (128,128,256))
@@ -37,12 +43,21 @@ class YOLOPyramid(nn.Module):
         self.register_buffer('std',torch.tensor([.229,.224,.225]).view(1,3,1,1),persistent=False)
 
     def forward_single(self,image):
-        p3=self.stage8(image*self.std+self.mean)
+        x=image*self.std+self.mean
+        if self.stride4:
+            for layer in list(self.stage8.children())[:3]:x=layer(x)
+            p2=self.adapter4(x)
+            for layer in list(self.stage8.children())[3:]:x=layer(x)
+            p3=x
+        else:p3=self.stage8(x)
         p4=self.stage16(p3);p5=self.stage32(p4)
         p3,p4,p5=(adapter(x) for adapter,x in zip(self.adapters,(p3,p4,p5)))
         if hasattr(self,'top_down'):
             p4=p4+F.interpolate(self.top_down[0](p5),size=p4.shape[-2:],mode='nearest')
             p3=p3+F.interpolate(self.top_down[1](p4),size=p3.shape[-2:],mode='nearest')
+        if self.stride4:
+            p2=p2+F.interpolate(self.top_down4(p3),size=p2.shape[-2:],mode='nearest')
+            return p2,p3,p4,p5
         return p3,p4,p5
 
     def forward(self,images):
@@ -58,6 +73,7 @@ class OpenCVProjector(nn.Module):
         def buffer(name,value):self.register_buffer(name,torch.as_tensor(np.asarray(value),dtype=torch.float32),persistent=False)
         buffer('transforms',[np.linalg.inv(c.T_base_cam) for c in cameras])
         buffer('intrinsics',[c.intrinsic for c in cameras]);buffer('distortion',[c.distortion for c in cameras])
+        buffer('network_intrinsics',[resized_camera_intrinsics(c.intrinsic,c.width,c.height,cfg.image_width,cfg.image_height) for c in cameras])
         buffer('raw_size',[[c.width,c.height] for c in cameras])
         resize=[letterbox_params(c.width,c.height,cfg.image_width,cfg.image_height) for c in cameras]
         buffer('resize_scale',[[r[0]/c.width,r[1]/c.height] for r,c in zip(resize,cameras)])
@@ -85,6 +101,8 @@ class OpenCVProjector(nn.Module):
         valid=(theta<=math.radians(self.cfg.theta_max_degrees))&(radius>.05)&(margin>=0)
         valid=valid&(uv<self.raw_size).all(-1)&torch.isfinite(xyz).all(-1)
         net=(uv+.5)*self.resize_scale-.5+self.padding
+        if self.cfg.architecture_version>=5:
+            net=torch.einsum('nij,bqpnj->bqpni',self.network_intrinsics,xy)[...,:2]
         cues=torch.cat((xyz/radius[...,None],(theta/math.radians(self.cfg.theta_max_degrees))[...,None],
                         (4*margin).clamp(0,1)[...,None],(radius.log()/math.log(self.cfg.max_range))[...,None]),-1)
         return net,valid,cues
@@ -132,7 +150,18 @@ class SparseEvidence(nn.Module):
         self.query=nn.Linear(cfg.channels,cfg.attention_channels)
         self.key=nn.Linear(cfg.channels,cfg.attention_channels)
         # ray XYZ, angle, margin, log-range, expected angular size, log stride.
-        self.geometry=nn.Sequential(nn.Linear(8,16),nn.ReLU(),nn.Linear(16,cfg.heads))
+        self.geometry=nn.Sequential(nn.Linear(15 if cfg.observation_conditioning else 8,32 if cfg.observation_conditioning else 16),
+                                    nn.ReLU(),nn.Linear(32 if cfg.observation_conditioning else 16,cfg.heads))
+        if cfg.observation_conditioning:
+            self.geometry_key=nn.Linear(15,cfg.attention_channels,bias=False)
+            self.ray_feature=nn.Linear(cfg.channels,16,bias=False)
+            self.ray_gate=nn.Linear(9,16,bias=False)
+            self.ray_output=nn.Linear(16,cfg.channels,bias=False)
+            nn.init.zeros_(self.ray_output.weight)
+            self.feature_reliability=nn.Linear(cfg.channels,cfg.heads,bias=False)
+        if cfg.architecture_version>=5 and cfg.multi_camera_facing:
+            self.camera_facing=nn.Sequential(nn.Linear(3*cfg.channels,cfg.channels//2),nn.ReLU(),nn.Linear(cfg.channels//2,8))
+            nn.init.zeros_(self.camera_facing[-1].weight);nn.init.zeros_(self.camera_facing[-1].bias)
         self.ray=nn.Linear(9,cfg.channels,bias=False);nn.init.zeros_(self.ray.weight)
         self.point_query=nn.Linear(cfg.channels,cfg.num_support_points*cfg.heads)
         if cfg.num_learned_points:
@@ -153,7 +182,8 @@ class SparseEvidence(nn.Module):
         uv,visible,cues=projector(box_points(boxes,offsets))
         b,q,p,n,_=uv.shape;h=self.cfg.heads;c=self.cfg.channels
         sampled=[]
-        for feature,stride in zip(features,(8,16,32)):
+        levels=len(self.cfg.feature_strides)
+        for feature,stride in zip(features,self.cfg.feature_strides):
             fh,fw=feature.shape[-2:]
             grid=2*(uv/stride+.5)/uv.new_tensor([fw,fh])-1
             grid=torch.where(visible[...,None],grid,torch.full_like(grid,2.))
@@ -167,23 +197,47 @@ class SparseEvidence(nn.Module):
         x,y,z=cues[...,:3].unbind(-1)
         basis=torch.stack((torch.ones_like(x),x,y,z,x*y,y*z,z*x,x*x-y*y,3*z*z-1),-1)
         values=values+self.ray(basis)[...,None,:]
-        key=self.key(values).reshape(b,q,p,n,3,h,-1)
+        if self.cfg.observation_conditioning:
+            values=values+self.ray_output(self.ray_feature(values)*self.ray_gate(basis)[...,None,:].tanh())
+        key=self.key(values).reshape(b,q,p,n,levels,h,-1)
         attention_query=self.query(query).reshape(b,q,h,-1)
         logits=(key.float()*attention_query[:,:,None,None,None].float()).sum(-1)/math.sqrt(self.cfg.attention_channels//h)
         angular=(boxes[...,3:6].norm(dim=-1)/boxes[...,:3].norm(dim=-1).clamp_min(.5)).clamp(.001,10).log()
         descriptor=torch.cat((cues,angular[:,:,None,None,None].expand(b,q,p,n,1)),-1)
-        descriptor=descriptor[...,None,:].expand(b,q,p,n,3,7)
-        stride=values.new_tensor([math.log(s/8) for s in (8,16,32)]).view(1,1,1,1,3,1).expand(b,q,p,n,3,1)
-        logits=logits+self.geometry(torch.cat((descriptor,stride),-1))
-        valid=visible[...,None,None].expand(b,q,p,n,3,h).reshape(b,q,p,n*3,h)
-        weights=masked_softmax(logits.reshape(b,q,p,n*3,h),valid,3)
-        split=values.reshape(b,q,p,n*3,h,c//h)
+        descriptor=descriptor[...,None,:].expand(b,q,p,n,levels,7)
+        stride=values.new_tensor([math.log(s/8) for s in self.cfg.feature_strides]).view(1,1,1,1,levels,1).expand(b,q,p,n,levels,1)
+        descriptor=torch.cat((descriptor,stride),-1)
+        if self.cfg.observation_conditioning:
+            from .sparse_observation import distortion_descriptor
+            extra=distortion_descriptor(cues,visible,boxes,projector,self.cfg.feature_strides)
+            descriptor=torch.cat((descriptor,extra),-1)
+            geometry_key=self.geometry_key(descriptor).reshape(b,q,p,n,levels,h,-1)
+            logits=logits+(geometry_key.float()*attention_query[:,:,None,None,None].float()).sum(-1)/math.sqrt(self.cfg.attention_channels//h)
+            logits=logits+self.feature_reliability(values)
+        logits=logits+self.geometry(descriptor)
+        valid=visible[...,None,None].expand(b,q,p,n,levels,h).reshape(b,q,p,n*levels,h)
+        weights=masked_softmax(logits.reshape(b,q,p,n*levels,h),valid,3)
+        split=values.reshape(b,q,p,n*levels,h,c//h)
         per_point=(weights[...,None]*split).sum(3).reshape(b,q,p,c)
         point_logits=self.point_query(query).reshape(b,q,p,h)+self.point_key(per_point)
         point_valid=visible.any(-1)[...,None].expand(b,q,p,h)
         point_weights=masked_softmax(point_logits,point_valid,2)
         fused=(point_weights[...,None]*per_point.reshape(b,q,p,h,c//h)).sum(2).reshape(b,q,c)
-        return self.output(fused),per_point,visible.any(-1).any(-1)
+        result=(self.output(fused),per_point,visible.any(-1).any(-1))
+        if self.cfg.architecture_version>=5:
+            if not self.cfg.multi_camera_facing:return result+(query.new_zeros(b,q,8),)
+            # Keep each camera separate until after its front/rear prediction.
+            camera_weights=weights.reshape(b,q,p,n,levels,h).mean(-1)
+            camera_values=(camera_weights[...,None]*values).sum(-2)/camera_weights.sum(-1,keepdim=True).clamp_min(1e-8)
+            facing_input=torch.cat((camera_values[:,:,0],camera_values[:,:,1]-camera_values[:,:,2],
+                                    camera_values[:,:,1]+camera_values[:,:,2]),-1)
+            both=visible[:,:,1]&visible[:,:,2]
+            confidence=camera_weights[:,:,1].sum(-1)+camera_weights[:,:,2].sum(-1)
+            confidence=confidence*both
+            confidence=confidence/confidence.sum(-1,keepdim=True).clamp_min(1e-8)
+            facing=(self.camera_facing(facing_input)*confidence[...,None]).sum(-2)
+            return result+(facing,)
+        return result
 
 
 class SparseStage(nn.Module):
@@ -218,7 +272,8 @@ class SparseStage(nn.Module):
         position=torch.cat((boxes[...,:3]/48,boxes[...,3:6].clamp_min(.05).log()/3,
                             boxes[...,6,None].sin(),boxes[...,6,None].cos()),-1)
         query=self.norm1(query+self.attention(query+self.position(position),attention_mask,key_valid))
-        evidence,points,supported=self.evidence(query,boxes,features,projector)
+        observations=self.evidence(query,boxes,features,projector)
+        evidence,points,supported=observations[:3]
         query=self.norm2(query+evidence);query=self.norm3(query+self.ffn(query))
         raw=self.center(query).float()
         radius=boxes[...,:3].norm(dim=-1,keepdim=True).clamp_min(self.cfg.min_range)
@@ -251,18 +306,22 @@ class SparseStage(nn.Module):
                           old.cos()*rotation[...,1]-old.sin()*rotation[...,0]),-1)
         facing_input=torch.cat((query,points[:,:,1]-points[:,:,2],points[:,:,1]+points[:,:,2]),-1)
         centers=query.new_tensor([i*2*math.pi/8 for i in range(8)])
-        facing=self.facing(facing_input).float()+torch.cos(centers-boxes[...,6,None])
+        facing=self.facing(facing_input).float()+self.cfg.facing_cosine_prior*torch.cos(centers-boxes[...,6,None])
+        if self.cfg.architecture_version>=5:facing=facing+observations[3].float()
+        facing=facing/self.cfg.facing_temperature
         decode_axis=axis
         if self.cfg.is_refined:
             # Keep raw axis for loss so a 90-degree physical error has a
             # corrective gradient. Never feed atan2(0,0), even under AMP.
             previous=torch.stack((old.sin(),old.cos()),-1)
             decode_axis=torch.where(axis.square().sum(-1,keepdim=True)>1e-4,axis,previous)
-        yaw,_=decode_heading(decode_axis,facing,self.cfg)
+        yaw,confidence=decode_heading(decode_axis,facing,self.cfg)
         updated=torch.cat((center,size,yaw[...,None]),-1)
         class_query=task_query+self.class_context(task_query) if self.cfg.is_refined else query
-        return query,dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(class_query),
-                          quality_logits=self.quality(query)[...,0],supported=supported)
+        output=dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(class_query),
+                    quality_logits=self.quality(query)[...,0],supported=supported)
+        if self.cfg.architecture_version>=5:output['facing_confidence']=confidence
+        return query,output
 
 
 def class_balanced_dn_indices(gt,limit,class_weights):
@@ -299,11 +358,21 @@ class YOLOROSALite(nn.Module):
         self.register_buffer('anchors',anchors.clone())
         self.query_features=nn.Parameter(torch.randn(self.cfg.queries,self.cfg.channels)*.02)
         self.layers=nn.ModuleList(SparseStage(self.cfg,i) for i in range(self.cfg.stages))
+        if self.cfg.proposal_queries:
+            from .sparse_observation import GroundProposals
+            self.proposals=GroundProposals(self.cfg)
 
     def forward_features(self,features,targets=None):
         b=features[0].shape[0];q=self.cfg.queries
         boxes=self.anchors[None].expand(b,-1,-1)
         query=self.query_features[None].expand(b,-1,-1)
+        proposal=None
+        if self.cfg.proposal_queries:
+            proposed,values,proposal=self.proposals(features,self.projector,boxes)
+            keep=q-self.cfg.proposal_queries
+            boxes=torch.cat((boxes[:,:keep],proposed),1)
+            query=torch.cat((query[:,:keep],query[:,keep:]+values),1)
+        initial_boxes=boxes
         indices=[];attention_mask=None;valid=None
         if self.training and targets is not None and self.cfg.dn_queries:
             for gt in targets:
@@ -339,7 +408,7 @@ class YOLOROSALite(nn.Module):
         for layer in self.layers:
             query,output=layer(query,boxes,features,self.projector,attention_mask,valid)
             boxes=output['boxes'];outputs.append(output)
-        return dict(stages=outputs,dn_indices=indices,num_queries=q)
+        return dict(stages=outputs,dn_indices=indices,num_queries=q,initial_boxes=initial_boxes,proposal=proposal)
 
     def forward(self,images,targets=None):
         if images.shape[-2:]!=(self.cfg.image_height,self.cfg.image_width):raise ValueError('Sparse input image size mismatch')

@@ -85,6 +85,18 @@ def project_fisheye(points_base, camera, theta_max_degrees=105.0):
     return np.column_stack([u, v]), valid, theta
 
 
+def resized_camera_intrinsics(intrinsic,src_width,src_height,dst_width,dst_height):
+    """K_network = A_resize @ K_native; OpenCV distortion is unchanged.
+
+    Pixel centres follow u'=(u+.5)*sx-.5+left, likewise for v. Use the
+    actual integer resize dimensions, not an approximate scalar scale.
+    """
+    width,height,left,top=letterbox_params(src_width,src_height,dst_width,dst_height)
+    sx,sy=width/src_width,height/src_height
+    transform=np.array([[sx,0,(sx-1)/2+left],[0,sy,(sy-1)/2+top],[0,0,1]],dtype=np.float64)
+    return transform@np.asarray(intrinsic,dtype=np.float64)
+
+
 def letterbox_params(src_width: int, src_height: int, dst_width: int, dst_height: int):
     """Exact integer resize-and-pad transform shared by preprocess and projection.
 

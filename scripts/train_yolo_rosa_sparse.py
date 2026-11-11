@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train Q100/L4 YOLO-ROSA-Lite, standalone or torchrun DDP. No dense-model resume."""
+"""Train versioned YOLO-ROSA-Lite, standalone or torchrun DDP. No dense-model resume."""
 import argparse
 import csv
 from datetime import timedelta
@@ -20,6 +20,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from raybev.config import CLASSES,DEFAULT_CALIBRATION
+from raybev.geometry import load_cameras
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.sparse_config import SparseConfig
 from raybev.sparse_model import YOLOROSALite,decode_sparse
@@ -30,7 +31,7 @@ from raybev.metrics import evaluate_detections,heading_diagnostics
 from train_combined_rosa_ddp import ExactEvalSampler,combine_exact_predictions,sync_bn_running_buffers,create_grad_scaler,cuda_autocast,save_checkpoint,Progress
 
 PROJECT=Path(__file__).resolve().parents[1]
-COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising')
+COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal')
 
 
 def build_parser():
@@ -54,15 +55,28 @@ def build_parser():
     p.add_argument('--queries',type=int,default=100)
     p.add_argument('--stages',type=int,default=4)
     p.add_argument('--channels',type=int,default=64)
-    p.add_argument('--architecture-version',type=int,choices=[3,4],default=3,
-                   help='3 reproduces V6; 4 uses the refined heading/localization/task heads')
+    p.add_argument('--architecture-version',type=int,choices=[3,4,5],default=3,
+                   help='3 reproduces V6; 4 refines geometry; 5 enables proposals and richer observations')
     p.add_argument('--image-width',type=int,default=800)
+    p.add_argument('--stride4',action='store_true')
+    p.add_argument('--observation-conditioning',action='store_true')
+    p.add_argument('--proposal-queries',type=int,default=0)
+    p.add_argument('--proposal-grid',type=int,default=24)
+    p.add_argument('--ground-z',type=float,default=0.)
+    p.add_argument('--proposal-weight',type=float,default=1.)
+    p.add_argument('--facing-cosine-prior',type=float,default=1.)
+    p.add_argument('--facing-temperature',type=float,default=1.)
+    p.add_argument('--no-multi-camera-facing',action='store_true')
+    p.add_argument('--extent-annotations')
+    p.add_argument('--extent-weight',type=float,default=0.)
     p.add_argument('--image-height',type=int,default=640)
     p.add_argument('--dn-queries',type=int,default=24)
     p.add_argument('--dn-weight',type=float,default=.5)
     p.add_argument('--heading-teacher')
     p.add_argument('--heading-teacher-weight',type=float,default=.2)
     p.add_argument('--no-augmentation',action='store_true')
+    p.add_argument('--resize-native-images',action='store_true',help='Resize matching-aspect native images to the calibrated network size')
+    p.add_argument('--expected-sequences',type=int,help='Fail if TRAIN/VAL do not both contain this many bags')
     p.add_argument('--sampling',choices=['track','uniform'],default='track')
     p.add_argument('--no-pretrained',action='store_true',help='Explicit random-backbone ablation only')
     p.add_argument('--backbone-weights')
@@ -95,6 +109,8 @@ def check_resume(state,cfg,args,contract,teacher_sha,world):
     for key in ('epochs','lr','weight_decay','batch_size','accum_steps','backbone_lr_mult','freeze_image_stages',
                 'warmup_steps','sampling','no_augmentation','seed','amp','workers'):
         if state['recipe'].get(key)!=getattr(args,key):raise ValueError('Sparse resume recipe changed: '+key)
+    if state['recipe'].get('resize_native_images',False)!=getattr(args,'resize_native_images',False):
+        raise ValueError('Sparse resume image resize policy changed')
 
 
 def check_warm_start(state,cfg,contract,teacher_sha):
@@ -193,6 +209,12 @@ def flat_metrics(row):
         for cls,values in values.items():
             for name in ('AOE_deg','axis_AOE_deg','flip_rate','recall','matched_count','gt_count','prediction_count','precision'):
                 flat[f'heading_{key}_{cls}_{name}']=values.get(name)
+    for stage,records in row.get('raw_query_coverage',{}).items():
+        for key,values in records.items():
+            for field in ('recall','matched','total'):
+                flat[f'raw_{stage}_{key.replace("/","_")}_{field}']=values[field]
+    for name,values in row.get('facing_reliability',{}).get('by_class',{}).items():
+        for key,value in values.items():flat[f'facing_calibration_{name}_{key}']=value
     return flat
 
 
@@ -235,6 +257,14 @@ def print_epoch_metrics(row):
               f'{count:7d} {number(ate):>7} {number(ase):>6} {number(aoe,1):>9}',flush=True)
     print('  TP/FP/FN use score >= 0.1 and 2m; geom_n uses retained score >= 0.01 and 2m. '
           'VAL excludes teacher/denoising losses; TRAIN/VAL total objectives differ.',flush=True)
+    coverage=row.get('raw_query_coverage',{})
+    if coverage:
+        stages=[key for key in coverage if key.startswith('stage_')]
+        final=max(stages,key=lambda x:int(x.split('_')[-1]))
+        print('  Raw class/score-agnostic XY recall @0.5/1/2/4m: initial -> final (ranges in history/CSV)',flush=True)
+        for name in CLASSES:
+            def recalls(stage):return '/'.join(number(coverage[stage][f'{name}/all/{t:g}m']['recall']) for t in (.5,1.,2.,4.))
+            print(f'  {name:12s} {recalls("initial")} -> {recalls(final)}',flush=True)
 
 
 def main():
@@ -254,12 +284,23 @@ def main():
         random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
         cfg=SparseConfig(architecture_version=args.architecture_version,image_width=args.image_width,image_height=args.image_height,queries=args.queries,
             stages=args.stages,channels=args.channels,ffn_channels=2*args.channels,max_detections=args.queries,
+            stride4=args.stride4,observation_conditioning=args.observation_conditioning,
+            proposal_queries=args.proposal_queries,proposal_grid=args.proposal_grid,ground_z=args.ground_z,
+            proposal_weight=args.proposal_weight,facing_cosine_prior=args.facing_cosine_prior,
+            facing_temperature=args.facing_temperature,multi_camera_facing=not args.no_multi_camera_facing,extent_weight=args.extent_weight,
             dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=args.heading_teacher_weight).validate()
         options=dict(root=args.root,cfg=cfg,box_frame=args.box_frame,z_reference=args.z_reference,
+                     strict_size=not args.resize_native_images,
+                     native_image_sizes={c.name:(c.width,c.height) for c in load_cameras(args.calibration)} if args.resize_native_images else None,
                      calibration=args.lidar_calibration or args.calibration,expected_size=(cfg.image_width,cfg.image_height))
         train=RosaCombinedDataset(ann_file=args.train_ann,augment=not args.no_augmentation,**options)
         val=RosaCombinedDataset(ann_file=args.val_ann,**options)
         if not len(train) or not len(val):raise ValueError('TRAIN and VAL must be nonempty')
+        train_sequences={str(r['metainfo']['sequence_id']) for r in train.rows}
+        val_sequences={str(r['metainfo']['sequence_id']) for r in val.rows}
+        if args.expected_sequences is not None and (len(train_sequences)!=args.expected_sequences or train_sequences!=val_sequences):
+            raise ValueError('Expected bag coverage mismatch in TRAIN/VAL')
+        if primary:print('Dataset bags:',sorted(train_sequences),'TRAIN:',len(train),'VAL:',len(val),flush=True)
         if any(r['metainfo'].get('temporal_split')!='train' for r in train.rows):raise ValueError('Sparse TRAIN split leakage')
         if any(r['metainfo'].get('temporal_split')!='val' for r in val.rows):raise ValueError('Sparse VAL split leakage')
         if {str(r['token']) for r in train.rows}&{str(r['token']) for r in val.rows}:raise ValueError('TRAIN/VAL token overlap')
@@ -267,8 +308,13 @@ def main():
         contract=contracts(train,val,args)
         teacher=SparseYawTeacher(args.heading_teacher,train,args.calibration,args.lidar_calibration) if args.heading_teacher else None
         teacher_sha=teacher.sha256 if teacher else None
+        from raybev.sparse_extent import VerifiedExtents
+        extents=VerifiedExtents(args.extent_annotations,train,args.calibration) if args.extent_annotations else None
+        if bool(extents)!=bool(cfg.extent_weight):raise ValueError('Set both --extent-annotations and positive --extent-weight')
         checkpoint=torch.load(args.resume,map_location='cpu',weights_only=False) if args.resume else None
         if checkpoint:check_resume(checkpoint,cfg,args,contract,teacher_sha,world)
+        if checkpoint and checkpoint.get('extent_annotations_sha256')!=(extents.sha256 if extents else None):
+            raise ValueError('Resume extent annotations changed')
         initializer=torch.load(args.init_from,map_location='cpu',weights_only=False) if args.init_from else None
         if initializer:check_warm_start(initializer,cfg,contract,teacher_sha)
         out=Path(args.out)
@@ -292,7 +338,7 @@ def main():
                             optimizer='fresh',scheduler='fresh',source_cfg=initializer['cfg'])
         configure_image_training(model,args.freeze_image_stages)
         optimizer=build_optimizer(model,args.lr,args.weight_decay,args.backbone_lr_mult)
-        criterion=SparseCriterion(cfg,teacher)
+        criterion=SparseCriterion(cfg,teacher,model.projector,extents)
         if args.sampling=='track':sampler=TrackBalancedSampler(train,args.seed,rank,world)
         else:sampler=DistributedSampler(train,num_replicas=world,rank=rank,seed=args.seed,drop_last=False)
         eval_sampler=ExactEvalSampler(val,rank,world)
@@ -357,7 +403,9 @@ def main():
                     **{key:f'{float(parts[key]):.3f}' for key in ('classification','center','size','axis','facing')}))
             if progress:progress.close()
             if distributed:dist.all_reduce(sums);sync_bn_running_buffers(model)
-            model.eval();val_sums=torch.zeros(2+len(components),device=device,dtype=torch.float64);records=[];position=0;ids=list(eval_sampler)
+            model.eval();val_sums=torch.zeros(2+len(components),device=device,dtype=torch.float64);records=[];raw_records=[];position=0;ids=list(eval_sampler)
+            from raybev.sparse_diagnostics import output_raw_counts,merge_raw_counts,facing_samples,summarize_facing
+            facing_records=[]
             val_progress=Progress('sparse validation',epoch+1,args.epochs,len(evaluation),args.progress,args.log_every) if primary else None
             with torch.inference_mode():
                 for images,boxes,tokens in evaluation:
@@ -366,6 +414,8 @@ def main():
                         output=model(images.to(device));loss,parts=criterion(output,targets)
                     if not torch.isfinite(loss):raise FloatingPointError('Nonfinite sparse VAL loss')
                     predictions=decode_sparse(output,cfg,.01)
+                    raw_records.extend(output_raw_counts(output,boxes,cfg))
+                    facing_records.extend(facing_samples(output,boxes,cfg))
                     val_sums[:2]+=val_sums.new_tensor([float(loss)*len(images),len(images)])
                     for j,key in enumerate(components,2):val_sums[j]+=float(parts[key])*len(images)
                     for pred,gt in zip(predictions,boxes):
@@ -377,6 +427,12 @@ def main():
             if distributed:
                 dist.all_reduce(val_sums);gathered=[None]*world;dist.all_gather_object(gathered,records)
             else:gathered=[records]
+            if distributed:
+                gathered_raw=[None]*world;dist.all_gather_object(gathered_raw,raw_records)
+            else:gathered_raw=[raw_records]
+            if distributed:
+                gathered_facing=[None]*world;dist.all_gather_object(gathered_facing,facing_records)
+            else:gathered_facing=[facing_records]
             if primary:
                 predictions,truths=combine_exact_predictions(gathered,len(val))
                 print(f'[Epoch {epoch+1}/{args.epochs}] Evaluating {len(val)} distinct validation frames globally...',flush=True)
@@ -389,6 +445,8 @@ def main():
                     per_bag[bag]=evaluate_detections([predictions[i] for i in selected],[truths[i] for i in selected],score_threshold=.1)
                 count=float(sums[1+len(components)])
                 row=dict(epoch=epoch+1,train_loss=float(sums[0])/count,val_loss=float(val_sums[0]/val_sums[1]),
+                    raw_query_coverage=merge_raw_counts([r for shard in gathered_raw for r in shard]),
+                    facing_reliability=summarize_facing([r for shard in gathered_facing for r in shard]),
                     metrics=metrics,heading_diagnostics=heading,per_bag_metrics=per_bag,
                     train_components={k:float(sums[j])/count for j,k in enumerate(components,1)},
                     val_components={k:float(val_sums[j]/val_sums[1]) for j,k in enumerate(components,2)},
@@ -406,6 +464,7 @@ def main():
                     optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),scaler=scaler.state_dict(),
                     epoch=epoch+1,best_map=best,best_heading_aoe=best_heading,metrics=metrics,heading_diagnostics=heading,
                     world_size=world,recipe=vars(args),heading_teacher_sha256=teacher_sha,
+                    extent_annotations_sha256=extents.sha256 if extents else None,
                     backbone_initialization=model.image_encoder.initialization,backbone_profile=model.image_encoder.backbone_profile,
                     warm_start=warm_start,**contract)
                 save_checkpoint(out/'last.pt',state)

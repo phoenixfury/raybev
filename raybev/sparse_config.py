@@ -1,4 +1,4 @@
-"""Independent Q100/L4/C64 sparse architecture; dense checkpoints are incompatible."""
+"""Versioned sparse architectures; legacy Q100/C64 and Q225 observation experiments."""
 from dataclasses import dataclass,asdict
 import math
 from .config import CLASSES
@@ -37,9 +37,22 @@ class SparseConfig:
     dn_queries: int = 24
     dn_weight: float = .5
     teacher_weight: float = .2
+    stride4: bool = False
+    observation_conditioning: bool = False
+    proposal_queries: int = 0
+    proposal_grid: int = 24
+    ground_z: float = 0.
+    proposal_weight: float = 1.
+    facing_cosine_prior: float = 1.
+    facing_temperature: float = 1.
+    multi_camera_facing: bool = True
+    extent_weight: float = 0.
 
     @property
-    def is_refined(self):return self.architecture_version==4
+    def is_refined(self):return self.architecture_version>=4
+
+    @property
+    def feature_strides(self):return (4,8,16,32) if self.stride4 else (8,16,32)
 
     @property
     def num_learned_points(self):return 6 if self.is_refined else 0
@@ -51,7 +64,7 @@ class SparseConfig:
     def center_loss_beta(self):return .1 if self.is_refined else 1.
 
     def validate(self):
-        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version not in (3,4) or self.backbone!='yolo26n':
+        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version not in (3,4,5) or self.backbone!='yolo26n':
             raise ValueError('Sparse architecture contract mismatch; dense/ROSA checkpoints cannot be resumed')
         if min(self.image_width,self.image_height)<=0 or self.image_width%32 or self.image_height%32:
             raise ValueError('Sparse image size must be divisible by 32')
@@ -76,6 +89,13 @@ class SparseConfig:
             raise ValueError('Invalid sparse loss/decoder settings')
         if len(self.training_class_counts)!=len(CLASSES) or any(x<0 for x in self.training_class_counts):
             raise ValueError('Invalid sparse TRAIN counts')
+        if (self.architecture_version<5 and (self.stride4 or self.observation_conditioning or self.proposal_queries or self.extent_weight)):
+            raise ValueError('Observation/proposal/extent changes require architecture 5')
+        if (not 0<=self.proposal_queries<self.queries or self.proposal_grid<2 or
+                self.proposal_grid**2<self.proposal_queries or not math.isfinite(self.ground_z) or
+                not all(math.isfinite(x) and x>=0 for x in (self.proposal_weight,self.extent_weight,self.facing_cosine_prior)) or
+                not math.isfinite(self.facing_temperature) or self.facing_temperature<=0):
+            raise ValueError('Invalid proposal/extent/facing settings')
         return self
 
     def to_dict(self):return asdict(self)

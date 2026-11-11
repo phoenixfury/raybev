@@ -1,0 +1,131 @@
+{
+  "type": "eight_bag_native_AMP_structural_smoke_NOT_accuracy",
+  "cfg": {
+    "architecture": "yolo_rosa_lite_v1",
+    "architecture_version": 5,
+    "backbone": "yolo26n",
+    "image_width": 800,
+    "image_height": 640,
+    "channels": 96,
+    "queries": 225,
+    "stages": 4,
+    "heads": 4,
+    "attention_channels": 32,
+    "ffn_channels": 192,
+    "num_classes": 6,
+    "theta_max_degrees": 105.0,
+    "bev_x_min": -48.0,
+    "bev_x_max": 48.0,
+    "bev_y_min": -48.0,
+    "bev_y_max": 48.0,
+    "min_range": 0.5,
+    "max_range": 68.0,
+    "class_positive_weights": [
+      1.0,
+      2.0,
+      4.0,
+      4.0,
+      4.0,
+      4.0
+    ],
+    "mean_training_objects": 14.517867271695973,
+    "training_class_counts": [
+      120229,
+      4493,
+      202,
+      1986,
+      61,
+      1004
+    ],
+    "facing_loss": "circular_bins",
+    "heading_encoding": "axis_direction",
+    "heading_bins": 8,
+    "quality_score_power": 0.5,
+    "nms_iou_threshold": 0.5,
+    "max_detections": 225,
+    "dn_queries": 24,
+    "dn_weight": 0.5,
+    "teacher_weight": 0.2,
+    "stride4": true,
+    "observation_conditioning": true,
+    "proposal_queries": 64,
+    "proposal_grid": 24,
+    "ground_z": 0.0,
+    "proposal_weight": 1.0,
+    "facing_cosine_prior": 0.0,
+    "facing_temperature": 1.0,
+    "multi_camera_facing": true,
+    "extent_weight": 1.0
+  },
+  "sequences": [
+    "09_16_09_58_56",
+    "09_17_08_33_47",
+    "09_25_13_28_18",
+    "09_30_10_10_54",
+    "11_06_10_07_06",
+    "11_09_08_01_03",
+    "11_09_09_00_30",
+    "11_09_09_40_48"
+  ],
+  "train_counts": {
+    "car": 120229,
+    "pedestrian": 4493,
+    "cyclist": 202,
+    "truck": 1986,
+    "van": 61,
+    "bus": 1004
+  },
+  "initialization": "YOLO26N_official_COCO_conv_sppf; path=/home/mostafa/mmdetection3d/projects/raybev_lite/weights/yolo26n.pt; sha256=9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef; ultralytics=8.4.182; layers=0..9; taps=4,6,9; no_C2PSA_no_2D_head",
+  "extent_sha256": "748849331d10c236c547cde46acd63628066a9550b551546d17b4acc88582aaf",
+  "steps": [
+    {
+      "tokens": [
+        "1789552780187146076",
+        "1789634027570191151",
+        "1790342898668922972",
+        "1790763109867265935"
+      ],
+      "loss": 23.283906936645508,
+      "gradient_norm": 79.24844360351562,
+      "components": {
+        "classification": 1.3540620803833008,
+        "center": 3.31178617477417,
+        "size": 0.506987452507019,
+        "axis": 0.9148674011230469,
+        "facing": 2.3991570472717285,
+        "quality": 0.8534217476844788,
+        "teacher": 0.0,
+        "denoising": 9.824174880981445,
+        "facing_binary": 0.7997190952301025,
+        "extent": 0.05261857807636261,
+        "proposal": 5.6939826011657715,
+        "matches": 56.0
+      }
+    },
+    {
+      "tokens": [
+        "1793959685405323143",
+        "1794211566171280965",
+        "1794215321291431916",
+        "1794217946019917139"
+      ],
+      "loss": 27.896625518798828,
+      "gradient_norm": 124.82684326171875,
+      "components": {
+        "classification": 1.7296159267425537,
+        "center": 4.42903995513916,
+        "size": 0.6176348328590393,
+        "axis": 1.2466082572937012,
+        "facing": 3.115269660949707,
+        "quality": 1.0972521305084229,
+        "teacher": 0.0,
+        "denoising": 11.217418670654297,
+        "facing_binary": 1.0384399890899658,
+        "extent": 0.058394335210323334,
+        "proposal": 5.594466686248779,
+        "matches": 76.0
+      }
+    }
+  ],
+  "peak_allocated_mb": 3604.56494140625
+}

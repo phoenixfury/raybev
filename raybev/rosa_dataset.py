@@ -14,12 +14,23 @@ import torch
 from PIL import Image,ImageOps
 from torch.utils.data import Dataset
 from .config import CAMERAS,CLASSES,CLASS_TO_ID,DEFAULT_BOX_FRAME,DEFAULT_CALIBRATION
-from .preprocessing import normalize_imagenet
+from .preprocessing import normalize_imagenet,resize_camera_image
 from .detection import in_bev_range
 
 
 class SerializedCameraMetadata:
     """Passive legacy PKL camera state; never used to project OpenCV images."""
+
+
+def camera_entry(cameras,name):
+    """Explicit ROSA-name mapping preserves the calibrated F/R/SL/SR order."""
+    aliases={'ARC_F':'fisheye_camera_front','ARC_R':'fisheye_camera_rear',
+             'ARC_SL':'fisheye_camera_left','ARC_SR':'fisheye_camera_right'}
+    keys=[key for key in (name,aliases[name]) if key in cameras]
+    if not keys:raise KeyError('Missing calibrated camera '+name)
+    if len(keys)>1 and cameras[keys[0]]['cam_path']!=cameras[keys[1]]['cam_path']:
+        raise ValueError('Conflicting camera aliases for '+name)
+    return cameras[keys[0]]
 
 
 class AnnotationUnpickler(pickle.Unpickler):
@@ -145,7 +156,7 @@ def photometric_augment(images):
 
 class RosaCombinedDataset(Dataset):
     def __init__(self,root,ann_file,box_frame=DEFAULT_BOX_FRAME,calibration=None,z_reference='center',
-                 strict_size=True,expected_size=(800,640),cfg=None,augment=False):
+                 strict_size=True,expected_size=(800,640),cfg=None,augment=False,native_image_sizes=None):
         self.root=Path(root).resolve()
         self.annotation_path=self.root/ann_file if not Path(ann_file).is_absolute() else Path(ann_file)
         self.annotation=load_annotations(self.annotation_path)
@@ -154,6 +165,7 @@ class RosaCombinedDataset(Dataset):
         self.z_reference=z_reference
         self.T_base_clidar=read_T_base_clidar(calibration) if self.box_frame=='CLIDAR' else None
         self.strict_size=strict_size;self.expected_size=expected_size
+        self.native_image_sizes=native_image_sizes
         self.augment=augment
         self.cfg=cfg
         self.range_filtered_boxes=0
@@ -179,17 +191,19 @@ class RosaCombinedDataset(Dataset):
         cam_dict=sample['cam_info']['cam_fisheye']
         image_list=[]
         for cam in CAMERAS:
-            rel=Path(cam_dict[cam]['cam_path'])
+            rel=Path(camera_entry(cam_dict,cam)['cam_path'])
             if rel.is_absolute() or '..' in rel.parts:raise ValueError(f'Unsafe camera path: {rel}')
             path=self.root/rel
             with Image.open(path) as im:
                 im=im.convert('RGB')
+                if self.native_image_sizes is not None and im.size not in (self.expected_size,tuple(self.native_image_sizes[cam])):
+                    raise ValueError(f'Image size differs from calibrated native/network size: {im.size}: {path}')
                 if im.size!=self.expected_size:
                     if self.strict_size:
                         raise ValueError(f'Expected pre-resized {self.expected_size} image, got {im.size}: {path}')
-                    if (im.width*self.expected_size[1]) != (im.height*self.expected_size[0]):
+                    if self.native_image_sizes is None and (im.width*self.expected_size[1]) != (im.height*self.expected_size[0]):
                         raise ValueError(f'Nonmatching aspect ratio of {im.size} for {path}; prepare images first')
-                    im=im.resize(self.expected_size,Image.Resampling.BILINEAR)
+                    im=resize_camera_image(im,*self.expected_size)
                 array=np.asarray(im,dtype=np.uint8)
             image_list.append(torch.from_numpy(array.copy()).permute(2,0,1).float()/255.)
         images=torch.stack(image_list)

@@ -79,13 +79,15 @@ class SparseYawTeacher:
 
 
 class SparseCriterion(nn.Module):
-    def __init__(self,cfg,teacher=None):
-        super().__init__();self.cfg=cfg;self.teacher=teacher
+    def __init__(self,cfg,teacher=None,projector=None,extents=None):
+        super().__init__();self.cfg=cfg;self.teacher=teacher;self.projector=projector;self.extents=extents
+        if cfg.extent_weight and (extents is None or projector is None):
+            raise ValueError('Extent loss requires verified image annotations and calibration')
 
     def _regression(self,stage,pi,gt,denominator,token=None):
         # This zero keeps all task projections in the DDP graph on empty ranks.
         zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
-        result={name:zero for name in ('center','size','axis','facing','quality','teacher')}
+        result={name:zero for name in ('center','size','axis','facing','quality','teacher','facing_binary','extent')}
         if not len(gt):return result
         pred=stage['boxes'][pi].float()
         weights=gt.new_tensor(self.cfg.class_positive_weights)[gt[:,7].long()]
@@ -98,6 +100,19 @@ class SparseCriterion(nn.Module):
         result['axis']=average(F.smooth_l1_loss(stage['axis'][pi].float(),axis_target,reduction='none').sum(-1))
         direction=torch.stack((gt[:,6].sin(),gt[:,6].cos()),-1)
         result['facing']=average(facing_vector_loss(stage['facing'][pi].float(),direction,self.cfg))
+        if self.cfg.architecture_version>=5:
+            # The target is a separate front/rear decision along the detached
+            # predicted axis. No axis gradient can game hemisphere membership.
+            yaw=pred[:,6].detach()
+            axis=.5*torch.atan2((2*yaw).sin(),(2*yaw).cos())
+            bins=axis.new_tensor([i*2*math.pi/8 for i in range(8)])
+            same=torch.cos(bins-axis[:,None])>=0
+            logits=stage['facing'][pi].float()
+            hemisphere_logit=torch.logsumexp(logits.masked_fill(~same,-1e4),-1)-torch.logsumexp(logits.masked_fill(same,-1e4),-1)
+            target=(torch.cos(gt[:,6]-axis)>=0).float()
+            result['facing_binary']=average(F.binary_cross_entropy_with_logits(hemisphere_logit,target,reduction='none'))
+        if self.cfg.extent_weight:
+            result['extent']=self.extents.loss(pred,gt,token,self.projector)
         distance=(pred[:,:2]-gt[:,:2]).norm(dim=-1)
         quality=torch.exp(-distance if self.cfg.is_refined else -distance-size_error.abs().mean(-1)).detach()
         result['quality']=average(F.binary_cross_entropy_with_logits(stage['quality_logits'][pi].float(),quality,reduction='none'))
@@ -115,7 +130,7 @@ class SparseCriterion(nn.Module):
         if not b:raise ValueError('Empty sparse minibatch')
         for gt in targets:validate_targets(gt,cfg)
         denominator=b*cfg.mean_training_objects
-        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising')}
+        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal')}
         matches=0
         for stage in output['stages']:
             zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
@@ -132,16 +147,20 @@ class SparseCriterion(nn.Module):
                 focal=F.binary_cross_entropy_with_logits(logits,truth,reduction='none')*(1-pt).square()*weights
                 current['classification']+=focal.mul(keep[:,None]).sum()/denominator
                 reg=self._regression(single,pi,known[ti],denominator,None if tokens is None else tokens[bi])
-                for key,value in reg.items():current[key]+=value
+                for key,value in reg.items():current[key]+=value/b if key=='extent' else value
                 if len(output['dn_indices']):
                     ids=output['dn_indices'][bi].to(target.device);dn=torch.arange(len(ids),device=target.device)+q
                     dn_truth=torch.zeros_like(single['class_logits'][dn].float())
                     dn_truth[torch.arange(len(ids),device=target.device),target[ids,7].long()]=1
                     dn_class=F.binary_cross_entropy_with_logits(single['class_logits'][dn].float(),dn_truth,reduction='none').sum()/denominator
                     dn_reg=self._regression(single,dn,target[ids],denominator)
-                    current['denoising']+=dn_class+2*dn_reg['center']+dn_reg['size']+dn_reg['axis']+dn_reg['facing']+.5*dn_reg['quality']
+                    current['denoising']+=dn_class+2*dn_reg['center']+dn_reg['size']+dn_reg['axis']+dn_reg['facing']+.5*dn_reg['quality']+.5*dn_reg['facing_binary']
                 matches+=len(pi)
             for key in totals:totals[key]+=current[key]/len(output['stages'])
+        if output.get('proposal') is not None:
+            from .sparse_observation import proposal_loss
+            totals['proposal']=proposal_loss(output['proposal'],targets)
         loss=(totals['classification']+2*totals['center']+totals['size']+totals['axis']+
               totals['facing']+.5*totals['quality']+cfg.teacher_weight*totals['teacher']+cfg.dn_weight*totals['denoising'])
+        loss=loss+.5*totals['facing_binary']+cfg.extent_weight*totals['extent']+cfg.proposal_weight*totals['proposal']
         return loss,{**{k:v.detach() for k,v in totals.items()},'matches':matches//len(output['stages'])}

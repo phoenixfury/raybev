@@ -47,7 +47,7 @@ def test_refined_config_keeps_legacy_v3_and_rejects_unknown_versions():
             cfg=cfg.to_dict()))
         assert restored==cfg
     with pytest.raises(ValueError,match='contract'):
-        replace(refined,architecture_version=5).validate()
+        replace(refined,architecture_version=6).validate()
 
 
 def test_raw_axis_has_gradient_at_exact_90_degree_physical_error_and_recovers():
