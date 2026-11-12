@@ -99,6 +99,18 @@ def contracts(train,val,args):
                 semantic_annotation_sha256={k:sparse_annotation_sha256(d) for k,d in [('train',train),('val',val)]})
 
 
+def check_bag_coverage(train,val,expected=None):
+    """Bag counts are dynamic unless an explicit audit count is requested."""
+    train_sequences={str(r['metainfo']['sequence_id']) for r in train.rows}
+    val_sequences={str(r['metainfo']['sequence_id']) for r in val.rows}
+    if expected is not None and (len(train_sequences)!=expected or train_sequences!=val_sequences):
+        raise ValueError(f'Expected {expected} bags in both splits; '
+            f'TRAIN ({len(train_sequences)}): {sorted(train_sequences)}; '
+            f'VAL ({len(val_sequences)}): {sorted(val_sequences)}. '
+            'Omit --expected-sequences to allow a changing bag count.')
+    return train_sequences,val_sequences
+
+
 def check_resume(state,cfg,args,contract,teacher_sha,world):
     source=SparseConfig.from_checkpoint(state)
     # Older teacher-free runs stored an inactive .2 weight. Normalizing that
@@ -300,11 +312,12 @@ def main():
         train=RosaCombinedDataset(ann_file=args.train_ann,augment=not args.no_augmentation,**options)
         val=RosaCombinedDataset(ann_file=args.val_ann,**options)
         if not len(train) or not len(val):raise ValueError('TRAIN and VAL must be nonempty')
-        train_sequences={str(r['metainfo']['sequence_id']) for r in train.rows}
-        val_sequences={str(r['metainfo']['sequence_id']) for r in val.rows}
-        if args.expected_sequences is not None and (len(train_sequences)!=args.expected_sequences or train_sequences!=val_sequences):
-            raise ValueError('Expected bag coverage mismatch in TRAIN/VAL')
-        if primary:print('Dataset bags:',sorted(train_sequences),'TRAIN:',len(train),'VAL:',len(val),flush=True)
+        train_sequences,val_sequences=check_bag_coverage(train,val,args.expected_sequences)
+        if primary:
+            print(f'TRAIN: {len(train)} frames, {len(train_sequences)} bags {sorted(train_sequences)}; '
+                  f'VAL: {len(val)} frames, {len(val_sequences)} bags {sorted(val_sequences)}',flush=True)
+            if train_sequences!=val_sequences:
+                print('Note: TRAIN/VAL bag sets differ; allowed without --expected-sequences.',flush=True)
         if any(r['metainfo'].get('temporal_split')!='train' for r in train.rows):raise ValueError('Sparse TRAIN split leakage')
         if any(r['metainfo'].get('temporal_split')!='val' for r in val.rows):raise ValueError('Sparse VAL split leakage')
         if {str(r['token']) for r in train.rows}&{str(r['token']) for r in val.rows}:raise ValueError('TRAIN/VAL token overlap')

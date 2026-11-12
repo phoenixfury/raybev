@@ -161,6 +161,19 @@ def test_sparse_trainer_rejects_removed_teacher_options():
         with pytest.raises(SystemExit):parser.parse_args(['--root','data',*flags])
 
 
+def test_sparse_bag_coverage_accepts_growing_and_independent_splits():
+    from types import SimpleNamespace
+    def dataset(n):return SimpleNamespace(rows=[dict(metainfo=dict(sequence_id=str(i))) for i in range(n)])
+    assert trainer.build_parser().parse_args(['--root','data']).expected_sequences is None
+    for n in (8,9,12):
+        train,val=trainer.check_bag_coverage(dataset(n),dataset(n))
+        assert len(train)==len(val)==n
+    trainer.check_bag_coverage(dataset(12),dataset(9))
+    with pytest.raises(ValueError,match='Expected 8 bags'):
+        trainer.check_bag_coverage(dataset(9),dataset(9),8)
+    trainer.check_bag_coverage(dataset(9),dataset(9),9)
+
+
 def test_sparse_resume_normalizes_only_inactive_teacher_weight():
     args=trainer.build_parser().parse_args(['--root','data'])
     cfg=replace(config(),teacher_weight=0.)

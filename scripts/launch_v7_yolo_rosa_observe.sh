@@ -7,8 +7,8 @@ ROOT="${ROOT:-$DATA_ROOT}"
 TRAIN_ANN="${TRAIN_ANN:-$ROOT/annotations/fisheye3dod_infos_train.pkl}"
 VAL_ANN="${VAL_ANN:-$ROOT/annotations/fisheye3dod_infos_val.pkl}"
 WEIGHTS="${YOLO26_WEIGHTS:-weights/yolo26n.pt}"
-OUT="${OUT:-work_dirs/raybev_v7_yolo_rosa_observe_q225_c96_p2_8bags_48m_clidar}"
-EXTENTS="${EXTENT_ANNOTATIONS:-datasets/combined_8bags/train_yolo_extents_v1.json}"
+OUT="${OUT:-work_dirs/raybev_v7_yolo_rosa_observe_q225_c96_p2_combined_48m_clidar}"
+EXTENTS="${EXTENT_ANNOTATIONS:-datasets/combined_bags/train_yolo_extents_v1.json}"
 OPTIONS=()
 if [[ "${STRIDE4:-1}" == 1 ]]; then OPTIONS+=(--stride4); fi
 if [[ "${OBSERVATION_CONDITIONING:-1}" == 1 ]]; then OPTIONS+=(--observation-conditioning); fi
@@ -23,7 +23,7 @@ export OMP_NUM_THREADS="${OMP_NUM_THREADS:-4}"
 # 4 checkpoints cannot resume into changed widths, query counts and objectives.
 torchrun --standalone --nnodes=1 --nproc_per_node=2 scripts/train_yolo_rosa_sparse.py \
   --architecture-version 5 --root "$ROOT" --train-ann "$TRAIN_ANN" --val-ann "$VAL_ANN" \
-  --expected-sequences 8 --resize-native-images \
+  --resize-native-images \
   --queries 225 --channels "${CHANNELS:-96}" --stages 4 --proposal-queries "${PROPOSAL_QUERIES:-64}" \
   --ground-z "${GROUND_Z:-0}" --facing-cosine-prior "${FACING_COSINE_PRIOR:-0}" \
   --out "$OUT" --backbone-weights "$WEIGHTS" "${OPTIONS[@]}" \
