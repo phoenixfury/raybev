@@ -152,7 +152,29 @@ def test_sparse_console_reports_train_val_components_and_geometric_coverage(caps
     trainer.print_epoch_metrics(metric_row());output=capsys.readouterr().out
     assert 'mATE=' in output and 'mASE=' in output and 'mAOE=' in output and 'geom_n' in output
     assert 'TRAIN components:' in output and 'VAL components:' in output and 'placeholders' in output
-    assert 'truck' in output and 'VAL excludes teacher/denoising losses' in output
+    assert 'truck' in output and 'Teacher disabled; VAL excludes denoising/extent losses' in output
+
+
+def test_sparse_trainer_rejects_removed_teacher_options():
+    parser=trainer.build_parser()
+    for flags in (['--heading-teacher','teacher.json'],['--heading-teacher-weight','0.2']):
+        with pytest.raises(SystemExit):parser.parse_args(['--root','data',*flags])
+
+
+def test_sparse_resume_normalizes_only_inactive_teacher_weight():
+    args=trainer.build_parser().parse_args(['--root','data'])
+    cfg=replace(config(),teacher_weight=0.)
+    state=dict(architecture=cfg.architecture,cfg=replace(cfg,teacher_weight=.2).to_dict(),heading_teacher_sha256=None,
+               world_size=1,recipe=vars(args),**contract())
+    trainer.check_resume(state,cfg,args,contract(),None,1)
+    state['cfg']=replace(cfg,teacher_weight=0.).to_dict()
+    trainer.check_resume(state,cfg,args,contract(),None,1)
+    state['heading_teacher_sha256']='active-teacher'
+    with pytest.raises(ValueError,match='teacher changed'):
+        trainer.check_resume(state,cfg,args,contract(),None,1)
+    state['heading_teacher_sha256']=None
+    with pytest.raises(ValueError,match='architecture/config'):
+        trainer.check_resume(state,replace(cfg,quality_score_power=0.),args,contract(),None,1)
 
 
 def test_sparse_weight_warm_start_is_fresh_audited_and_needs_no_original_yolo_file(tmp_path,monkeypatch):
@@ -186,6 +208,8 @@ def test_sparse_weight_warm_start_is_fresh_audited_and_needs_no_original_yolo_fi
     monkeypatch.setattr(sys,'argv',new_arguments);trainer.main()
     result=torch.load(current/'last.pt',map_location='cpu',weights_only=False)
     old=torch.load(source,map_location='cpu',weights_only=False)
+    assert result['cfg']['teacher_weight']==0 and result['heading_teacher_sha256'] is None
+    assert result['recipe'].get('heading_teacher') is None
     assert calls==[(False,None)]
     assert result['cfg']['architecture_version']==4 and result['epoch']==1
     assert result['warm_start']['checkpoint_sha256']==source_digest and result['warm_start']['epoch']==1

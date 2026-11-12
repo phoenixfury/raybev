@@ -2,6 +2,7 @@
 """Train versioned YOLO-ROSA-Lite, standalone or torchrun DDP. No dense-model resume."""
 import argparse
 import csv
+from dataclasses import replace
 from datetime import timedelta
 import json
 import math
@@ -24,7 +25,7 @@ from raybev.geometry import load_cameras
 from raybev.rosa_dataset import RosaCombinedDataset,collate_samples
 from raybev.sparse_config import SparseConfig
 from raybev.sparse_model import YOLOROSALite,decode_sparse
-from raybev.sparse_loss import SparseCriterion,SparseYawTeacher
+from raybev.sparse_loss import SparseCriterion
 from raybev.sparse_training import fit_sparse_anchors,TrackBalancedSampler,sparse_annotation_sha256
 from raybev.training import configure_image_training,build_optimizer,build_scheduler,calibration_sha256,heading_selection_score,accumulation_weight
 from raybev.metrics import evaluate_detections,heading_diagnostics
@@ -72,8 +73,6 @@ def build_parser():
     p.add_argument('--image-height',type=int,default=640)
     p.add_argument('--dn-queries',type=int,default=24)
     p.add_argument('--dn-weight',type=float,default=.5)
-    p.add_argument('--heading-teacher')
-    p.add_argument('--heading-teacher-weight',type=float,default=.2)
     p.add_argument('--no-augmentation',action='store_true')
     p.add_argument('--resize-native-images',action='store_true',help='Resize matching-aspect native images to the calibrated network size')
     p.add_argument('--expected-sequences',type=int,help='Fail if TRAIN/VAL do not both contain this many bags')
@@ -101,10 +100,15 @@ def contracts(train,val,args):
 
 
 def check_resume(state,cfg,args,contract,teacher_sha,world):
-    if SparseConfig.from_checkpoint(state)!=cfg:raise ValueError('Sparse resume architecture/config mismatch')
+    source=SparseConfig.from_checkpoint(state)
+    # Older teacher-free runs stored an inactive .2 weight. Normalizing that
+    # metadata does not change the objective or invalidate optimizer state.
+    if state.get('heading_teacher_sha256') is None and teacher_sha is None and cfg.teacher_weight==0:
+        source=replace(source,teacher_weight=0.)
+    if state.get('heading_teacher_sha256')!=teacher_sha:raise ValueError('Sparse resume teacher changed; cannot exactly resume a teacher-trained run without its teacher')
+    if source!=cfg:raise ValueError('Sparse resume architecture/config mismatch')
     for key in ('classes','box_frame','z_reference','calibration_sha256','lidar_calibration_sha256','semantic_annotation_sha256'):
         if state.get(key)!=contract[key]:raise ValueError('Sparse resume data/calibration mismatch: '+key)
-    if state.get('heading_teacher_sha256')!=teacher_sha:raise ValueError('Sparse resume teacher changed')
     if state.get('world_size')!=world:raise ValueError('Sparse resume world size changed')
     for key in ('epochs','lr','weight_decay','batch_size','accum_steps','backbone_lr_mult','freeze_image_stages',
                 'warmup_steps','sampling','no_augmentation','seed','amp','workers'):
@@ -256,7 +260,7 @@ def print_epoch_metrics(row):
               f'{str(values.get("TP","NA")):>6} {str(values.get("FP","NA")):>6} {str(values.get("FN","NA")):>6} '
               f'{count:7d} {number(ate):>7} {number(ase):>6} {number(aoe,1):>9}',flush=True)
     print('  TP/FP/FN use score >= 0.1 and 2m; geom_n uses retained score >= 0.01 and 2m. '
-          'VAL excludes teacher/denoising losses; TRAIN/VAL total objectives differ.',flush=True)
+          'Teacher disabled; VAL excludes denoising/extent losses; TRAIN/VAL total objectives differ.',flush=True)
     coverage=row.get('raw_query_coverage',{})
     if coverage:
         stages=[key for key in coverage if key.startswith('stage_')]
@@ -288,7 +292,7 @@ def main():
             proposal_queries=args.proposal_queries,proposal_grid=args.proposal_grid,ground_z=args.ground_z,
             proposal_weight=args.proposal_weight,facing_cosine_prior=args.facing_cosine_prior,
             facing_temperature=args.facing_temperature,multi_camera_facing=not args.no_multi_camera_facing,extent_weight=args.extent_weight,
-            dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=args.heading_teacher_weight).validate()
+            dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=0.).validate()
         options=dict(root=args.root,cfg=cfg,box_frame=args.box_frame,z_reference=args.z_reference,
                      strict_size=not args.resize_native_images,
                      native_image_sizes={c.name:(c.width,c.height) for c in load_cameras(args.calibration)} if args.resize_native_images else None,
@@ -306,8 +310,7 @@ def main():
         if {str(r['token']) for r in train.rows}&{str(r['token']) for r in val.rows}:raise ValueError('TRAIN/VAL token overlap')
         cfg,anchors=fit_sparse_anchors(train,cfg,args.seed)
         contract=contracts(train,val,args)
-        teacher=SparseYawTeacher(args.heading_teacher,train,args.calibration,args.lidar_calibration) if args.heading_teacher else None
-        teacher_sha=teacher.sha256 if teacher else None
+        teacher_sha=None  # Preserve checkpoint provenance schema; no teacher is loaded.
         from raybev.sparse_extent import VerifiedExtents
         extents=VerifiedExtents(args.extent_annotations,train,args.calibration) if args.extent_annotations else None
         if bool(extents)!=bool(cfg.extent_weight):raise ValueError('Set both --extent-annotations and positive --extent-weight')
@@ -338,7 +341,7 @@ def main():
                             optimizer='fresh',scheduler='fresh',source_cfg=initializer['cfg'])
         configure_image_training(model,args.freeze_image_stages)
         optimizer=build_optimizer(model,args.lr,args.weight_decay,args.backbone_lr_mult)
-        criterion=SparseCriterion(cfg,teacher,model.projector,extents)
+        criterion=SparseCriterion(cfg,teacher=None,projector=model.projector,extents=extents)
         if args.sampling=='track':sampler=TrackBalancedSampler(train,args.seed,rank,world)
         else:sampler=DistributedSampler(train,num_replicas=world,rank=rank,seed=args.seed,drop_last=False)
         eval_sampler=ExactEvalSampler(val,rank,world)
@@ -361,7 +364,7 @@ def main():
         if primary:
             print('YOLO-ROSA-Lite:',cfg.to_dict(),'TRAIN counts:',train.gt_counts,'VAL counts:',val.gt_counts,flush=True)
             print('Backbone:',model.image_encoder.initialization,'sampling:',args.sampling,'freeze:',args.freeze_image_stages,flush=True)
-            print(f'Only {cfg.queries} matching queries at inference; denoising/teacher are training-only. No dense BEV.',flush=True)
+            print(f'Only {cfg.queries} matching queries at inference; denoising is training-only. Teacher disabled (weight=0). No dense BEV.',flush=True)
             if warm_start:
                 report=warm_start['transfer_report']
                 print(f'Warm start: source epoch={warm_start["epoch"]} sha256={warm_start["checkpoint_sha256"]}; '

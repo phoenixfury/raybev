@@ -6,7 +6,6 @@ DATA_ROOT="$PROJECT_DIR/../../data/Custom/combined_bags"
 ROOT="${ROOT:-$DATA_ROOT}"
 TRAIN_ANN="${TRAIN_ANN:-$ROOT/annotations/fisheye3dod_infos_train.pkl}"
 VAL_ANN="${VAL_ANN:-$ROOT/annotations/fisheye3dod_infos_val.pkl}"
-TEACHER="${HEADING_TEACHER:-}"
 WEIGHTS="${YOLO26_WEIGHTS:-weights/yolo26n.pt}"
 OUT="${OUT:-work_dirs/raybev_v7_yolo_rosa_observe_q225_c96_p2_8bags_48m_clidar}"
 EXTENTS="${EXTENT_ANNOTATIONS:-datasets/combined_8bags/train_yolo_extents_v1.json}"
@@ -14,7 +13,6 @@ OPTIONS=()
 if [[ "${STRIDE4:-1}" == 1 ]]; then OPTIONS+=(--stride4); fi
 if [[ "${OBSERVATION_CONDITIONING:-1}" == 1 ]]; then OPTIONS+=(--observation-conditioning); fi
 if [[ "${MULTI_CAMERA_FACING:-1}" == 0 ]]; then OPTIONS+=(--no-multi-camera-facing); fi
-if [[ -n "$TEACHER" ]]; then OPTIONS+=(--heading-teacher "$TEACHER"); fi
 if [[ "${EXTENT_WEIGHT:-1}" != 0 ]]; then
   if [[ ! -f "$EXTENTS" ]]; then echo "Missing TRAIN extent annotations: $EXTENTS" >&2; exit 1; fi
   OPTIONS+=(--extent-annotations "$EXTENTS" --extent-weight "${EXTENT_WEIGHT:-1}")
