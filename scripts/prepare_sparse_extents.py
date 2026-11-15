@@ -34,6 +34,8 @@ def main():
     p.add_argument('--train-ann',help='Defaults to ROOT/annotations/fisheye3dod_infos_train.pkl')
     p.add_argument('--source',action='append',default=[],help='sequence_id=/path/to/original/dataset; repeat per bag')
     p.add_argument('--source-summary',type=Path,help='Combined summary.json contains every source dataset path')
+    p.add_argument('--cache-name',default='yolo_detections_camera_ray_dedup_v2.json',
+                   help='YOLO cache filename inside each source detzero_output directory')
     p.add_argument('--calibration',default=DEFAULT_CALIBRATION)
     p.add_argument('--output',type=Path,required=True)
     a=p.parse_args();torch.set_num_threads(2)
@@ -49,7 +51,14 @@ def main():
         source_list.extend(s['name']+'='+s['dataset'] for s in summary['sequences'])
     for item in source_list:
         name,path=item.split('=',1);path=Path(path)
-        cache=path/'detzero_output/yolo_detections.json';manifest=path/'manifest.csv'
+        cache=path/'detzero_output'/a.cache_name
+        if not cache.is_file():
+            # The 09_24 bag predates the versioned cache name but its
+            # undistorted cache is the same YOLO evidence used by the latest
+            # camera-ray annotations.
+            fallback=path/'detzero_output/yolo_detections_undistorted.json'
+            cache=fallback if fallback.is_file() else path/'detzero_output/yolo_detections.json'
+        manifest=path/'manifest.csv'
         with manifest.open(newline='') as stream:rows=list(csv.DictReader(stream))
         sources[name]=dict(detections=json.loads(cache.read_text()),rows=rows,
             cache_sha256=calibration_sha256(cache),manifest_sha256=calibration_sha256(manifest))
