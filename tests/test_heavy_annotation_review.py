@@ -1,6 +1,7 @@
 """Class-only corrections and weak YOLO-target synchronization must fail closed."""
 import copy
 import importlib.util
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,6 +11,44 @@ import torch
 
 spec = importlib.util.spec_from_file_location('heavy_review', Path(__file__).resolve().parents[1] / 'scripts/prepare_heavy_annotation_review.py')
 review = importlib.util.module_from_spec(spec); spec.loader.exec_module(review)
+
+
+def extent_release(tmp_path):
+    old = dict(frames={'1': [dict(gt=[1., 2., 3., 4., 1.8, 1.5, 0., 5.], bbox=[1, 2, 3, 4])]})
+    new = copy.deepcopy(old); new['frames']['1'][0]['gt'][7] = 0.
+    source = tmp_path / 'original.json'; source.write_text(json.dumps(old))
+    release = tmp_path / 'train_yolo_extents_v1.json'; release.write_text(json.dumps(new))
+    expected = dict(source_sha256=review.sha(source), output_sha256=review.sha(release))
+    return source, release, expected
+
+
+def test_extent_comparison_when_original_exists(tmp_path):
+    source, _, expected = extent_release(tmp_path)
+    assert review.verify_extent_files(tmp_path, source, expected) == (1, 1)
+
+
+def test_missing_original_requires_opt_in_and_reports_unavailable(tmp_path):
+    source, _, expected = extent_release(tmp_path)
+    missing = tmp_path / 'deleted.json'
+    with pytest.raises(FileNotFoundError):
+        review.verify_extent_files(tmp_path, missing, expected)
+    assert review.verify_extent_files(tmp_path, missing, expected, True) == (1, None)
+
+
+def test_missing_original_never_skips_release_hash(tmp_path):
+    _, release, expected = extent_release(tmp_path)
+    release.write_text(release.read_text() + ' ')
+    with pytest.raises(ValueError, match='Revised extent file hash differs'):
+        review.verify_extent_files(tmp_path, tmp_path / 'deleted.json', expected, True)
+
+
+def test_opt_in_does_not_accept_wrong_existing_source(tmp_path):
+    source, release, expected = extent_release(tmp_path)
+    with pytest.raises(ValueError, match='Source extent file hash differs'):
+        review.verify_extent_files(tmp_path, release, expected, True)
+    source.write_text('{}')
+    with pytest.raises(ValueError, match='Source extent file hash differs'):
+        review.verify_extent_files(tmp_path, source, expected, True)
 
 
 def sample():

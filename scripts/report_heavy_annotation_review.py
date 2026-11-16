@@ -17,8 +17,10 @@ def main():
     p.add_argument('--audit', type=Path, required=True)
     p.add_argument('--source-extents', type=Path, required=True)
     p.add_argument('--calibration', type=Path, default=Path(DEFAULT_CALIBRATION))
+    p.add_argument('--allow-missing-source-extents', action='store_true')
     a = p.parse_args(); output = a.review.resolve()
-    verified = verify_release(a.root.resolve(), output, a.source_extents.resolve(), a.calibration.resolve())
+    verified = verify_release(a.root.resolve(), output, a.source_extents.resolve(), a.calibration.resolve(),
+                              allow_missing_source_extents=a.allow_missing_source_extents)
     manifest = json.loads((output / 'correction_manifest.json').read_text())
     records = [json.loads(line) for line in (output / 'annotation_review.jsonl').read_text().splitlines()]
     tracks = json.loads((a.audit / 'index.json').read_text())['tracks']
@@ -191,7 +193,10 @@ On the training machine copy this directory under its RayBEV project directory
 (e.g. `/home/mustafa/mmdetection3d/projects/raybev/datasets/combined_bags_camera_ray_heavy_review_v4/`
 if that is its checkout). Copy the new `scripts/launch_v8_heavy_review.sh` and
 `scripts/prepare_heavy_annotation_review.py` too. Existing image/source data and
-the original extent JSON used for verification must remain available.
+source annotation pickles must remain available. If the original extent JSON
+was deleted, the updated launcher allows its absence while still enforcing the
+v4 JSON hash and runtime GT/calibration checks. It warns and records the original
+extent comparison as unavailable; it never accepts a wrong existing source JSON.
 
 From the RayBEV project directory, in the existing training Python environment:
 

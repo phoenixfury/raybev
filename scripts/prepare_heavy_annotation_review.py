@@ -266,7 +266,39 @@ def build(root, audit, source_extents, output, calibration):
     print(json.dumps(dict(splits=manifest['splits'], extents=manifest['extents']), indent=2), flush=True)
 
 
-def verify_release(root, output, source_extents, calibration):
+def verify_extent_files(output, source_extents, expected, allow_missing_source_extents=False):
+    """Always authenticate the release; optionally compare the historical source."""
+    extent_path = output / 'train_yolo_extents_v1.json'
+    if sha(extent_path) != expected['output_sha256']:
+        raise ValueError('Revised extent file hash differs from correction_manifest.json')
+    new = json.loads(extent_path.read_text())
+    if not source_extents.exists():
+        if not allow_missing_source_extents:
+            raise FileNotFoundError('Original extent JSON missing. Restore it or explicitly use '
+                                    '--allow-missing-source-extents to verify the release without a historical comparison.')
+        print('WARNING: original extent JSON is missing; historical 2D-evidence/class-change '
+              'comparison unavailable. Revised file hash and runtime GT checks remain mandatory.', file=sys.stderr)
+        return sum(len(records) for records in new['frames'].values()), None
+    if sha(source_extents) != expected['source_sha256']:
+        raise ValueError('Source extent file hash differs: --source-extents must name the original '
+                         'JSON, not the revised v4 JSON. No hash checks have been bypassed.')
+    old = json.loads(source_extents.read_text())
+    if old['frames'].keys() != new['frames'].keys():
+        raise ValueError('Extent frame set changed')
+    preserved = 0; changes = 0
+    for token in old['frames']:
+        if len(old['frames'][token]) != len(new['frames'][token]):
+            raise ValueError('Extent record count changed')
+        for src, dst in zip(old['frames'][token], new['frames'][token]):
+            if src.keys() != dst.keys() or src['gt'][:7] != dst['gt'][:7]:
+                raise ValueError('Extent structure/GT geometry changed')
+            if any(src[k] != dst[k] for k in src if k != 'gt'):
+                raise ValueError('Measured 2D evidence changed')
+            changes += int(src['gt'][7] != dst['gt'][7]); preserved += 1
+    return preserved, changes
+
+
+def verify_release(root, output, source_extents, calibration, allow_missing_source_extents=False):
     """Independent post-write sweep over ALL boxes and EVERY extent record."""
     report = json.loads((output / 'correction_manifest.json').read_text())
     if sha(calibration) != report['calibration_sha256']:
@@ -290,26 +322,13 @@ def verify_release(root, output, source_extents, calibration):
     if split_tokens['train'] & split_tokens['val']:
         raise ValueError('TRAIN/VAL token overlap')
     extent_path = output / 'train_yolo_extents_v1.json'
-    if sha(source_extents) != report['extents']['source_sha256'] or sha(extent_path) != report['extents']['output_sha256']:
-        raise ValueError('Extent file hash differs')
-    old = json.loads(source_extents.read_text()); new = json.loads(extent_path.read_text())
-    if old['frames'].keys() != new['frames'].keys():
-        raise ValueError('Extent frame set changed')
-    preserved = 0; changes = 0
-    for token in old['frames']:
-        if len(old['frames'][token]) != len(new['frames'][token]):
-            raise ValueError('Extent record count changed')
-        for src, dst in zip(old['frames'][token], new['frames'][token]):
-            if src.keys() != dst.keys() or src['gt'][:7] != dst['gt'][:7]:
-                raise ValueError('Extent structure/GT geometry changed')
-            if any(src[k] != dst[k] for k in src if k != 'gt'):
-                raise ValueError('Measured 2D evidence changed')
-            changes += int(src['gt'][7] != dst['gt'][7]); preserved += 1
+    preserved, changes = verify_extent_files(output, source_extents, report['extents'], allow_missing_source_extents)
     torch.set_num_threads(2)
     dataset = RosaCombinedDataset(root, (output / 'fisheye3dod_infos_train.pkl').resolve(),
         cfg=SparseConfig(architecture_version=5), calibration=calibration)
     VerifiedExtents(extent_path, dataset, calibration)
-    if preserved != report['extents']['records'] or changes != report['extents']['changed_gt_records']:
+    if (preserved != report['extents']['records'] or
+            (changes is not None and changes != report['extents']['changed_gt_records'])):
         raise ValueError('Extent migration counts differ')
     # Verify source data were not modified while building this revision.
     result = dict(all_annotation_boxes_checked=checked, total_boxes_checked=sum(checked.values()),
@@ -317,7 +336,9 @@ def verify_release(root, output, source_extents, calibration):
         yolo_extent_class_changes=changes,
         authorized_size_edits=sum('new_dimensions_lwh' in r for r in records),
         centers_yaw_identity_and_nonrequested_geometry_unchanged=True,
-        measured_yolo_evidence_unchanged=True, train_val_tokens_disjoint=True,
+        original_extent_comparison='passed' if changes is not None else 'unavailable_original_file_missing',
+        measured_yolo_evidence_unchanged=True if changes is not None else None,
+        train_val_tokens_disjoint=True,
         runtime_extent_validator='passed', certification='Data consistency passed; not all-class visual/3D correctness certification')
     dump(output / 'verification_report.json', result)
     print(json.dumps(result, indent=2), flush=True)
@@ -332,10 +353,15 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--calibration', type=Path, default=Path(DEFAULT_CALIBRATION))
     p.add_argument('--verify', action='store_true', help='Check an existing release without rewriting annotations/extents')
+    p.add_argument('--allow-missing-source-extents', action='store_true',
+                   help='For --verify only: allow a deleted original extent JSON; still require release hash and runtime GT checks')
     a = p.parse_args()
     if a.verify:
-        verify_release(a.root.resolve(), a.output.resolve(), a.source_extents.resolve(), a.calibration.resolve())
+        verify_release(a.root.resolve(), a.output.resolve(), a.source_extents.resolve(), a.calibration.resolve(),
+                       allow_missing_source_extents=a.allow_missing_source_extents)
     else:
+        if a.allow_missing_source_extents:
+            p.error('--allow-missing-source-extents is only valid with --verify')
         if a.audit is None:
             p.error('--audit is required when building')
         build(a.root.resolve(), a.audit.resolve(), a.source_extents.resolve(), a.output.resolve(), a.calibration.resolve())

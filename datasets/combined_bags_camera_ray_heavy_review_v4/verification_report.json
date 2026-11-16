@@ -6,10 +6,11 @@
   "total_boxes_checked": 119264,
   "heavy_review_records_checked": 4555,
   "yolo_extent_records_checked": 5201,
-  "yolo_extent_class_changes": 27,
+  "yolo_extent_class_changes": null,
   "authorized_size_edits": 9,
   "centers_yaw_identity_and_nonrequested_geometry_unchanged": true,
-  "measured_yolo_evidence_unchanged": true,
+  "original_extent_comparison": "unavailable_original_file_missing",
+  "measured_yolo_evidence_unchanged": null,
   "train_val_tokens_disjoint": true,
   "runtime_extent_validator": "passed",
   "certification": "Data consistency passed; not all-class visual/3D correctness certification"
