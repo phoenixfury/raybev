@@ -27,8 +27,8 @@ for file in "$TRAIN_ANN" "$VAL_ANN" "$EXTENTS" "$WEIGHTS"; do
   [[ -f "$file" ]] || { echo "Missing experiment input: $file" >&2; exit 1; }
 done
 NPROC="${NPROC_PER_NODE:-2}"
-MICROBATCH="${BATCH_SIZE:-1}"
-GLOBAL_BATCH="${GLOBAL_BATCH_SIZE:-32}"
+MICROBATCH="${BATCH_SIZE:-6}"
+GLOBAL_BATCH="${GLOBAL_BATCH_SIZE:-24}"
 if [[ -n "${ACCUM_STEPS:-}" ]]; then
   ACCUMULATION="$ACCUM_STEPS"
 else
