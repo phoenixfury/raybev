@@ -9,7 +9,7 @@
   "yolo_extent_class_changes": null,
   "authorized_size_edits": 9,
   "centers_yaw_identity_and_nonrequested_geometry_unchanged": true,
-  "original_extent_comparison": "unavailable_original_file_missing",
+  "original_extent_comparison": "not_requested_release_only",
   "measured_yolo_evidence_unchanged": null,
   "train_val_tokens_disjoint": true,
   "runtime_extent_validator": "passed",

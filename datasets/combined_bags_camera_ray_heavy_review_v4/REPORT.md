@@ -132,10 +132,11 @@ On the training machine copy this directory under its RayBEV project directory
 (e.g. `/home/mustafa/mmdetection3d/projects/raybev/datasets/combined_bags_camera_ray_heavy_review_v4/`
 if that is its checkout). Copy the new `scripts/launch_v8_heavy_review.sh` and
 `scripts/prepare_heavy_annotation_review.py` too. Existing image/source data and
-source annotation pickles must remain available. If the original extent JSON
-was deleted, the updated launcher allows its absence while still enforcing the
-v4 JSON hash and runtime GT/calibration checks. It warns and records the original
-extent comparison as unavailable; it never accepts a wrong existing source JSON.
+source annotation pickles must remain available. The updated launcher uses
+`--verify --release-only`: no original extent JSON is required. It still enforces
+the v4 JSON hash and runtime GT/calibration checks, and explicitly records that
+the historical extent comparison was not requested. Full historical comparison
+is available by verifying with `--source-extents` instead of `--release-only`.
 
 From the RayBEV project directory, in the existing training Python environment:
 

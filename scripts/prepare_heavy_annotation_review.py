@@ -272,6 +272,10 @@ def verify_extent_files(output, source_extents, expected, allow_missing_source_e
     if sha(extent_path) != expected['output_sha256']:
         raise ValueError('Revised extent file hash differs from correction_manifest.json')
     new = json.loads(extent_path.read_text())
+    if source_extents is None:
+        print('WARNING: release-only verification: original extent comparison not requested. '
+              'Revised file hash and runtime GT checks remain mandatory.', file=sys.stderr)
+        return sum(len(records) for records in new['frames'].values()), None
     if not source_extents.exists():
         if not allow_missing_source_extents:
             raise FileNotFoundError('Original extent JSON missing. Restore it or explicitly use '
@@ -336,7 +340,8 @@ def verify_release(root, output, source_extents, calibration, allow_missing_sour
         yolo_extent_class_changes=changes,
         authorized_size_edits=sum('new_dimensions_lwh' in r for r in records),
         centers_yaw_identity_and_nonrequested_geometry_unchanged=True,
-        original_extent_comparison='passed' if changes is not None else 'unavailable_original_file_missing',
+        original_extent_comparison=('not_requested_release_only' if source_extents is None else
+                                    'passed' if changes is not None else 'unavailable_original_file_missing'),
         measured_yolo_evidence_unchanged=True if changes is not None else None,
         train_val_tokens_disjoint=True,
         runtime_extent_validator='passed', certification='Data consistency passed; not all-class visual/3D correctness certification')
@@ -349,15 +354,21 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--root', type=Path, required=True)
     p.add_argument('--audit', type=Path, help='Required when building; not needed for --verify')
-    p.add_argument('--source-extents', type=Path, required=True)
+    p.add_argument('--source-extents', type=Path, help='Original extent JSON; required unless --verify --release-only')
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--calibration', type=Path, default=Path(DEFAULT_CALIBRATION))
     p.add_argument('--verify', action='store_true', help='Check an existing release without rewriting annotations/extents')
     p.add_argument('--allow-missing-source-extents', action='store_true',
                    help='For --verify only: allow a deleted original extent JSON; still require release hash and runtime GT checks')
+    p.add_argument('--release-only', action='store_true',
+                   help='For --verify only: verify release hashes/GT/calibration without historical extent comparison')
     a = p.parse_args()
+    if a.release_only and (not a.verify or a.source_extents is not None or a.allow_missing_source_extents):
+        p.error('--release-only requires --verify and cannot be combined with source-extent arguments')
+    if not a.release_only and a.source_extents is None:
+        p.error('--source-extents is required unless using --verify --release-only')
     if a.verify:
-        verify_release(a.root.resolve(), a.output.resolve(), a.source_extents.resolve(), a.calibration.resolve(),
+        verify_release(a.root.resolve(), a.output.resolve(), None if a.release_only else a.source_extents.resolve(), a.calibration.resolve(),
                        allow_missing_source_extents=a.allow_missing_source_extents)
     else:
         if a.allow_missing_source_extents:

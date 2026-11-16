@@ -27,6 +27,14 @@ def test_extent_comparison_when_original_exists(tmp_path):
     assert review.verify_extent_files(tmp_path, source, expected) == (1, 1)
 
 
+def test_release_only_verifies_hash_without_original(tmp_path):
+    _, release, expected = extent_release(tmp_path)
+    assert review.verify_extent_files(tmp_path, None, expected) == (1, None)
+    release.write_text('{}')
+    with pytest.raises(ValueError, match='Revised extent file hash differs'):
+        review.verify_extent_files(tmp_path, None, expected)
+
+
 def test_missing_original_requires_opt_in_and_reports_unavailable(tmp_path):
     source, _, expected = extent_release(tmp_path)
     missing = tmp_path / 'deleted.json'
