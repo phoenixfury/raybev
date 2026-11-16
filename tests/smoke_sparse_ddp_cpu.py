@@ -14,6 +14,7 @@ from raybev.sparse_loss import SparseCriterion
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--architecture-version',type=int,choices=[3,4,5],default=3)
+    parser.add_argument('--v9',action='store_true')
     args=parser.parse_args()
     torch.set_num_threads(2);torch.manual_seed(34)
     rank=int(os.environ['RANK']);dist.init_process_group('gloo')
@@ -22,13 +23,19 @@ def main():
         if args.architecture_version==5:
             from dataclasses import replace
             cfg=replace(cfg,stride4=True,observation_conditioning=True,proposal_queries=4,proposal_grid=4,facing_cosine_prior=0.)
+        if args.v9:
+            from dataclasses import replace
+            cfg=replace(cfg,proposal_cell_targets=True,fresh_box_classification=True,
+                        independent_facing_views=True,match_class_start=.05,
+                        match_warmup_epochs=3,match_ramp_epochs=5,
+                        quality_distance_target=True,quality_hard_negative_weight=.2,heavy_endpoint_weight=.1).validate()
         model=YOLOROSALite(cfg).train();wrapped=DDP(model,broadcast_buffers=False,find_unused_parameters=False)
         optimizer=torch.optim.AdamW(model.parameters(),lr=1e-4);criterion=SparseCriterion(cfg)
         images=torch.randn(1,4,3,128,160)
         for i in range(3):
             gt=torch.tensor([[10.,2.,1.,8.,3.,3.,.5,3.],[12.,-3.,1.,12.,3.,4.,-.4,5.]])
             if rank:gt=torch.empty(0,8) if i!=1 else torch.tensor([[10.,2.,1.,8.,3.,3.,.5,-1.]])
-            output=wrapped(images,[gt]);loss,_=criterion(output,[gt]);loss.backward()
+            output=wrapped(images,[gt]);loss,_=criterion(output,[gt],[str(i)]);loss.backward()
             assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
             optimizer.step();optimizer.zero_grad(set_to_none=True)
         value=next(model.parameters()).detach().flatten()[:8].clone();values=[torch.zeros_like(value) for _ in range(dist.get_world_size())]

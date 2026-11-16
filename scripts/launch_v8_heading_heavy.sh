@@ -23,7 +23,13 @@ if [[ "$EXPERIMENT" == *_fixes ]]; then
     --facing-binary-weight "${FACING_BINARY_WEIGHT:-1}" \
     --facing-label-smoothing "${FACING_LABEL_SMOOTHING:-0.05}")
 fi
-for file in "$TRAIN_ANN" "$VAL_ANN" "$EXTENTS" "$WEIGHTS"; do
+INPUTS=("$TRAIN_ANN" "$VAL_ANN" "$EXTENTS")
+EXISTING_MODEL=0
+for option in "$@"; do
+  case "$option" in --resume|--resume=*|--init-from|--init-from=*) EXISTING_MODEL=1 ;; esac
+done
+if (( EXISTING_MODEL == 0 )); then INPUTS+=("$WEIGHTS"); fi
+for file in "${INPUTS[@]}"; do
   [[ -f "$file" ]] || { echo "Missing experiment input: $file" >&2; exit 1; }
 done
 NPROC="${NPROC_PER_NODE:-2}"

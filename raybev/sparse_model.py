@@ -232,13 +232,44 @@ class SparseEvidence(nn.Module):
             camera_values=(camera_weights[...,None]*values).sum(-2)/camera_weights.sum(-1,keepdim=True).clamp_min(1e-8)
             facing_input=torch.cat((camera_values[:,:,0],camera_values[:,:,1]-camera_values[:,:,2],
                                     camera_values[:,:,1]+camera_values[:,:,2]),-1)
-            both=visible[:,:,1]&visible[:,:,2]
+            end_a,end_b=visible[:,:,1],visible[:,:,2]
+            evidence=(end_a|end_b) if self.cfg.independent_facing_views else (end_a&end_b)
             confidence=camera_weights[:,:,1].sum(-1)+camera_weights[:,:,2].sum(-1)
-            confidence=confidence*both
+            confidence=confidence*evidence
             confidence=confidence/confidence.sum(-1,keepdim=True).clamp_min(1e-8)
             facing=(self.camera_facing(facing_input)*confidence[...,None]).sum(-2)
             return result+(facing,)
         return result
+
+
+class RefinedBoxClassifier(nn.Module):
+    """A small final-box-only P3 resampling residual, no new decoder stage."""
+    def __init__(self,channels):
+        super().__init__()
+        self.register_buffer('points',torch.tensor([[0,0,0],[.45,0,0],[-.45,0,0],
+            [.30,.43,.25],[-.30,-.43,.25],[0,0,.45]]),persistent=False)
+        self.view_score=nn.Linear(channels,1)
+        self.output=nn.Sequential(nn.Linear(6*channels+9,channels),nn.ReLU(),nn.Linear(channels,channels))
+        nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
+
+    def forward(self,boxes,feature,projector):
+        boxes=boxes.detach().float()
+        local=boxes[...,None,3:6]*self.points.float()
+        x,y,z=local.unbind(-1);a=boxes[...,6,None]
+        points=boxes[...,None,:3]+torch.stack((x*a.cos()-y*a.sin(),x*a.sin()+y*a.cos(),z),-1)
+        uv,valid,_=projector(points)
+        b,n,c,h,w=feature.shape;q,p=uv.shape[1:3]
+        uv=2*(uv/8+.5)/uv.new_tensor([w,h])-1
+        uv=torch.where(valid[...,None],uv,torch.full_like(uv,2.))
+        grid=uv.permute(0,3,1,2,4).reshape(b*n,q*p,1,2)
+        with torch.autocast(device_type=feature.device.type,enabled=False):
+            values=F.grid_sample(feature.float().reshape(b*n,c,h,w),grid.float(),align_corners=False)
+        values=values.reshape(b,n,c,q,p).permute(0,3,4,1,2)
+        weights=masked_softmax(self.view_score(values)[...,0],valid,dim=-1)
+        pooled=(values*weights[...,None]).sum(3).flatten(2)
+        visible=valid.any(-1)
+        residual=self.output(torch.cat((pooled,boxes[...,3:6].clamp_min(.05).log(),visible.float()),-1))
+        return residual*visible.any(-1,keepdim=True)
 
 
 class SparseStage(nn.Module):
@@ -263,6 +294,8 @@ class SparseStage(nn.Module):
             # Independent nonlinear task representations, reduced from ROSA's
             # C256 trunks. Residual initialization retains the learned query.
             self.class_context=task_context();self.size_context=task_context()
+        if cfg.fresh_box_classification and stage_index==cfg.stages-1:
+            self.refined_box_classifier=RefinedBoxClassifier(cfg.channels)
         nn.init.constant_(self.classifier.bias,math.log(.01/.99))
         for module in (self.center,self.size,self.axis,self.facing[-1]):
             nn.init.zeros_(module.weight);nn.init.zeros_(module.bias)
@@ -319,6 +352,8 @@ class SparseStage(nn.Module):
         yaw,confidence=decode_heading(decode_axis,facing,self.cfg)
         updated=torch.cat((center,size,yaw[...,None]),-1)
         class_query=task_query+self.class_context(task_query) if self.cfg.is_refined else query
+        if hasattr(self,'refined_box_classifier'):
+            class_query=class_query+self.refined_box_classifier(updated,features[self.cfg.feature_strides.index(8)],projector)
         output=dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(class_query),
                     quality_logits=self.quality(query)[...,0],supported=supported)
         if self.cfg.architecture_version>=5:output['facing_confidence']=confidence
@@ -416,22 +451,54 @@ class YOLOROSALite(nn.Module):
         return self.forward_features(self.image_encoder(images),targets)
 
 
-@torch.no_grad()
-def decode_sparse(output,cfg,score_threshold=.1,apply_nms=True):
-    if not 0<=score_threshold<=1:raise ValueError('Invalid sparse score threshold')
-    final=output['stages'][-1];q=cfg.queries
-    probabilities=final['class_logits'][:,:q].float().sigmoid()
-    score,classes=probabilities.max(-1)
-    score=score*final['quality_logits'][:,:q].float().sigmoid().pow(cfg.quality_score_power)
-    finite=torch.isfinite(final['class_logits'][:,:q]).all(-1)
+def sparse_candidates(final,cfg,quality_power=None,class_bias=None):
+    """Decoded raw query arrays plus separate validity masks for replay/audit."""
+    q=cfg.queries
+    power=cfg.quality_score_power if quality_power is None else float(quality_power)
+    if not math.isfinite(power) or not 0<=power<=1:raise ValueError('Invalid quality power')
+    logits=final['class_logits'][:,:q].float()
+    if class_bias is not None:
+        bias=logits.new_tensor(class_bias)
+        if bias.shape!=(cfg.num_classes,) or not torch.isfinite(bias).all():
+            raise ValueError('Expected one finite logit bias per class')
+        logits=logits+bias
+    quality=final['quality_logits'][:,:q].float()
+    prob=logits.sigmoid()
+    if power>0:prob=prob*quality.sigmoid().pow(power)[...,None]
+    # Retain legacy sigmoid-max behavior (including equal saturated logits).
+    score,classes=logits.sigmoid().max(-1)
+    if power>0:score=score*quality.sigmoid().pow(power)
+    boxes=final['boxes'][:,:q].float()
+    finite=torch.isfinite(logits).all(-1)&torch.isfinite(boxes).all(-1)
     finite=finite&torch.isfinite(final['axis'][:,:q]).all(-1)&torch.isfinite(final['facing'][:,:q]).all(-1)
-    if cfg.quality_score_power>0:finite=finite&torch.isfinite(final['quality_logits'][:,:q])
+    if power>0:finite=finite&torch.isfinite(quality)
+    in_range=in_bev_range(boxes.flatten(0,1),cfg).reshape_as(score)
+    return boxes,classes,score,final['supported'][:,:q].bool(),finite,in_range,prob
+
+
+@torch.no_grad()
+def decode_sparse(output,cfg,score_threshold=.1,apply_nms=True,*,quality_power=None,
+                  nms_iou=None,vehicle_duplicates=False,class_bias=None,class_thresholds=None,return_indices=False):
+    if not 0<=score_threshold<=1:raise ValueError('Invalid sparse score threshold')
+    nms_iou=cfg.nms_iou_threshold if nms_iou is None else float(nms_iou)
+    if not 0<=nms_iou<=1:raise ValueError('Invalid NMS threshold')
+    boxes,labels,scores,support,valid,in_range,_=sparse_candidates(output['stages'][-1],cfg,quality_power,class_bias)
+    thresholds=score_threshold
+    if class_thresholds is not None:
+        per_class=scores.new_tensor(class_thresholds)
+        if (per_class.shape!=(cfg.num_classes,) or not torch.isfinite(per_class).all() or
+                (per_class<0).any() or (per_class>1).any()):
+            raise ValueError('Expected one score threshold per class in [0,1]')
+        thresholds=torch.maximum(per_class[labels],scores.new_tensor(score_threshold))
+    keep=valid&in_range&(scores>=thresholds)&(scores>0)&support
     results=[]
-    for boxes,labels,scores,support,valid in zip(final['boxes'][:,:q].float(),classes,score,final['supported'][:,:q],finite):
-        detections=torch.cat((boxes,labels[:,None].float(),scores[:,None]),-1)
-        keep=valid&torch.isfinite(detections).all(-1)&in_bev_range(detections,cfg)&(scores>=score_threshold)&(scores>0)&support
-        detections=detections[keep]
-        detections=detections[detections[:,8].argsort(descending=True)]
-        if apply_nms and len(detections):detections=detections[rotated_bev_nms(detections,cfg.nms_iou_threshold,cfg.max_detections)]
-        results.append(detections[:cfg.max_detections])
+    for box,label,score,mask in zip(boxes,labels,scores,keep):
+        ids=torch.nonzero(mask,as_tuple=False).flatten()
+        ids=ids[score[ids].argsort(descending=True)]
+        detections=torch.cat((box[ids],label[ids,None].float(),score[ids,None]),-1)
+        if apply_nms and len(detections):
+            selected=rotated_bev_nms(detections,nms_iou,cfg.max_detections,vehicle_duplicates)
+            ids=ids[selected];detections=detections[selected]
+        detections=detections[:cfg.max_detections];ids=ids[:cfg.max_detections]
+        results.append((detections,ids) if return_indices else detections)
     return results

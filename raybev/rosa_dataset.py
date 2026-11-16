@@ -102,7 +102,7 @@ def boxes_to_baselink(boxes,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_ref
     return boxes
 
 
-def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_reference='center',only_ignored=False):
+def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,z_reference='center',only_ignored=False,return_indices=False):
     annos=sample.get('annos',{})
     for key in ('gt_boxes','gt_boxes_3d','boxes_3d'):
         if key in annos:
@@ -128,7 +128,8 @@ def parse_box_annotations(sample,box_frame=DEFAULT_BOX_FRAME,T_base_clidar=None,
         raise ValueError('Ignored annotations are TRAIN-only; validation GT must remain complete')
     keep&=ignored if only_ignored else ~ignored
     out=np.concatenate((boxes[keep],labels[keep,None].astype(np.float64)),axis=1)
-    return torch.as_tensor(out,dtype=torch.float32)
+    values=torch.as_tensor(out,dtype=torch.float32)
+    return (values,np.flatnonzero(keep)) if return_indices else values
 
 
 def read_T_base_clidar(path=None):
@@ -171,15 +172,15 @@ class RosaCombinedDataset(Dataset):
         self.range_filtered_boxes=0
         self.gt_counts={name:0 for name in CLASSES}
         # Precache compact GT tensors; this also rejects mismatched taxonomies before training.
-        self.boxes=[];self.ignore_boxes=[]
+        self.boxes=[];self.ignore_boxes=[];self.box_source_indices=[]
         for s in self.rows:
-            b=parse_box_annotations(s,self.box_frame,self.T_base_clidar,self.z_reference)
+            b,indices=parse_box_annotations(s,self.box_frame,self.T_base_clidar,self.z_reference,return_indices=True)
             ignored=parse_box_annotations(s,self.box_frame,self.T_base_clidar,self.z_reference,only_ignored=True)
             if cfg is not None:
                 keep=in_bev_range(b,cfg)
                 self.range_filtered_boxes+=int((~keep).sum())
-                b=b[keep]
-            self.boxes.append(b)
+                b=b[keep];indices=indices[keep.numpy()]
+            self.boxes.append(b);self.box_source_indices.append(indices)
             self.ignore_boxes.append(ignored)
             for i in range(len(CLASSES)):
                 self.gt_counts[CLASSES[i]]+=int((b[:,-1]==i).sum())

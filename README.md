@@ -573,3 +573,8 @@ These are test-only CPU/gloo runs (small synthetic tensors); they do **not**
 benchmark NCCL, CUDA, real dataset throughput or GPU memory consumption.
 For real use, profile both RTX GPUs and ensure that your calibrated OpenCV fisheye
 projection agrees with actual image overlays before interpreting mAP.
+
+## RayBEV V9 heavy-vehicle update
+
+See [V9_HEAVY_FIXES.md](V9_HEAVY_FIXES.md) for checkpoint diagnosis, scoring
+replay, reviewed two-GPU training, and controlled ablations.

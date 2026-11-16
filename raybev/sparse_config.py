@@ -53,6 +53,16 @@ class SparseConfig:
     heading_hard_weight: float = 0.
     facing_binary_weight: float = .5
     facing_label_smoothing: float = 0.
+    # V9 is opt-in so legacy inference and exact training resumes keep their recipe.
+    proposal_cell_targets: bool = False
+    match_class_start: float = 1.
+    match_warmup_epochs: int = 0
+    match_ramp_epochs: int = 0
+    fresh_box_classification: bool = False
+    independent_facing_views: bool = False
+    heavy_endpoint_weight: float = 0.
+    quality_distance_target: bool = False
+    quality_hard_negative_weight: float = 0.
 
     @property
     def is_refined(self):return self.architecture_version>=4
@@ -108,6 +118,16 @@ class SparseConfig:
             raise ValueError('Invalid experiment loss settings')
         if self.architecture_version<5 and (self.heading_hard_weight or self.facing_label_smoothing or self.facing_binary_weight!=.5):
             raise ValueError('New heading objectives require architecture 5')
+        if (not 0 <= self.match_class_start <= 1 or
+                min(self.match_warmup_epochs,self.match_ramp_epochs)<0 or
+                not all(math.isfinite(x) and x>=0 for x in
+                        (self.heavy_endpoint_weight,self.quality_hard_negative_weight))):
+            raise ValueError('Invalid V9 matching/geometry/quality settings')
+        if self.architecture_version<5 and (self.proposal_cell_targets or self.fresh_box_classification or
+                self.independent_facing_views or self.heavy_endpoint_weight or self.quality_distance_target or
+                self.quality_hard_negative_weight or self.match_class_start!=1 or
+                self.match_warmup_epochs or self.match_ramp_epochs):
+            raise ValueError('V9 improvements require architecture 5')
         return self
 
     def to_dict(self):return asdict(self)

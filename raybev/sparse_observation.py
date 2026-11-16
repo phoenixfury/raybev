@@ -95,7 +95,14 @@ class GroundProposals(nn.Module):
             lattice=self.centers,cell_size=self.cell_size)
 
 
-def proposal_loss(proposal,targets):
+def select_proposal_targets(delta,cell_size,valid):
+    """Nearest GT *inside* each visible half-open cell, with stable ties."""
+    inside=((delta>=-cell_size/2)&(delta<cell_size/2)).all(-1)
+    nearest=delta.square().sum(-1).masked_fill(~inside,float('inf')).argmin(1)
+    return nearest,inside.any(-1)&valid
+
+
+def proposal_loss(proposal,targets,cell_targets=False):
     from .sparse_loss import ignored_queries
     zero=proposal['logits'].sum()*0+proposal['centers'].sum()*0
     total=zero
@@ -107,14 +114,22 @@ def proposal_loss(proposal,targets):
         keep &= ~ignored_queries(placeholder,target[target[:,7]<0])
         regression=zero
         if len(gt):
-            distance=torch.cdist(proposal['lattice'][:,:2],gt[:,:2])
-            nearest=distance.argmin(1)
-            delta=gt[nearest,:2]-proposal['lattice'][:,:2]
-            positive=(delta.abs()<=proposal['cell_size']/2).all(-1)&proposal['valid'][bi]
+            if cell_targets:
+                delta=gt[None,:,:2]-proposal['lattice'][:,None,:2]
+                nearest,positive=select_proposal_targets(delta,proposal['cell_size'],proposal['valid'][bi])
+            else:
+                distance=torch.cdist(proposal['lattice'][:,:2],gt[:,:2])
+                nearest=distance.argmin(1)
+                delta=gt[nearest,:2]-proposal['lattice'][:,:2]
+                positive=(delta.abs()<=proposal['cell_size']/2).all(-1)&proposal['valid'][bi]
             truth[positive]=1;keep|=positive
             regression=F.smooth_l1_loss(proposal['centers'][bi,positive,:2],gt[nearest[positive],:2],beta=.1,reduction='sum')/max(int(positive.sum()),1)
         logits=proposal['logits'][bi];p=logits.sigmoid()
         pt=torch.where(truth.bool(),p,1-p)
         focal=F.binary_cross_entropy_with_logits(logits,truth,reduction='none')*(1-pt).square()
-        total+=((focal*keep).sum()/truth.sum().clamp_min(1)+regression)/len(targets)
+        increment=((focal*keep).sum()/truth.sum().clamp_min(1)+regression)/len(targets)
+        # The old in-place update alias modified `zero`, so an empty later
+        # frame could accidentally add earlier frames' loss again.
+        if cell_targets:total=total+increment
+        else:total+=increment
     return total

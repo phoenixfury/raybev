@@ -60,6 +60,7 @@ def export_model(model,output):
         heading_axis_output='raw doubled-axis vector (normalize for direction only)' if cfg.is_refined else 'unit doubled-axis vector',
         center_refinement='early spherical capture, final two stages bounded metric XYZ residuals' if cfg.is_refined else 'spherical direction/log-range residuals',
         feature_fusion='residual top-down semantic fusion; optional P2' if cfg.is_refined else 'independent pyramid projections',
+        final_classification='refined-box P3 residual' if cfg.fresh_box_classification else 'incoming-box evidence',
         proposals='image-scored calibrated ground lattice with TRAIN-supervised offsets' if cfg.proposal_queries else 'TRAIN fitted anchors',
         projection='Dynamic per-stage box support points. Calibration constants are baked into the exported head.',
         training_only_excluded=['Hungarian matching','denoising queries','teacher','track-balanced sampling'],

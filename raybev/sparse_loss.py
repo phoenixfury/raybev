@@ -59,8 +59,76 @@ def background_quality_loss(single,known,matched,keep):
     return (loss*mask).sum()/mask.sum().clamp_min(1)
 
 
+def class_match_weight(cfg,epoch):
+    """Zero-based epoch schedule, including deterministic epoch-boundary resume."""
+    elapsed=epoch-cfg.match_warmup_epochs
+    if elapsed<0:return cfg.match_class_start
+    if not cfg.match_ramp_epochs:return 1.
+    fraction=min(elapsed/cfg.match_ramp_epochs,1.)
+    return cfg.match_class_start+(1-cfg.match_class_start)*fraction
+
+
+def endpoint_error(pred,gt):
+    def ends(box):
+        axis=torch.stack((box[:,6].cos(),box[:,6].sin()),-1)
+        offset=axis*box[:,3:4]/2
+        return torch.stack((box[:,:2]+offset,box[:,:2]-offset),1)
+    a,b=ends(pred),ends(gt)
+    def loss(target):return F.smooth_l1_loss(a,target,beta=.1,reduction='none').sum(-1).mean(-1)
+    return torch.minimum(loss(b),loss(b.flip(1)))
+
+
+def distance_quality(distance):
+    # Smooth approximation to the fraction of evaluator radii passed.
+    radii=distance.new_tensor([.5,1.,2.,4.])
+    return ((radii-distance[...,None])/.15).sigmoid().mean(-1)
+
+
+def hard_quality_negatives(single,known,matched,target_ids,keep,quality_power,limit=8):
+    """Mine high-score background plus tightly supported non-owner duplicates."""
+    logits=single['quality_logits'][:len(keep)].float()
+    boxes=single['boxes'][:len(keep)].detach().float()
+    with torch.no_grad():
+        mask=keep.clone();mask[matched]=False
+        if 'supported' in single:mask &= single['supported'][:len(keep)]
+        if len(known):
+            distance=torch.cdist(boxes[:,:2],known[:,:2].float())
+            nearest_distance,nearest=distance.min(-1)
+            # A duplicate needs a close owner of the SAME GT, not just any GT
+            # within 2 m. Near-only unmatched hypotheses are still protected.
+            owner_distance=distance.new_full((len(known),),float('inf'))
+            owner_distance[target_ids]=distance[matched,target_ids]
+            duplicate=(nearest_distance<.75)&(owner_distance[nearest]<.75)
+            # In a crowded scene avoid penalizing a query between two objects.
+            if len(known)>1:
+                neighbours=distance.topk(2,largest=False).values
+                duplicate &= neighbours[:,1]-neighbours[:,0]>.5
+            mask &= (nearest_distance>=2.)|duplicate
+        score=single['class_logits'][:len(keep)].detach().float().sigmoid().amax(-1)
+        score*=logits.detach().sigmoid().pow(quality_power)
+        ids=score.masked_fill(~mask,-1).topk(min(limit,len(keep))).indices
+        valid=mask[ids]
+    loss=F.softplus(logits[ids])
+    return (loss*valid).sum()/valid.sum().clamp_min(1)
+
+
+def match_geometry_gap(single,known,pi,ti,q):
+    """Heavy assignment XY regret relative to each GT's nearest visible query."""
+    with torch.no_grad():
+        heavy=(known[ti,7]==3)|(known[ti,7]==4)|(known[ti,7]==5)
+        distances=torch.cdist(single['boxes'][:q,:2].detach().float(),known[ti,:2].float())
+        support=single.get('supported')
+        if support is not None:
+            nearest=distances.masked_fill(~support[:q,None],float('inf')).amin(0)
+        else:nearest=distances.amin(0)
+        valid=heavy&torch.isfinite(nearest)
+        assigned=distances[pi,torch.arange(len(ti),device=ti.device)]
+        gap=torch.where(valid,(assigned-nearest).clamp_min(0),0.)
+        return gap.sum(),valid.sum(),((gap>.5)&valid).sum()
+
+
 @torch.no_grad()
-def match_queries(stage,gt,cfg):
+def match_queries(stage,gt,cfg,class_weight=1.):
     if not len(gt):return torch.empty(0,dtype=torch.long),torch.empty(0,dtype=torch.long)
     boxes=stage['boxes'][:cfg.queries].float()
     p=stage['class_logits'][:cfg.queries].float().sigmoid().clamp(1e-6,1-1e-6)
@@ -69,7 +137,7 @@ def match_queries(stage,gt,cfg):
     cls=(pos-neg)[:,gt[:,7].long()]
     center=torch.cdist(boxes[:,:3],gt[:,:3],p=1)
     size=torch.cdist(boxes[:,3:6].clamp_min(.05).log(),gt[:,3:6].log(),p=1)
-    cost=cls+center*.25+size*.5
+    cost=class_weight*cls+center*.25+size*.5
     if not torch.isfinite(cost).all():raise FloatingPointError('Nonfinite sparse matching cost')
     prediction,target=linear_sum_assignment(cost.cpu().numpy())
     return torch.as_tensor(prediction),torch.as_tensor(target)
@@ -107,18 +175,22 @@ class SparseYawTeacher:
 class SparseCriterion(nn.Module):
     def __init__(self,cfg,teacher=None,projector=None,extents=None):
         super().__init__();self.cfg=cfg;self.teacher=teacher;self.projector=projector;self.extents=extents
+        self.match_epoch=0
         if cfg.extent_weight and (extents is None or projector is None):
             raise ValueError('Extent loss requires verified image annotations and calibration')
 
     def _regression(self,stage,pi,gt,denominator,token=None):
         # This zero keeps all task projections in the DDP graph on empty ranks.
         zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
-        result={name:zero for name in ('center','size','axis','facing','quality','teacher','facing_binary','extent')}
+        result={name:zero for name in ('center','size','axis','facing','quality','teacher','facing_binary','extent','heavy_endpoint')}
         if not len(gt):return result
         pred=stage['boxes'][pi].float()
         weights=gt.new_tensor(self.cfg.class_positive_weights)[gt[:,7].long()]
         def average(value):return (value*weights).sum()/denominator
         result['center']=average(F.smooth_l1_loss(pred[:,:3],gt[:,:3],beta=self.cfg.center_loss_beta,reduction='none').sum(-1))
+        if self.cfg.heavy_endpoint_weight and token is not None:
+            heavy=(gt[:,7]==3)|(gt[:,7]==4)|(gt[:,7]==5)
+            result['heavy_endpoint']=(endpoint_error(pred[heavy],gt[heavy])*weights[heavy].sqrt()).sum()/denominator
         size_error=(pred[:,3:6].clamp_min(.05).log()-gt[:,3:6].log())
         size_loss=size_error.abs() if self.cfg.is_refined else F.smooth_l1_loss(size_error,torch.zeros_like(size_error),reduction='none')
         result['size']=average(size_loss.sum(-1))
@@ -153,7 +225,8 @@ class SparseCriterion(nn.Module):
         if self.cfg.extent_weight:
             result['extent']=self.extents.loss(pred,gt,token,self.projector)
         distance=(pred[:,:2]-gt[:,:2]).norm(dim=-1)
-        quality=torch.exp(-distance if self.cfg.is_refined else -distance-size_error.abs().mean(-1)).detach()
+        quality=(distance_quality(distance) if self.cfg.quality_distance_target else
+                 torch.exp(-distance if self.cfg.is_refined else -distance-size_error.abs().mean(-1))).detach()
         result['quality']=average(F.binary_cross_entropy_with_logits(stage['quality_logits'][pi].float(),quality,reduction='none'))
         if self.teacher is not None and token is not None:
             yaw,confidence=self.teacher.targets(token,gt)
@@ -169,15 +242,17 @@ class SparseCriterion(nn.Module):
         if not b:raise ValueError('Empty sparse minibatch')
         for gt in targets:validate_targets(gt,cfg)
         denominator=b*cfg.mean_training_objects
-        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background')}
+        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative')}
         matches=0
+        match_weight=class_match_weight(cfg,self.match_epoch) if self.training else 1.
+        gap_stats=output['stages'][0]['boxes'].new_zeros(3,dtype=torch.float32)
         for stage in output['stages']:
             zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
             current={k:zero.clone() for k in totals}
             for bi,target in enumerate(targets):
                 target=target.to(stage['boxes'].device);known=target[target[:,7]>=0];ignored=target[target[:,7]<0]
                 single={k:v[bi] for k,v in stage.items()}
-                pi,ti=match_queries(single,known,cfg);pi=pi.to(target.device);ti=ti.to(target.device)
+                pi,ti=match_queries(single,known,cfg,match_weight);pi=pi.to(target.device);ti=ti.to(target.device)
                 logits=single['class_logits'][:q].float();truth=torch.zeros_like(logits)
                 truth[pi,known[ti,7].long()]=1
                 keep=~ignored_queries(single['boxes'][:q].detach(),ignored);keep[pi]=True
@@ -189,6 +264,10 @@ class SparseCriterion(nn.Module):
                     current['matched_class']+=matched_class_loss(logits[pi],known[ti,7].long(),cfg,denominator)
                 if cfg.quality_background_weight:
                     current['quality_background']+=background_quality_loss(single,known,pi,keep)/b
+                if cfg.quality_hard_negative_weight:
+                    current['quality_hard_negative']+=hard_quality_negatives(single,known,pi,ti,keep,cfg.quality_score_power)/b
+                if stage is output['stages'][-1] and len(ti) and (cfg.match_warmup_epochs or cfg.match_ramp_epochs):
+                    gap_stats+=torch.stack(match_geometry_gap(single,known,pi,ti,q))
                 reg=self._regression(single,pi,known[ti],denominator,None if tokens is None else tokens[bi])
                 for key,value in reg.items():current[key]+=value/b if key=='extent' else value
                 if len(output['dn_indices']):
@@ -204,9 +283,11 @@ class SparseCriterion(nn.Module):
             for key in totals:totals[key]+=current[key]/len(output['stages'])
         if output.get('proposal') is not None:
             from .sparse_observation import proposal_loss
-            totals['proposal']=proposal_loss(output['proposal'],targets)
+            totals['proposal']=proposal_loss(output['proposal'],targets,cfg.proposal_cell_targets)
         loss=(totals['classification']+2*totals['center']+totals['size']+totals['axis']+
               totals['facing']+.5*totals['quality']+cfg.teacher_weight*totals['teacher']+cfg.dn_weight*totals['denoising'])
         loss=loss+cfg.facing_binary_weight*totals['facing_binary']+cfg.extent_weight*totals['extent']+cfg.proposal_weight*totals['proposal']
         loss=loss+cfg.matched_class_weight*totals['matched_class']+cfg.quality_background_weight*totals['quality_background']
-        return loss,{**{k:v.detach() for k,v in totals.items()},'matches':matches//len(output['stages'])}
+        loss=loss+cfg.heavy_endpoint_weight*totals['heavy_endpoint']+cfg.quality_hard_negative_weight*totals['quality_hard_negative']
+        return loss,{**{k:v.detach() for k,v in totals.items()},'matches':matches//len(output['stages']),
+                     'match_gap_stats':gap_stats}

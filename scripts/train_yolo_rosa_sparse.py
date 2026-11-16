@@ -32,7 +32,7 @@ from raybev.metrics import evaluate_detections,heading_diagnostics
 from train_combined_rosa_ddp import ExactEvalSampler,combine_exact_predictions,sync_bn_running_buffers,create_grad_scaler,cuda_autocast,save_checkpoint,Progress
 
 PROJECT=Path(__file__).resolve().parents[1]
-COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background')
+COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative')
 
 
 def build_parser():
@@ -85,6 +85,16 @@ def build_parser():
     p.add_argument('--heading-hard-weight',type=float,default=0.,help='Detached error-based heading reweighting')
     p.add_argument('--facing-binary-weight',type=float,default=.5)
     p.add_argument('--facing-label-smoothing',type=float,default=0.)
+    p.add_argument('--proposal-cell-targets',action='store_true')
+    p.add_argument('--heavy-query-audit',action='store_true')
+    p.add_argument('--match-class-start',type=float,default=1.)
+    p.add_argument('--match-warmup-epochs',type=int,default=0)
+    p.add_argument('--match-ramp-epochs',type=int,default=0)
+    p.add_argument('--fresh-box-classification',action='store_true')
+    p.add_argument('--independent-facing-views',action='store_true')
+    p.add_argument('--heavy-endpoint-weight',type=float,default=0.)
+    p.add_argument('--quality-distance-target',action='store_true')
+    p.add_argument('--quality-hard-negative-weight',type=float,default=0.)
     initialization=p.add_mutually_exclusive_group()
     initialization.add_argument('--resume',help='Only the same sparse run/architecture/recipe')
     initialization.add_argument('--init-from',help='Audited sparse weights only; starts a NEW optimizer and schedule')
@@ -139,8 +149,8 @@ def check_warm_start(state,cfg,contract,teacher_sha):
     """Allow an explicit new recipe without silently changing data or geometry."""
     source=SparseConfig.from_checkpoint(state)
     if not ((source.architecture_version==3 and cfg.architecture_version==4) or
-            source.architecture_version==cfg.architecture_version==4):
-        raise ValueError('Sparse warm start supports only architecture 3 -> 4 or 4 -> 4')
+            source.architecture_version==cfg.architecture_version and cfg.architecture_version in (4,5)):
+        raise ValueError('Sparse warm start supports only architecture 3 -> 4, 4 -> 4 or 5 -> 5')
     for key in ('architecture','backbone','image_width','image_height','channels','queries','stages','heads',
                 'attention_channels','ffn_channels','num_classes','theta_max_degrees','bev_x_min','bev_x_max',
                 'bev_y_min','bev_y_max','min_range','max_range','heading_bins','facing_loss','heading_encoding',
@@ -148,6 +158,12 @@ def check_warm_start(state,cfg,contract,teacher_sha):
         if getattr(source,key)!=getattr(cfg,key):raise ValueError('Sparse warm-start geometry/config mismatch: '+key)
     for key in ('classes','box_frame','z_reference','calibration_sha256','lidar_calibration_sha256','semantic_annotation_sha256'):
         if state.get(key)!=contract[key]:raise ValueError('Sparse warm-start data/calibration mismatch: '+key)
+    if cfg.architecture_version==5:
+        for key in ('stride4','observation_conditioning','proposal_queries','proposal_grid','ground_z',
+                    'multi_camera_facing','facing_cosine_prior','facing_temperature'):
+            if getattr(source,key)!=getattr(cfg,key):raise ValueError('Sparse warm-start architecture mismatch: '+key)
+        if source.fresh_box_classification and not cfg.fresh_box_classification:
+            raise ValueError('Cannot discard the trained final-box classification head during warm start')
     if state.get('heading_teacher_sha256')!=teacher_sha:raise ValueError('Sparse warm-start teacher changed')
     return source
 
@@ -162,6 +178,19 @@ def transfer_sparse_weights(model,state):
     """
     source_cfg=SparseConfig.from_checkpoint(state);cfg=model.cfg
     source=state['state_dict'];destination=model.state_dict()
+    if source_cfg.architecture_version==cfg.architecture_version==5:
+        missing=sorted(set(destination)-set(source))
+        extra=set(source)-set(destination)
+        prefix=f'layers.{cfg.stages-1}.refined_box_classifier.'
+        expected_new={k for k in destination if k.startswith(prefix)} if (
+            cfg.fresh_box_classification and not source_cfg.fresh_box_classification) else set()
+        if extra or set(missing)!=expected_new:
+            raise ValueError('Unexpected architecture-5 warm-start parameters')
+        for key,value in source.items():
+            if value.shape!=destination[key].shape:raise ValueError('Unexpected sparse warm-start tensor shape: '+key)
+        model.load_state_dict({**destination,**source},strict=True)
+        return dict(source_architecture_version=5,target_architecture_version=5,
+                    copied=list(source),expanded=[],reset=[],new=missing)
     if source_cfg.architecture_version==cfg.architecture_version==4:
         model.load_state_dict(source,strict=True)
         return dict(source_architecture_version=4,target_architecture_version=4,
@@ -313,7 +342,12 @@ def main():
             dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=0.,
             matched_class_weight=args.matched_class_weight,quality_background_weight=args.quality_background_weight,
             heading_hard_weight=args.heading_hard_weight,facing_binary_weight=args.facing_binary_weight,
-            facing_label_smoothing=args.facing_label_smoothing).validate()
+            facing_label_smoothing=args.facing_label_smoothing,proposal_cell_targets=args.proposal_cell_targets,
+            match_class_start=args.match_class_start,match_warmup_epochs=args.match_warmup_epochs,
+            match_ramp_epochs=args.match_ramp_epochs,fresh_box_classification=args.fresh_box_classification,
+            independent_facing_views=args.independent_facing_views,heavy_endpoint_weight=args.heavy_endpoint_weight,
+            quality_distance_target=args.quality_distance_target,
+            quality_hard_negative_weight=args.quality_hard_negative_weight).validate()
         options=dict(root=args.root,cfg=cfg,box_frame=args.box_frame,z_reference=args.z_reference,
                      strict_size=not args.resize_native_images,
                      native_image_sizes={c.name:(c.width,c.height) for c in load_cameras(args.calibration)} if args.resize_native_images else None,
@@ -397,7 +431,9 @@ def main():
             # Epoch-boundary resume is deterministic without carrying worker RNG
             # pools: every epoch reconstructs its seeded loader workers.
             torch.manual_seed(args.seed+1000*epoch+rank);np.random.seed(args.seed+1000*epoch+rank);random.seed(args.seed+1000*epoch+rank)
-            sampler.set_epoch(epoch);wrapped.train();configure_image_training(model,args.freeze_image_stages)
+            sampler.set_epoch(epoch);wrapped.train();criterion.train();criterion.match_epoch=epoch
+            configure_image_training(model,args.freeze_image_stages)
+            match_gap=torch.zeros(3,device=device,dtype=torch.float64)
             sums=torch.zeros(1+len(components)+1+len(CLASSES),device=device,dtype=torch.float64)
             optimizer.zero_grad(set_to_none=True);started=time.monotonic()
             progress=Progress('sparse train',epoch+1,args.epochs,len(loader),args.progress,args.log_every) if primary else None
@@ -418,6 +454,7 @@ def main():
                     scale=scaler.get_scale();scaler.step(optimizer);scaler.update()
                     if scaler.get_scale()>=scale:scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
+                match_gap+=parts['match_gap_stats']
                 n=len(images);sums[0]+=float(loss.detach())*n
                 for j,k in enumerate(components,1):sums[j]+=float(parts[k])*n
                 sums[1+len(components)]+=n
@@ -427,10 +464,11 @@ def main():
                 if progress:progress.update(n,dict(loss=f'{float(loss.detach()):.3f}',
                     **{key:f'{float(parts[key]):.3f}' for key in ('classification','center','size','axis','facing')}))
             if progress:progress.close()
-            if distributed:dist.all_reduce(sums);sync_bn_running_buffers(model)
-            model.eval();val_sums=torch.zeros(2+len(components),device=device,dtype=torch.float64);records=[];raw_records=[];position=0;ids=list(eval_sampler)
+            if distributed:dist.all_reduce(sums);dist.all_reduce(match_gap);sync_bn_running_buffers(model)
+            criterion.eval();model.eval();val_sums=torch.zeros(2+len(components),device=device,dtype=torch.float64);records=[];raw_records=[];position=0;ids=list(eval_sampler)
             from raybev.sparse_diagnostics import output_raw_counts,merge_raw_counts,facing_samples,summarize_facing
-            facing_records=[]
+            facing_records=[];query_records=[]
+            from raybev.sparse_audit import audit_queries,summarize_query_audit,false_positive_audit
             val_progress=Progress('sparse validation',epoch+1,args.epochs,len(evaluation),args.progress,args.log_every) if primary else None
             with torch.inference_mode():
                 for images,boxes,tokens in evaluation:
@@ -438,7 +476,9 @@ def main():
                     with cuda_autocast(args.amp and device.type=='cuda'):
                         output=model(images.to(device));loss,parts=criterion(output,targets)
                     if not torch.isfinite(loss):raise FloatingPointError('Nonfinite sparse VAL loss')
-                    predictions=decode_sparse(output,cfg,.01)
+                    decoded=decode_sparse(output,cfg,.01,return_indices=args.heavy_query_audit)
+                    predictions=[p for p,_ in decoded] if args.heavy_query_audit else decoded
+                    if args.heavy_query_audit:query_records.extend(audit_queries(output,cfg,boxes,decoded))
                     raw_records.extend(output_raw_counts(output,boxes,cfg))
                     facing_records.extend(facing_samples(output,boxes,cfg))
                     val_sums[:2]+=val_sums.new_tensor([float(loss)*len(images),len(images)])
@@ -458,6 +498,9 @@ def main():
             if distributed:
                 gathered_facing=[None]*world;dist.all_gather_object(gathered_facing,facing_records)
             else:gathered_facing=[facing_records]
+            if args.heavy_query_audit and distributed:
+                gathered_queries=[None]*world;dist.all_gather_object(gathered_queries,query_records)
+            else:gathered_queries=[query_records]
             if primary:
                 predictions,truths=combine_exact_predictions(gathered,len(val))
                 print(f'[Epoch {epoch+1}/{args.epochs}] Evaluating {len(val)} distinct validation frames globally...',flush=True)
@@ -482,6 +525,13 @@ def main():
                     seconds=time.monotonic()-started,lr=optimizer.param_groups[0]['lr'])
                 from raybev.sparse_diagnostics import heavy_confusion_diagnostics
                 row['heavy_confusion']=heavy_confusion_diagnostics(predictions,truths)
+                if args.heavy_query_audit:
+                    row['query_audit']=summarize_query_audit([r for shard in gathered_queries for r in shard])
+                    row['false_positive_audit']=false_positive_audit(predictions,truths)[0]
+                from raybev.sparse_loss import class_match_weight
+                gap,total,far=match_gap.tolist()
+                row['training_heavy_assignment']=dict(class_cost_weight=class_match_weight(cfg,epoch),
+                    objects=int(total),mean_xy_regret_m=gap/total if total else None,over_half_m=int(far))
                 with (out/'history.jsonl').open('a') as stream:stream.write(json.dumps(row,allow_nan=False)+'\n')
                 csv_path=append_metrics_csv(out,flat_metrics(row))
                 if csv_path.name!='epochs.csv':print('Extended metric CSV:',csv_path,flush=True)

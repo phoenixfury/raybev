@@ -452,7 +452,7 @@ def _intersection_area(subject,clip):
     return .5*abs(np.dot(p[:,0],np.roll(p[:,1],-1))-np.dot(p[:,1],np.roll(p[:,0],-1)))
 
 
-def rotated_bev_nms(detections,threshold=.25,max_detections=150):
+def rotated_bev_nms(detections,threshold=.25,max_detections=150,vehicle_duplicates=False):
     """Portable polygon-IoU reference with vectorized axis-aligned rejection."""
     if not len(detections):
         return torch.empty(0,device=detections.device,dtype=torch.long)
@@ -467,11 +467,22 @@ def rotated_bev_nms(detections,threshold=.25,max_detections=150):
         remaining=order[1:]
         if not len(remaining):break
         overlap=(np.minimum(hi[i],hi[remaining])>np.maximum(lo[i],lo[remaining])).all(axis=1)
-        candidates=np.where(overlap & (boxes[remaining,7]==boxes[i,7]))[0]
+        same=boxes[remaining,7]==boxes[i,7]
+        cross=np.zeros(len(remaining),dtype=bool)
+        if vehicle_duplicates and int(boxes[i,7]) in (0,3,4,5):
+            delta=boxes[remaining,:2]-boxes[i,:2]
+            yaw=boxes[remaining,6]-boxes[i,6]
+            cross=(~same&np.isin(boxes[remaining,7],[0,3,4,5])&
+                   ((delta**2).sum(axis=1)<=.75**2)&(np.abs(np.cos(yaw))>=math.cos(math.pi/6)))
+        candidates=np.where(overlap & (same|cross))[0]
         suppress=np.zeros(len(remaining),dtype=bool)
         for pos in candidates:
             j=remaining[pos]
             inter=_intersection_area(corners[i],corners[j])
-            suppress[pos]=inter/max(float(areas[i]+areas[j]-inter),1e-9)>threshold
+            iou=inter/max(float(areas[i]+areas[j]-inter),1e-9)
+            if same[pos]:suppress[pos]=iou>threshold
+            else:
+                overlap_smaller=inter/max(float(min(areas[i],areas[j])),1e-9)
+                suppress[pos]=iou>=.35 and overlap_smaller>=.8
         order=remaining[~suppress]
     return torch.tensor(keep,device=detections.device,dtype=torch.long)
