@@ -1,0 +1,1958 @@
+{
+  "1": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "4": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "15": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "16": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "17": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "18": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "19": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "20": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "21": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "22": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "23": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "24": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "25": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "26": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "27": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "28": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "30": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "31": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "32": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "35": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "36": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "2": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "6": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "7": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "9": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "10": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "11": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "3": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Large source box, competing foreground car/van and background heavy vehicle; withdraw class change until full 3D association is resolved (pages 1, 6)."
+  },
+  "29": {
+    "physical_class": "van",
+    "note": "Panel/passenger van body, not a cab-and-box truck"
+  },
+  "33": {
+    "physical_class": "van",
+    "note": "Panel/passenger van body, not a cab-and-box truck"
+  },
+  "34": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Large source box, competing foreground car/van and background heavy vehicle; withdraw class change until full 3D association is resolved (pages 1, 6)."
+  },
+  "5": {
+    "physical_class": "unresolved",
+    "note": "Occlusion, competing foreground object or association ambiguity; inspect full-camera evidence"
+  },
+  "8": {
+    "physical_class": "unresolved",
+    "note": "Occlusion, competing foreground object or association ambiguity; inspect full-camera evidence"
+  },
+  "12": {
+    "physical_class": "unresolved",
+    "note": "Occlusion, competing foreground object or association ambiguity; inspect full-camera evidence"
+  },
+  "13": {
+    "physical_class": "truck",
+    "note": "Second pass: White separate cab-and-box cargo vehicle throughout A0221..A0235; Bus is wrong (pages 2-3)."
+  },
+  "14": {
+    "physical_class": "unresolved",
+    "note": "Occlusion, competing foreground object or association ambiguity; inspect full-camera evidence"
+  },
+  "38": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "40": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "42": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "47": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "37": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "39": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "43": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "44": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "45": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "46": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "60": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "71": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "72": {
+    "physical_class": "van",
+    "note": "Panel van or ambulance; ambulance belongs to Van under project taxonomy"
+  },
+  "41": {
+    "physical_class": "car",
+    "note": "Red passenger SUV/crossover under Truck label"
+  },
+  "48": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "49": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "50": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "51": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "53": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "55": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "56": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "57": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "58": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "59": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "61": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "63": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "64": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "65": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "52": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "54": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "62": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "66": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "67": {
+    "physical_class": "van",
+    "note": "Second pass: Blue integrated passenger van consistently visible throughout temporal sequence (pages 10-11); minibus->Van policy."
+  },
+  "68": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "69": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or van/SUV ambiguity; class cannot be certified from this sheet"
+  },
+  "70": {
+    "physical_class": "van",
+    "note": "Second pass: Blue integrated passenger van consistently visible throughout temporal sequence (pages 10-11); minibus->Van policy."
+  },
+  "73": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "76": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "77": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "78": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "79": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "81": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "82": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "88": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "89": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "91": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "92": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "93": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "80": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "83": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "84": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "90": {
+    "physical_class": "truck",
+    "note": "Second pass: Clear separate white cab and cargo box in A0683/A0684; withdraw Truck->Van proposal (page 14)."
+  },
+  "95": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "96": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "99": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "100": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "101": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "102": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "103": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "104": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "105": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "107": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "108": {
+    "physical_class": "van",
+    "note": "Integrated panel-van body, not a separate cab-and-cargo-box truck"
+  },
+  "85": {
+    "physical_class": "construction",
+    "note": "Backhoe/tractor-type work vehicle; requires explicit taxonomy rather than ordinary Truck/Van label"
+  },
+  "87": {
+    "physical_class": "construction",
+    "note": "Backhoe/tractor-type work vehicle; requires explicit taxonomy rather than ordinary Truck/Van label"
+  },
+  "74": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "75": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "86": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "94": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "97": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "98": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "106": {
+    "physical_class": "unresolved",
+    "note": "Ego-body occlusion or ambiguous vehicle identity"
+  },
+  "109": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "110": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "111": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "112": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "113": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "114": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "115": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "116": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "117": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "118": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "119": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "120": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "121": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "122": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "123": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "124": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "125": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "127": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "128": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "133": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "134": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "135": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "136": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "137": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "138": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "139": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "140": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "141": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "142": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "143": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "144": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "126": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "129": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "130": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "131": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "132": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "145": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "146": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "149": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "150": {
+    "physical_class": "truck",
+    "note": "Second pass: White delivery vehicle has separate cab and raised cargo box, visible in A0726/A0734 (pages 18-19)."
+  },
+  "151": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "153": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "154": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "165": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "171": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "179": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "180": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "152": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "158": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "174": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "176": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "177": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "156": {
+    "physical_class": "pickup",
+    "note": "Double-cab pickup with open bed; Van is wrong, Truck-versus-Car mapping needs a stated policy"
+  },
+  "160": {
+    "physical_class": "car",
+    "note": "BMW passenger SUV, not Van"
+  },
+  "161": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "162": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "163": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "164": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "167": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "169": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "172": {
+    "physical_class": "tram",
+    "note": "Passenger tram; valid Bus under the existing tram->Bus taxonomy"
+  },
+  "147": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "148": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "155": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "157": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "159": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "166": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "168": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "170": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "173": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "175": {
+    "physical_class": "bus",
+    "note": "Second pass: Blue urban passenger bus visible in A1036-A1040, partially occluded in A1042 (page 22)."
+  },
+  "178": {
+    "physical_class": "unresolved",
+    "note": "Occluded or insufficient detail to certify the target vehicle class"
+  },
+  "181": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "190": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "192": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "197": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "198": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "201": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "205": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "182": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "183": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "184": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "185": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "186": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "188": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "191": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "199": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Van-versus-light-box-truck morphology not sufficiently clear in all temporal views; withdraw proposed Van->Truck (page 28)."
+  },
+  "200": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Van-versus-light-box-truck morphology not sufficiently clear in all temporal views; withdraw proposed Van->Truck (page 28)."
+  },
+  "204": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "211": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "212": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "215": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "187": {
+    "physical_class": "construction",
+    "note": "Agricultural/utility tractor, not an ordinary van or road cargo truck"
+  },
+  "193": {
+    "physical_class": "construction",
+    "note": "Agricultural/utility tractor, not an ordinary van or road cargo truck"
+  },
+  "194": {
+    "physical_class": "construction",
+    "note": "Agricultural/utility tractor, not an ordinary van or road cargo truck"
+  },
+  "203": {
+    "physical_class": "construction",
+    "note": "Agricultural/utility tractor, not an ordinary van or road cargo truck"
+  },
+  "207": {
+    "physical_class": "construction",
+    "note": "Agricultural/utility tractor, not an ordinary van or road cargo truck"
+  },
+  "202": {
+    "physical_class": "car",
+    "note": "Blue passenger crossover/SUV, not Van"
+  },
+  "208": {
+    "physical_class": "truck",
+    "note": "Second pass: White heavy cab with separate closed cargo body, visible throughout A1347..A1393 (page 29); not passenger Bus."
+  },
+  "210": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "214": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "216": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "189": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "195": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "196": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "206": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "209": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "213": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or association ambiguity; track 196 contains competing van/tractor appearances"
+  },
+  "217": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "218": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "221": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "223": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "224": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "226": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "227": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "229": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "230": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "231": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "232": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "236": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "237": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "240": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "241": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "243": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "244": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "246": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "247": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "248": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "222": {
+    "physical_class": "truck",
+    "note": "Second pass: Raised rectangular cargo roof above cab; no side-body evidence of an integrated panel van. Withdraw 129 proposed Van relabels (pages 34-37)."
+  },
+  "225": {
+    "physical_class": "van",
+    "note": "Integrated van body; original Truck label is inconsistent with morphology"
+  },
+  "238": {
+    "physical_class": "van",
+    "note": "Integrated van body; original Truck label is inconsistent with morphology"
+  },
+  "242": {
+    "physical_class": "truck",
+    "note": "Second pass: Blue cab and separate white box body unambiguous in A1368..A1445; foreground green van caused first-pass confusion (page 41)."
+  },
+  "219": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "220": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "228": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "233": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "234": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "235": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "239": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "245": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "249": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "250": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "251": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "252": {
+    "physical_class": "unresolved",
+    "note": "Competing foreground vehicles or insufficient visible body to distinguish van from truck"
+  },
+  "254": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "255": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "257": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "258": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "260": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "261": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "262": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "263": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "265": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "267": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "268": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "269": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "270": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "273": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "275": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "276": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "278": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "279": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "280": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "281": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "282": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "283": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "284": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "285": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "286": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "287": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "288": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "253": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "256": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "259": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "264": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "266": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "271": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "272": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "274": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "277": {
+    "physical_class": "unresolved",
+    "note": "Projected center on foreground car/ego body; cannot equate foreground object with intended annotation"
+  },
+  "289": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "290": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "291": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "292": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "293": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "294": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "300": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "303": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "309": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "317": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "319": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "320": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "321": {
+    "physical_class": "truck",
+    "note": "Separate cab/cargo body or articulated cargo vehicle, not Bus/Van"
+  },
+  "297": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a commercial van"
+  },
+  "307": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a commercial van"
+  },
+  "298": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "299": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "301": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "304": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "305": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "306": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "311": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "318": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "324": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "295": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "296": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "302": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "308": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "310": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "312": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "313": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "314": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "315": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "316": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "322": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "323": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target association ambiguity; some 09_25 Truck boxes have no visible truck and need geometry/ghost review"
+  },
+  "325": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "326": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "327": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "328": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "330": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "332": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "336": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "338": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "339": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "340": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "341": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "342": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "343": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "344": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "347": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "348": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "350": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "351": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "353": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "354": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "355": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "358": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "360": {
+    "physical_class": "van",
+    "note": "Second pass: White/orange integrated panel-van body clear in A2571..A2576; orange paint is not a separate cargo box (page 67)."
+  },
+  "370": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "329": {
+    "physical_class": "van",
+    "note": "Integrated panel van, ambulance or passenger van body"
+  },
+  "334": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Incomplete body view; withdraw Truck->Van proposal until van/cab-and-box distinction is visible (pages 64, 67)."
+  },
+  "335": {
+    "physical_class": "van",
+    "note": "Integrated panel van, ambulance or passenger van body"
+  },
+  "337": {
+    "physical_class": "truck",
+    "note": "Second pass: Raised separate cargo body behind van-derived cab; withdraw Truck->Van proposal (pages 64, 67)."
+  },
+  "352": {
+    "physical_class": "truck",
+    "note": "Second pass: Raised separate cargo body behind van-derived cab; withdraw Truck->Van proposal (pages 64, 67)."
+  },
+  "357": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Incomplete body view; withdraw Truck->Van proposal until van/cab-and-box distinction is visible (pages 64, 67)."
+  },
+  "359": {
+    "physical_class": "van",
+    "note": "Integrated panel van, ambulance or passenger van body"
+  },
+  "356": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a cargo truck"
+  },
+  "331": {
+    "physical_class": "unresolved",
+    "note": "Occluded target; foreground passenger car may not be the annotated truck"
+  },
+  "333": {
+    "physical_class": "unresolved",
+    "note": "Occluded target; foreground passenger car may not be the annotated truck"
+  },
+  "345": {
+    "physical_class": "unresolved",
+    "note": "Occluded target; foreground passenger car may not be the annotated truck"
+  },
+  "346": {
+    "physical_class": "unresolved",
+    "note": "Occluded target; foreground passenger car may not be the annotated truck"
+  },
+  "349": {
+    "physical_class": "unresolved",
+    "note": "Occluded target; foreground passenger car may not be the annotated truck"
+  },
+  "364": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a van or cargo truck"
+  },
+  "366": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Dark-blue vehicle may be a compact passenger van/MPV rather than SUV; withdraw Van->Car until taxonomy/identity is clear (page 69)."
+  },
+  "367": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a van or cargo truck"
+  },
+  "368": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a van or cargo truck"
+  },
+  "379": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a van or cargo truck"
+  },
+  "383": {
+    "physical_class": "car",
+    "note": "Passenger SUV/crossover, not a van or cargo truck"
+  },
+  "361": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "362": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "363": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "365": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "369": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "371": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "372": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "373": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "374": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "375": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "376": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "381": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "382": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "385": {
+    "physical_class": "unresolved",
+    "note": "Occlusion or target/foreground association ambiguity"
+  },
+  "377": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "378": {
+    "physical_class": "van",
+    "note": "Integrated passenger/panel van body"
+  },
+  "380": {
+    "physical_class": "van",
+    "note": "Integrated passenger/panel van body"
+  },
+  "384": {
+    "physical_class": "van",
+    "note": "Integrated passenger/panel van body"
+  },
+  "386": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "389": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "393": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "396": {
+    "physical_class": "bus",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "387": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not Bus"
+  },
+  "392": {
+    "physical_class": "unresolved",
+    "note": "Second pass: First views put center near orange background cargo vehicle while close white panel van occludes it; withdraw Bus->Van (page 78)."
+  },
+  "391": {
+    "physical_class": "van",
+    "note": "Second pass: Rear Citroen-style integrated panel van, not separate cab-and-cargo truck (A3309, page 78)."
+  },
+  "388": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or ambiguous association; do not relabel the occluder as the target"
+  },
+  "390": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or ambiguous association; do not relabel the occluder as the target"
+  },
+  "394": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or ambiguous association; do not relabel the occluder as the target"
+  },
+  "395": {
+    "physical_class": "unresolved",
+    "note": "Foreground occlusion or ambiguous association; do not relabel the occluder as the target"
+  },
+  "397": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not a separate cargo truck"
+  },
+  "403": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not a separate cargo truck"
+  },
+  "404": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not a separate cargo truck"
+  },
+  "417": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not a separate cargo truck"
+  },
+  "427": {
+    "physical_class": "van",
+    "note": "Integrated panel van, not a separate cargo truck"
+  },
+  "405": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "407": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "409": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "410": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "411": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "412": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "414": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "416": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "421": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "398": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "399": {
+    "physical_class": "van",
+    "note": "Second pass: White integrated panel van rear consistently identifiable in the temporal sequence, including A2893/A2931/A2935 (pages 80-81)."
+  },
+  "400": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "401": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "402": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "406": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "408": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "413": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "415": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "418": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "419": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "420": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "422": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "423": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "424": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "425": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "426": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "428": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "429": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "430": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "431": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "432": {
+    "physical_class": "unresolved",
+    "note": "Occluded target or projected marker on a foreground passenger car; cannot certify which vehicle is annotated"
+  },
+  "433": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "437": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "438": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "439": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "441": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "448": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "449": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "459": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "463": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "466": {
+    "physical_class": "truck",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "440": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "445": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "446": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "447": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "450": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Foreground car/van masks a different background vehicle in some frames; withdraw class correction rather than relabel the occluder (pages 95, 108)."
+  },
+  "451": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "460": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "464": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "465": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "468": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "470": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "471": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "472": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "474": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "476": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "478": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "479": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "480": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "481": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "484": {
+    "physical_class": "van",
+    "note": "Visible vehicle morphology in projected crop and temporal views"
+  },
+  "442": {
+    "physical_class": "car",
+    "note": "Visible passenger SUV/crossover morphology"
+  },
+  "453": {
+    "physical_class": "car",
+    "note": "Visible passenger SUV/crossover morphology"
+  },
+  "454": {
+    "physical_class": "car",
+    "note": "Visible passenger SUV/crossover morphology"
+  },
+  "482": {
+    "physical_class": "unresolved",
+    "note": "Second pass: Foreground car/van masks a different background vehicle in some frames; withdraw class correction rather than relabel the occluder (pages 95, 108)."
+  },
+  "434": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "435": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "436": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "443": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "444": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "452": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "455": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "456": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "457": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "458": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "461": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "462": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "467": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "469": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "473": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "475": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "477": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "483": {
+    "physical_class": "unresolved",
+    "note": "Insufficient view, foreground SUV/taxi masking the intended van, or no identifiable Bus/Truck at projected location"
+  },
+  "485": {
+    "physical_class": "car",
+    "note": "Second pass: USER-CONFIRMED passenger cars in the supplied screenshot: A4172-A4175 Bus/1516 and A4176-A4180 Van/1748, bag 11_09_09_40_48. Apply Car to all 9 track annotations, not only shown thumbnails.",
+    "dimensions_lwh": [
+      4.0,
+      1.8,
+      1.5
+    ],
+    "geometry_authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+  },
+  "486": {
+    "physical_class": "car",
+    "note": "Second pass: USER-CONFIRMED passenger cars in the supplied screenshot: A4172-A4175 Bus/1516 and A4176-A4180 Van/1748, bag 11_09_09_40_48. Apply Car to all 9 track annotations, not only shown thumbnails.",
+    "dimensions_lwh": [
+      4.0,
+      1.8,
+      1.5
+    ],
+    "geometry_authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+  }
+}

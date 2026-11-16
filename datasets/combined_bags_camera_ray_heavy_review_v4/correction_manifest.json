@@ -1,0 +1,271 @@
+{
+  "type": "raybev_manual_heavy_revision_v4",
+  "scope": "Bus/Truck/Van class corrections plus nine user-prescribed car sizes",
+  "geometry_edits": [
+    {
+      "id": 4172,
+      "split": "train",
+      "token": "1794218014714145854",
+      "index": 0,
+      "track_id": "1516",
+      "old_dimensions_lwh": [
+        11.971729278564453,
+        3.2408456802368164,
+        3.8463213443756104
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4173,
+      "split": "train",
+      "token": "1794218015778797084",
+      "index": 0,
+      "track_id": "1516",
+      "old_dimensions_lwh": [
+        11.971729278564453,
+        3.2408456802368164,
+        3.8463213443756104
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4174,
+      "split": "train",
+      "token": "1794218016559047874",
+      "index": 0,
+      "track_id": "1516",
+      "old_dimensions_lwh": [
+        11.971729278564453,
+        3.2408456802368164,
+        3.8463213443756104
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4175,
+      "split": "train",
+      "token": "1794218016644586033",
+      "index": 0,
+      "track_id": "1516",
+      "old_dimensions_lwh": [
+        11.971729278564453,
+        3.2408456802368164,
+        3.8463213443756104
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4176,
+      "split": "train",
+      "token": "1794218216918998478",
+      "index": 22,
+      "track_id": "1748",
+      "old_dimensions_lwh": [
+        5.692651748657227,
+        2.205220937728882,
+        2.0010368824005127
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4177,
+      "split": "train",
+      "token": "1794218217521241815",
+      "index": 22,
+      "track_id": "1748",
+      "old_dimensions_lwh": [
+        5.692651748657227,
+        2.205220937728882,
+        2.0010368824005127
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4178,
+      "split": "train",
+      "token": "1794218230214904901",
+      "index": 22,
+      "track_id": "1748",
+      "old_dimensions_lwh": [
+        5.692651748657227,
+        2.205220937728882,
+        2.0010368824005127
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4179,
+      "split": "train",
+      "token": "1794218217976402437",
+      "index": 23,
+      "track_id": "1748",
+      "old_dimensions_lwh": [
+        5.692651748657227,
+        2.205220937728882,
+        2.0010368824005127
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    },
+    {
+      "id": 4180,
+      "split": "train",
+      "token": "1794218219076045424",
+      "index": 23,
+      "track_id": "1748",
+      "old_dimensions_lwh": [
+        5.692651748657227,
+        2.205220937728882,
+        2.0010368824005127
+      ],
+      "new_dimensions_lwh": [
+        4.0,
+        1.8,
+        1.5
+      ],
+      "authority": "User requested length x width x height 4 x 1.8 x 1.5 m; preserve centers and yaw."
+    }
+  ],
+  "limitations": [
+    "Unresolved annotations retained, not silently deleted/ignored.",
+    "Car/Pedestrian/Cyclist source annotations were not visually audited.",
+    "Nine explicitly authorized LWH edits; centers, yaw and all other geometry unchanged. Cuboid fitting is not certified.",
+    "Tram remains Bus; construction->Van existing policy retained; pickup unchanged pending taxonomy decision."
+  ],
+  "audit_annotation_count": 4555,
+  "audit_track_count": 486,
+  "findings_sha256": "df4cb1d16919f0bf33b84a52c1a45a5fdfe52f1b7172a4678ebed50905ecc07e",
+  "audit_index_sha256": "f31aafdd0c84f8600e7819e803f9c1857f7d9a0c5d48ddb1161abd28dc90465e",
+  "audit_records_sha256": "26cb4a63f982c5579f194c2fa69d63806dd892cf6fd687b4a2a90f620fe99461",
+  "calibration_sha256": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+  "splits": {
+    "train": {
+      "source": "/home/mostafa/mmdetection3d/data/Custom/combined_bags_camera_ray_dedup_v2/annotations/fisheye3dod_infos_train.pkl",
+      "source_sha256": "1ac488f77de0f8005e237c11370eca86c34d57b3b8923ee00e07a65375e7cee8",
+      "output_sha256": "1d4aa7dd354c836d3e51b9bc4d93356fa28f348a7f1e5fca3968d275f194507b",
+      "frames": 9959,
+      "all_boxes_checked": 109952,
+      "before": {
+        "Car": 102083,
+        "Bus": 528,
+        "Truck": 2184,
+        "Pedestrian": 3567,
+        "Van": 1468,
+        "Cyclist": 122
+      },
+      "after": {
+        "Car": 102131,
+        "Truck": 2070,
+        "Bus": 415,
+        "Van": 1647,
+        "Pedestrian": 3567,
+        "Cyclist": 122
+      },
+      "review_statuses": {
+        "corrected_class": 561,
+        "supported_class": 2665,
+        "unresolved": 919,
+        "taxonomy_policy": 35
+      },
+      "transitions": {
+        "bus->Truck": 95,
+        "truck->Van": 296,
+        "truck->Car": 3,
+        "van->Truck": 96,
+        "bus->Van": 20,
+        "van->Car": 41,
+        "truck->Bus": 6,
+        "bus->Car": 4
+      }
+    },
+    "val": {
+      "source": "/home/mostafa/mmdetection3d/data/Custom/combined_bags_camera_ray_dedup_v2/annotations/fisheye3dod_infos_val.pkl",
+      "source_sha256": "079e706a7d594b3bbad836faf833d41b25d582c07c9e0eefafc0aef4939c3521",
+      "output_sha256": "80d6eccf7b7eb9ee9d3e7ff027728c2cf5268432791364bf28b9dfd106fe02f5",
+      "frames": 1034,
+      "all_boxes_checked": 9312,
+      "before": {
+        "Car": 8593,
+        "Truck": 118,
+        "Pedestrian": 342,
+        "Bus": 23,
+        "Cyclist": 2,
+        "Van": 234
+      },
+      "after": {
+        "Car": 8606,
+        "Van": 225,
+        "Truck": 114,
+        "Pedestrian": 342,
+        "Bus": 23,
+        "Cyclist": 2
+      },
+      "review_statuses": {
+        "corrected_class": 16,
+        "unresolved": 140,
+        "supported_class": 219
+      },
+      "transitions": {
+        "truck->Van": 3,
+        "van->Car": 12,
+        "truck->Car": 1
+      }
+    }
+  },
+  "extents": {
+    "source": "/home/mostafa/mmdetection3d/projects/raybev_lite/datasets/combined_bags_camera_ray_dedup_v2/train_yolo_extents_v1.json",
+    "source_sha256": "21fbe02f2c6d32ba7ef3bb38abca36ff8a15e38245659e28f26d44bccf18b298",
+    "output_sha256": "2e31cabecb514736bdac43b64d180966aab12da0cdfb85a6993f32a8d7ebcd58",
+    "old_training_boxes_sha256": "15e4b98e39079aa1d9e30ffc6011a8d3a6cf32453ace05f81ecbfb6770dab718",
+    "new_training_boxes_sha256": "3e47895020ec3e89664575b848bb09bc4df3fa0bd776d8b2105673ec3cca3d72",
+    "records": 5201,
+    "changed_gt_records": 27,
+    "unreferenced_size_changes": 9,
+    "classes": {
+      "car": 4801,
+      "truck": 186,
+      "bus": 28,
+      "pedestrian": 15,
+      "van": 171
+    }
+  }
+}
