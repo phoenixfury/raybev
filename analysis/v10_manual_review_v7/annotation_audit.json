@@ -1,0 +1,229 @@
+{
+  "status": "passed",
+  "verification": {
+    "status": "passed",
+    "all_boxes_checked": 119126,
+    "extent_records_checked": 5200,
+    "note": "Hash/GT/calibration consistency, not a certification of human review correctness."
+  },
+  "reviewed": 91,
+  "decision_statuses": {
+    "reviewed": 82,
+    "removed": 9
+  },
+  "transitions": {
+    "train:car->van": 1,
+    "train:car->truck": 7,
+    "val:car->van": 1
+  },
+  "splits": {
+    "train": {
+      "frames": 9959,
+      "objects": {
+        "car": 102272,
+        "truck": 2026,
+        "van": 1529,
+        "pedestrian": 3567,
+        "bus": 315,
+        "cyclist": 122
+      },
+      "removed": 6
+    },
+    "val": {
+      "frames": 1034,
+      "objects": {
+        "car": 8642,
+        "van": 171,
+        "pedestrian": 342,
+        "truck": 115,
+        "bus": 23,
+        "cyclist": 2
+      },
+      "removed": 3
+    }
+  },
+  "removed_annotations": [
+    {
+      "id": "train:1790240196174029662:17",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "5794",
+      "class_name": "car",
+      "box": [
+        -17.61916160583496,
+        8.20460033416748,
+        0.04186512902379036,
+        6.710459232330322,
+        2.4831383228302,
+        2.862440586090088,
+        -0.044378794729709625
+      ]
+    },
+    {
+      "id": "train:1790240196564527903:13",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "5794",
+      "class_name": "car",
+      "box": [
+        -17.701313018798828,
+        8.29931926727295,
+        -0.25202786922454834,
+        6.466791152954102,
+        2.3889811038970947,
+        2.81876277923584,
+        -0.03217293322086334
+      ]
+    },
+    {
+      "id": "train:1790240194797370933:10",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "5794",
+      "class_name": "car",
+      "box": [
+        -17.533279418945312,
+        8.670164108276367,
+        -0.27463310956954956,
+        4.563899993896484,
+        2.453200101852417,
+        2.8199000358581543,
+        -0.07562746107578278
+      ]
+    },
+    {
+      "id": "train:1790240383493262827:13",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "6118",
+      "class_name": "car",
+      "box": [
+        -9.742273330688477,
+        10.513689041137695,
+        -0.5399888157844543,
+        4.734600067138672,
+        2.4702000617980957,
+        2.8234000205993652,
+        0.04916820302605629
+      ]
+    },
+    {
+      "id": "train:1790240384674492384:11",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "6118",
+      "class_name": "car",
+      "box": [
+        -14.690779685974121,
+        10.479328155517578,
+        -0.4209041893482208,
+        4.653800010681152,
+        2.501499891281128,
+        2.801500082015991,
+        0.05983906611800194
+      ]
+    },
+    {
+      "id": "train:1790240393834864904:5",
+      "split": "train",
+      "sequence": "09_24_08_52_50",
+      "track_id": "6118",
+      "class_name": "truck",
+      "box": [
+        -25.246809005737305,
+        -23.255475997924805,
+        0.36162540316581726,
+        6.758134841918945,
+        2.4327633380889893,
+        2.7972190380096436,
+        1.4349218606948853
+      ]
+    },
+    {
+      "id": "val:1787825893246948695:12",
+      "split": "val",
+      "sequence": "08_27_10_12_18",
+      "track_id": "5566",
+      "class_name": "car",
+      "box": [
+        7.200891017913818,
+        -19.98866081237793,
+        -0.5065281391143799,
+        6.973635196685791,
+        2.492192506790161,
+        2.9797534942626953,
+        -3.1420106887817383
+      ]
+    },
+    {
+      "id": "val:1787825894500342959:11",
+      "split": "val",
+      "sequence": "08_27_10_12_18",
+      "track_id": "5566",
+      "class_name": "car",
+      "box": [
+        -10.711652755737305,
+        -22.05228614807129,
+        -0.2320515364408493,
+        6.973635196685791,
+        2.492192506790161,
+        2.9797534942626953,
+        2.7734289169311523
+      ]
+    },
+    {
+      "id": "val:1790763780382908014:5",
+      "split": "val",
+      "sequence": "09_30_10_10_54",
+      "track_id": "4903",
+      "class_name": "car",
+      "box": [
+        -13.408592224121094,
+        6.741990089416504,
+        -0.4588867425918579,
+        4.67140007019043,
+        2.4921000003814697,
+        2.8096001148223877,
+        0.051789332181215286
+      ]
+    }
+  ],
+  "track_class_conflicts": [],
+  "track_id_edits": 17,
+  "geometry_flags": [],
+  "seen_unseen_val": {
+    "car": {
+      "unseen": 3790,
+      "seen": 4842
+    },
+    "pedestrian": {
+      "unseen": 342
+    },
+    "cyclist": {
+      "unseen": 2
+    },
+    "truck": {
+      "unseen": 115
+    },
+    "van": {
+      "unseen": 33,
+      "seen": 138
+    },
+    "bus": {
+      "unseen": 23
+    }
+  },
+  "yolo": {
+    "records": 5200,
+    "changed": 1,
+    "removed": 0,
+    "geometry_dropped": 0,
+    "pixel_evidence_preserved": true
+  },
+  "credible_geometry": {
+    "approved_boxes": 0,
+    "endpoint_training_allowed": false,
+    "reason": "Class confirmation does not certify cuboid centers/dimensions/yaw. No geometry approval ledger supplied."
+  },
+  "limitation": "Exhaustive source/decision/export consistency, not independent visual certification of every user label."
+}

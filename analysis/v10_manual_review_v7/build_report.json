@@ -1,0 +1,116 @@
+{
+  "source_identity": {
+    "version": 1,
+    "annotations": {
+      "train": "bcef94aff1fe07f2474e6aadefca30b4200ff3a4b1ba968c046e6540764c12b9",
+      "val": "43a5fe279c64afb82cd52a0a338f4ed20c935ace751ad85339c81f9e0d845763"
+    },
+    "extents": "4d2a08ba66e5a888ad8bd43456399a0a9e6ae74eedb01a7b81f40b0042f69f46",
+    "calibration": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+    "classes": [
+      "bus",
+      "car",
+      "cyclist",
+      "pedestrian",
+      "truck",
+      "van"
+    ],
+    "box_frame": "CLIDAR",
+    "z_reference": "center"
+  },
+  "plan_sha256": "26f94c8f0ddb510f8b8426f48be134c2bbcf28a3545e71527e01e527716f8e41",
+  "export": {
+    "type": "raybev_desktop_manual_review_v1",
+    "source_identity": {
+      "version": 1,
+      "annotations": {
+        "train": "bcef94aff1fe07f2474e6aadefca30b4200ff3a4b1ba968c046e6540764c12b9",
+        "val": "43a5fe279c64afb82cd52a0a338f4ed20c935ace751ad85339c81f9e0d845763"
+      },
+      "extents": "4d2a08ba66e5a888ad8bd43456399a0a9e6ae74eedb01a7b81f40b0042f69f46",
+      "calibration": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+      "classes": [
+        "bus",
+        "car",
+        "cyclist",
+        "pedestrian",
+        "truck",
+        "van"
+      ],
+      "box_frame": "CLIDAR",
+      "z_reference": "center"
+    },
+    "review_summary": {
+      "queued": 119135,
+      "reviewed": 91,
+      "unknown_remaining": 0,
+      "review_ledger": null,
+      "uncertain": 0,
+      "removed": 9,
+      "class_changes": 9,
+      "dimension_edits": 15,
+      "splits": {
+        "train": 109837,
+        "val": 9298
+      },
+      "original_classes": {
+        "truck": 2135,
+        "van": 1698,
+        "bus": 338,
+        "car": 110931,
+        "pedestrian": 3909,
+        "cyclist": 124
+      }
+    },
+    "splits": {
+      "train": {
+        "source_sha256": "bcef94aff1fe07f2474e6aadefca30b4200ff3a4b1ba968c046e6540764c12b9",
+        "output_sha256": "4fc1cac224ba5bc5e663f3a2cfe072c29c9be1a548d94ea8bdc31851288da3c6",
+        "all_boxes_checked": 109831,
+        "source_boxes_checked": 109837,
+        "removed_boxes": 6,
+        "frames": 9959
+      },
+      "val": {
+        "source_sha256": "43a5fe279c64afb82cd52a0a338f4ed20c935ace751ad85339c81f9e0d845763",
+        "output_sha256": "2b7593f804550516c86fd4262a49a90159379a11cf83e886aa20ffbde27732e8",
+        "all_boxes_checked": 9295,
+        "source_boxes_checked": 9298,
+        "removed_boxes": 3,
+        "frames": 1034
+      }
+    },
+    "limitations": [
+      "Unreviewed and uncertain annotations retained. Only explicit single-frame object removals are applied.",
+      "Centers/yaw unchanged. Optional sizes are prescribed, not fitted from images.",
+      "Geometry-edited weak extent associations are dropped, never fabricated.",
+      "Conflicting IDs split into conservative class-consistent review segments; physical identity is not certified."
+    ],
+    "extents": {
+      "records": 5200,
+      "changed_gt_records": 1,
+      "unreferenced_size_changes": 13,
+      "classes": {
+        "car": 4801,
+        "truck": 187,
+        "bus": 28,
+        "pedestrian": 15,
+        "van": 169
+      },
+      "geometry_edited_records_dropped": 0,
+      "removed_object_records_dropped": 0,
+      "output_sha256": "4babfe5164ab526dae7ac94bf13bf1c9bb7537c0ef0f41b474306fe76ea9bb36"
+    },
+    "verification": {
+      "status": "passed",
+      "all_boxes_checked": 119126,
+      "extent_records_checked": 5200,
+      "note": "Hash/GT/calibration consistency, not a certification of human review correctness."
+    },
+    "track_id_revisions": {
+      "records": 17,
+      "sha256": "700acac4d1b022479adda8f205e023f1cb29bb7b93bb6e4551e1587de411a4ad"
+    }
+  },
+  "limitation": "Image review and default dimensions are not independent LiDAR geometry certification."
+}

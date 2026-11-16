@@ -1,0 +1,17 @@
+{
+  "release": "/home/mostafa/mmdetection3d/projects/raybev_lite/datasets/combined_bags_camera_ray_manual_review_v5",
+  "files": {
+    "fisheye3dod_infos_train.pkl": "3d5c3c147aed78e4fbbc90d8c42829fa31b40cb248b906e3d392558d07da038e",
+    "fisheye3dod_infos_val.pkl": "74fd8531a95b82b58b70338c2398ee6bb3026450c753bf81e266dfb8bae8381e",
+    "train_yolo_extents_v1.json": "80c949e2f475fdf8ff440a8c29333567e68b87849ba757c7701d83abf15afc2f",
+    "review_decisions.json": "a6ba549c8fd1848a2fd1b0b1daf9a2396a43738907fbb042fcc85792e242d1ab",
+    "review_manifest.json": "1d1832a03f5c9b423e6268820f7f950e43669932ff29ff24087fcb4c809f3258",
+    "review_queue.jsonl": "ed1df97b5ce8df2cd322546d1c2932f62512e3204bd29d768784a3c5b8bd7f2b"
+  },
+  "calibration_sha256": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+  "seed": 3407,
+  "track_class_conflicts": 2,
+  "geometry_flags": 89,
+  "geometry_flags_by_class": {"car": 49, "van": 35, "pedestrian": 5},
+  "endpoint_ready": false
+}

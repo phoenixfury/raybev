@@ -1,0 +1,1984 @@
+{
+  "seed": 3407,
+  "shape_bin_length_edges_m": [
+    2.5,
+    5.5,
+    8.5,
+    14.0
+  ],
+  "arms": {
+    "control": {
+      "learned_shape_bins": [
+        8,
+        144,
+        5,
+        4,
+        0
+      ],
+      "proposal_size_shape_bins": [
+        4,
+        53,
+        4,
+        3,
+        0
+      ],
+      "coverage": {
+        "train": {
+          "learned_anchors_only": {
+            "car/all/0.5m": {
+              "matched": 7691,
+              "total": 102240,
+              "recall": 0.07522496087636933
+            },
+            "car/0_20m/0.5m": {
+              "matched": 5968,
+              "total": 67464,
+              "recall": 0.08846199454523894
+            },
+            "car/20_35m/0.5m": {
+              "matched": 1621,
+              "total": 30603,
+              "recall": 0.05296866320295396
+            },
+            "car/35m_plus/0.5m": {
+              "matched": 102,
+              "total": 4173,
+              "recall": 0.024442846872753415
+            },
+            "pedestrian/all/0.5m": {
+              "matched": 188,
+              "total": 3572,
+              "recall": 0.05263157894736842
+            },
+            "pedestrian/0_20m/0.5m": {
+              "matched": 186,
+              "total": 3319,
+              "recall": 0.056040976197649896
+            },
+            "pedestrian/20_35m/0.5m": {
+              "matched": 2,
+              "total": 233,
+              "recall": 0.008583690987124463
+            },
+            "pedestrian/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 20,
+              "recall": 0.0
+            },
+            "cyclist/all/0.5m": {
+              "matched": 8,
+              "total": 122,
+              "recall": 0.06557377049180328
+            },
+            "cyclist/0_20m/0.5m": {
+              "matched": 4,
+              "total": 76,
+              "recall": 0.05263157894736842
+            },
+            "cyclist/20_35m/0.5m": {
+              "matched": 3,
+              "total": 26,
+              "recall": 0.11538461538461539
+            },
+            "cyclist/35m_plus/0.5m": {
+              "matched": 1,
+              "total": 20,
+              "recall": 0.05
+            },
+            "truck/all/0.5m": {
+              "matched": 297,
+              "total": 2007,
+              "recall": 0.14798206278026907
+            },
+            "truck/0_20m/0.5m": {
+              "matched": 181,
+              "total": 1425,
+              "recall": 0.1270175438596491
+            },
+            "truck/20_35m/0.5m": {
+              "matched": 20,
+              "total": 410,
+              "recall": 0.04878048780487805
+            },
+            "truck/35m_plus/0.5m": {
+              "matched": 96,
+              "total": 172,
+              "recall": 0.5581395348837209
+            },
+            "van/all/0.5m": {
+              "matched": 198,
+              "total": 1544,
+              "recall": 0.12823834196891193
+            },
+            "van/0_20m/0.5m": {
+              "matched": 66,
+              "total": 1192,
+              "recall": 0.05536912751677853
+            },
+            "van/20_35m/0.5m": {
+              "matched": 72,
+              "total": 253,
+              "recall": 0.2845849802371542
+            },
+            "van/35m_plus/0.5m": {
+              "matched": 60,
+              "total": 99,
+              "recall": 0.6060606060606061
+            },
+            "bus/all/0.5m": {
+              "matched": 40,
+              "total": 310,
+              "recall": 0.12903225806451613
+            },
+            "bus/0_20m/0.5m": {
+              "matched": 10,
+              "total": 125,
+              "recall": 0.08
+            },
+            "bus/20_35m/0.5m": {
+              "matched": 29,
+              "total": 140,
+              "recall": 0.20714285714285716
+            },
+            "bus/35m_plus/0.5m": {
+              "matched": 1,
+              "total": 45,
+              "recall": 0.022222222222222223
+            },
+            "car/all/1m": {
+              "matched": 26243,
+              "total": 102240,
+              "recall": 0.2566803599374022
+            },
+            "car/0_20m/1m": {
+              "matched": 20376,
+              "total": 67464,
+              "recall": 0.30202774813233724
+            },
+            "car/20_35m/1m": {
+              "matched": 5569,
+              "total": 30603,
+              "recall": 0.18197562330490474
+            },
+            "car/35m_plus/1m": {
+              "matched": 298,
+              "total": 4173,
+              "recall": 0.07141145458902469
+            },
+            "pedestrian/all/1m": {
+              "matched": 688,
+              "total": 3572,
+              "recall": 0.19260918253079506
+            },
+            "pedestrian/0_20m/1m": {
+              "matched": 661,
+              "total": 3319,
+              "recall": 0.1991563724013257
+            },
+            "pedestrian/20_35m/1m": {
+              "matched": 27,
+              "total": 233,
+              "recall": 0.11587982832618025
+            },
+            "pedestrian/35m_plus/1m": {
+              "matched": 0,
+              "total": 20,
+              "recall": 0.0
+            },
+            "cyclist/all/1m": {
+              "matched": 27,
+              "total": 122,
+              "recall": 0.22131147540983606
+            },
+            "cyclist/0_20m/1m": {
+              "matched": 21,
+              "total": 76,
+              "recall": 0.27631578947368424
+            },
+            "cyclist/20_35m/1m": {
+              "matched": 5,
+              "total": 26,
+              "recall": 0.19230769230769232
+            },
+            "cyclist/35m_plus/1m": {
+              "matched": 1,
+              "total": 20,
+              "recall": 0.05
+            },
+            "truck/all/1m": {
+              "matched": 617,
+              "total": 2007,
+              "recall": 0.30742401594419533
+            },
+            "truck/0_20m/1m": {
+              "matched": 443,
+              "total": 1425,
+              "recall": 0.31087719298245614
+            },
+            "truck/20_35m/1m": {
+              "matched": 75,
+              "total": 410,
+              "recall": 0.18292682926829268
+            },
+            "truck/35m_plus/1m": {
+              "matched": 99,
+              "total": 172,
+              "recall": 0.5755813953488372
+            },
+            "van/all/1m": {
+              "matched": 585,
+              "total": 1544,
+              "recall": 0.3788860103626943
+            },
+            "van/0_20m/1m": {
+              "matched": 425,
+              "total": 1192,
+              "recall": 0.3565436241610738
+            },
+            "van/20_35m/1m": {
+              "matched": 98,
+              "total": 253,
+              "recall": 0.38735177865612647
+            },
+            "van/35m_plus/1m": {
+              "matched": 62,
+              "total": 99,
+              "recall": 0.6262626262626263
+            },
+            "bus/all/1m": {
+              "matched": 76,
+              "total": 310,
+              "recall": 0.24516129032258063
+            },
+            "bus/0_20m/1m": {
+              "matched": 31,
+              "total": 125,
+              "recall": 0.248
+            },
+            "bus/20_35m/1m": {
+              "matched": 43,
+              "total": 140,
+              "recall": 0.30714285714285716
+            },
+            "bus/35m_plus/1m": {
+              "matched": 2,
+              "total": 45,
+              "recall": 0.044444444444444446
+            },
+            "car/all/2m": {
+              "matched": 66172,
+              "total": 102240,
+              "recall": 0.6472222222222223
+            },
+            "car/0_20m/2m": {
+              "matched": 49286,
+              "total": 67464,
+              "recall": 0.7305525910115024
+            },
+            "car/20_35m/2m": {
+              "matched": 15943,
+              "total": 30603,
+              "recall": 0.520961997189818
+            },
+            "car/35m_plus/2m": {
+              "matched": 943,
+              "total": 4173,
+              "recall": 0.22597651569614186
+            },
+            "pedestrian/all/2m": {
+              "matched": 2173,
+              "total": 3572,
+              "recall": 0.6083426651735723
+            },
+            "pedestrian/0_20m/2m": {
+              "matched": 2087,
+              "total": 3319,
+              "recall": 0.6288038565833082
+            },
+            "pedestrian/20_35m/2m": {
+              "matched": 84,
+              "total": 233,
+              "recall": 0.3605150214592275
+            },
+            "pedestrian/35m_plus/2m": {
+              "matched": 2,
+              "total": 20,
+              "recall": 0.1
+            },
+            "cyclist/all/2m": {
+              "matched": 65,
+              "total": 122,
+              "recall": 0.5327868852459017
+            },
+            "cyclist/0_20m/2m": {
+              "matched": 52,
+              "total": 76,
+              "recall": 0.6842105263157895
+            },
+            "cyclist/20_35m/2m": {
+              "matched": 10,
+              "total": 26,
+              "recall": 0.38461538461538464
+            },
+            "cyclist/35m_plus/2m": {
+              "matched": 3,
+              "total": 20,
+              "recall": 0.15
+            },
+            "truck/all/2m": {
+              "matched": 1311,
+              "total": 2007,
+              "recall": 0.6532137518684604
+            },
+            "truck/0_20m/2m": {
+              "matched": 981,
+              "total": 1425,
+              "recall": 0.6884210526315789
+            },
+            "truck/20_35m/2m": {
+              "matched": 219,
+              "total": 410,
+              "recall": 0.5341463414634147
+            },
+            "truck/35m_plus/2m": {
+              "matched": 111,
+              "total": 172,
+              "recall": 0.6453488372093024
+            },
+            "van/all/2m": {
+              "matched": 1075,
+              "total": 1544,
+              "recall": 0.6962435233160622
+            },
+            "van/0_20m/2m": {
+              "matched": 844,
+              "total": 1192,
+              "recall": 0.7080536912751678
+            },
+            "van/20_35m/2m": {
+              "matched": 168,
+              "total": 253,
+              "recall": 0.6640316205533597
+            },
+            "van/35m_plus/2m": {
+              "matched": 63,
+              "total": 99,
+              "recall": 0.6363636363636364
+            },
+            "bus/all/2m": {
+              "matched": 197,
+              "total": 310,
+              "recall": 0.635483870967742
+            },
+            "bus/0_20m/2m": {
+              "matched": 94,
+              "total": 125,
+              "recall": 0.752
+            },
+            "bus/20_35m/2m": {
+              "matched": 94,
+              "total": 140,
+              "recall": 0.6714285714285714
+            },
+            "bus/35m_plus/2m": {
+              "matched": 9,
+              "total": 45,
+              "recall": 0.2
+            },
+            "car/all/4m": {
+              "matched": 96565,
+              "total": 102240,
+              "recall": 0.9444933489827856
+            },
+            "car/0_20m/4m": {
+              "matched": 66911,
+              "total": 67464,
+              "recall": 0.9918030356931103
+            },
+            "car/20_35m/4m": {
+              "matched": 27356,
+              "total": 30603,
+              "recall": 0.893899290919191
+            },
+            "car/35m_plus/4m": {
+              "matched": 2298,
+              "total": 4173,
+              "recall": 0.5506829618979152
+            },
+            "pedestrian/all/4m": {
+              "matched": 3380,
+              "total": 3572,
+              "recall": 0.9462486002239642
+            },
+            "pedestrian/0_20m/4m": {
+              "matched": 3188,
+              "total": 3319,
+              "recall": 0.960530280204881
+            },
+            "pedestrian/20_35m/4m": {
+              "matched": 186,
+              "total": 233,
+              "recall": 0.7982832618025751
+            },
+            "pedestrian/35m_plus/4m": {
+              "matched": 6,
+              "total": 20,
+              "recall": 0.3
+            },
+            "cyclist/all/4m": {
+              "matched": 97,
+              "total": 122,
+              "recall": 0.7950819672131147
+            },
+            "cyclist/0_20m/4m": {
+              "matched": 75,
+              "total": 76,
+              "recall": 0.9868421052631579
+            },
+            "cyclist/20_35m/4m": {
+              "matched": 17,
+              "total": 26,
+              "recall": 0.6538461538461539
+            },
+            "cyclist/35m_plus/4m": {
+              "matched": 5,
+              "total": 20,
+              "recall": 0.25
+            },
+            "truck/all/4m": {
+              "matched": 1939,
+              "total": 2007,
+              "recall": 0.9661185849526657
+            },
+            "truck/0_20m/4m": {
+              "matched": 1422,
+              "total": 1425,
+              "recall": 0.9978947368421053
+            },
+            "truck/20_35m/4m": {
+              "matched": 384,
+              "total": 410,
+              "recall": 0.9365853658536586
+            },
+            "truck/35m_plus/4m": {
+              "matched": 133,
+              "total": 172,
+              "recall": 0.7732558139534884
+            },
+            "van/all/4m": {
+              "matched": 1494,
+              "total": 1544,
+              "recall": 0.9676165803108808
+            },
+            "van/0_20m/4m": {
+              "matched": 1177,
+              "total": 1192,
+              "recall": 0.9874161073825504
+            },
+            "van/20_35m/4m": {
+              "matched": 239,
+              "total": 253,
+              "recall": 0.9446640316205533
+            },
+            "van/35m_plus/4m": {
+              "matched": 78,
+              "total": 99,
+              "recall": 0.7878787878787878
+            },
+            "bus/all/4m": {
+              "matched": 286,
+              "total": 310,
+              "recall": 0.9225806451612903
+            },
+            "bus/0_20m/4m": {
+              "matched": 125,
+              "total": 125,
+              "recall": 1.0
+            },
+            "bus/20_35m/4m": {
+              "matched": 133,
+              "total": 140,
+              "recall": 0.95
+            },
+            "bus/35m_plus/4m": {
+              "matched": 28,
+              "total": 45,
+              "recall": 0.6222222222222222
+            }
+          }
+        },
+        "val": {
+          "learned_anchors_only": {
+            "car/all/0.5m": {
+              "matched": 363,
+              "total": 8637,
+              "recall": 0.042028482111844394
+            },
+            "car/0_20m/0.5m": {
+              "matched": 308,
+              "total": 6059,
+              "recall": 0.05083347086978049
+            },
+            "car/20_35m/0.5m": {
+              "matched": 55,
+              "total": 2411,
+              "recall": 0.022812111157196183
+            },
+            "car/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 167,
+              "recall": 0.0
+            },
+            "pedestrian/all/0.5m": {
+              "matched": 12,
+              "total": 342,
+              "recall": 0.03508771929824561
+            },
+            "pedestrian/0_20m/0.5m": {
+              "matched": 12,
+              "total": 333,
+              "recall": 0.036036036036036036
+            },
+            "pedestrian/20_35m/0.5m": {
+              "matched": 0,
+              "total": 9,
+              "recall": 0.0
+            },
+            "pedestrian/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/0.5m": {
+              "matched": 0,
+              "total": 2,
+              "recall": 0.0
+            },
+            "cyclist/0_20m/0.5m": {
+              "matched": 0,
+              "total": 2,
+              "recall": 0.0
+            },
+            "cyclist/20_35m/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/0.5m": {
+              "matched": 10,
+              "total": 114,
+              "recall": 0.08771929824561403
+            },
+            "truck/0_20m/0.5m": {
+              "matched": 9,
+              "total": 74,
+              "recall": 0.12162162162162163
+            },
+            "truck/20_35m/0.5m": {
+              "matched": 1,
+              "total": 35,
+              "recall": 0.02857142857142857
+            },
+            "truck/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 5,
+              "recall": 0.0
+            },
+            "van/all/0.5m": {
+              "matched": 8,
+              "total": 170,
+              "recall": 0.047058823529411764
+            },
+            "van/0_20m/0.5m": {
+              "matched": 7,
+              "total": 147,
+              "recall": 0.047619047619047616
+            },
+            "van/20_35m/0.5m": {
+              "matched": 1,
+              "total": 19,
+              "recall": 0.05263157894736842
+            },
+            "van/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/0.5m": {
+              "matched": 2,
+              "total": 23,
+              "recall": 0.08695652173913043
+            },
+            "bus/0_20m/0.5m": {
+              "matched": 1,
+              "total": 18,
+              "recall": 0.05555555555555555
+            },
+            "bus/20_35m/0.5m": {
+              "matched": 1,
+              "total": 5,
+              "recall": 0.2
+            },
+            "bus/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/1m": {
+              "matched": 1766,
+              "total": 8637,
+              "recall": 0.20446914437883523
+            },
+            "car/0_20m/1m": {
+              "matched": 1440,
+              "total": 6059,
+              "recall": 0.2376629806898828
+            },
+            "car/20_35m/1m": {
+              "matched": 321,
+              "total": 2411,
+              "recall": 0.133139776026545
+            },
+            "car/35m_plus/1m": {
+              "matched": 5,
+              "total": 167,
+              "recall": 0.029940119760479042
+            },
+            "pedestrian/all/1m": {
+              "matched": 77,
+              "total": 342,
+              "recall": 0.22514619883040934
+            },
+            "pedestrian/0_20m/1m": {
+              "matched": 77,
+              "total": 333,
+              "recall": 0.23123123123123124
+            },
+            "pedestrian/20_35m/1m": {
+              "matched": 0,
+              "total": 9,
+              "recall": 0.0
+            },
+            "pedestrian/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/1m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/0_20m/1m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/20_35m/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/1m": {
+              "matched": 32,
+              "total": 114,
+              "recall": 0.2807017543859649
+            },
+            "truck/0_20m/1m": {
+              "matched": 29,
+              "total": 74,
+              "recall": 0.3918918918918919
+            },
+            "truck/20_35m/1m": {
+              "matched": 3,
+              "total": 35,
+              "recall": 0.08571428571428572
+            },
+            "truck/35m_plus/1m": {
+              "matched": 0,
+              "total": 5,
+              "recall": 0.0
+            },
+            "van/all/1m": {
+              "matched": 48,
+              "total": 170,
+              "recall": 0.2823529411764706
+            },
+            "van/0_20m/1m": {
+              "matched": 46,
+              "total": 147,
+              "recall": 0.3129251700680272
+            },
+            "van/20_35m/1m": {
+              "matched": 2,
+              "total": 19,
+              "recall": 0.10526315789473684
+            },
+            "van/35m_plus/1m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/1m": {
+              "matched": 4,
+              "total": 23,
+              "recall": 0.17391304347826086
+            },
+            "bus/0_20m/1m": {
+              "matched": 2,
+              "total": 18,
+              "recall": 0.1111111111111111
+            },
+            "bus/20_35m/1m": {
+              "matched": 2,
+              "total": 5,
+              "recall": 0.4
+            },
+            "bus/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/2m": {
+              "matched": 5603,
+              "total": 8637,
+              "recall": 0.6487206205858516
+            },
+            "car/0_20m/2m": {
+              "matched": 4375,
+              "total": 6059,
+              "recall": 0.7220663475821093
+            },
+            "car/20_35m/2m": {
+              "matched": 1204,
+              "total": 2411,
+              "recall": 0.49937785151389463
+            },
+            "car/35m_plus/2m": {
+              "matched": 24,
+              "total": 167,
+              "recall": 0.1437125748502994
+            },
+            "pedestrian/all/2m": {
+              "matched": 241,
+              "total": 342,
+              "recall": 0.7046783625730995
+            },
+            "pedestrian/0_20m/2m": {
+              "matched": 238,
+              "total": 333,
+              "recall": 0.7147147147147147
+            },
+            "pedestrian/20_35m/2m": {
+              "matched": 3,
+              "total": 9,
+              "recall": 0.3333333333333333
+            },
+            "pedestrian/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/2m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/0_20m/2m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/20_35m/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/2m": {
+              "matched": 80,
+              "total": 114,
+              "recall": 0.7017543859649122
+            },
+            "truck/0_20m/2m": {
+              "matched": 67,
+              "total": 74,
+              "recall": 0.9054054054054054
+            },
+            "truck/20_35m/2m": {
+              "matched": 12,
+              "total": 35,
+              "recall": 0.34285714285714286
+            },
+            "truck/35m_plus/2m": {
+              "matched": 1,
+              "total": 5,
+              "recall": 0.2
+            },
+            "van/all/2m": {
+              "matched": 111,
+              "total": 170,
+              "recall": 0.6529411764705882
+            },
+            "van/0_20m/2m": {
+              "matched": 102,
+              "total": 147,
+              "recall": 0.6938775510204082
+            },
+            "van/20_35m/2m": {
+              "matched": 9,
+              "total": 19,
+              "recall": 0.47368421052631576
+            },
+            "van/35m_plus/2m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/2m": {
+              "matched": 7,
+              "total": 23,
+              "recall": 0.30434782608695654
+            },
+            "bus/0_20m/2m": {
+              "matched": 4,
+              "total": 18,
+              "recall": 0.2222222222222222
+            },
+            "bus/20_35m/2m": {
+              "matched": 3,
+              "total": 5,
+              "recall": 0.6
+            },
+            "bus/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/4m": {
+              "matched": 8187,
+              "total": 8637,
+              "recall": 0.9478985758944077
+            },
+            "car/0_20m/4m": {
+              "matched": 5951,
+              "total": 6059,
+              "recall": 0.9821752764482587
+            },
+            "car/20_35m/4m": {
+              "matched": 2153,
+              "total": 2411,
+              "recall": 0.8929904603898797
+            },
+            "car/35m_plus/4m": {
+              "matched": 83,
+              "total": 167,
+              "recall": 0.49700598802395207
+            },
+            "pedestrian/all/4m": {
+              "matched": 341,
+              "total": 342,
+              "recall": 0.9970760233918129
+            },
+            "pedestrian/0_20m/4m": {
+              "matched": 332,
+              "total": 333,
+              "recall": 0.996996996996997
+            },
+            "pedestrian/20_35m/4m": {
+              "matched": 9,
+              "total": 9,
+              "recall": 1.0
+            },
+            "pedestrian/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/4m": {
+              "matched": 2,
+              "total": 2,
+              "recall": 1.0
+            },
+            "cyclist/0_20m/4m": {
+              "matched": 2,
+              "total": 2,
+              "recall": 1.0
+            },
+            "cyclist/20_35m/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/4m": {
+              "matched": 110,
+              "total": 114,
+              "recall": 0.9649122807017544
+            },
+            "truck/0_20m/4m": {
+              "matched": 74,
+              "total": 74,
+              "recall": 1.0
+            },
+            "truck/20_35m/4m": {
+              "matched": 31,
+              "total": 35,
+              "recall": 0.8857142857142857
+            },
+            "truck/35m_plus/4m": {
+              "matched": 5,
+              "total": 5,
+              "recall": 1.0
+            },
+            "van/all/4m": {
+              "matched": 160,
+              "total": 170,
+              "recall": 0.9411764705882353
+            },
+            "van/0_20m/4m": {
+              "matched": 144,
+              "total": 147,
+              "recall": 0.9795918367346939
+            },
+            "van/20_35m/4m": {
+              "matched": 13,
+              "total": 19,
+              "recall": 0.6842105263157895
+            },
+            "van/35m_plus/4m": {
+              "matched": 3,
+              "total": 4,
+              "recall": 0.75
+            },
+            "bus/all/4m": {
+              "matched": 23,
+              "total": 23,
+              "recall": 1.0
+            },
+            "bus/0_20m/4m": {
+              "matched": 18,
+              "total": 18,
+              "recall": 1.0
+            },
+            "bus/20_35m/4m": {
+              "matched": 5,
+              "total": 5,
+              "recall": 1.0
+            },
+            "bus/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            }
+          }
+        }
+      }
+    },
+    "shapes": {
+      "learned_shape_bins": [
+        13,
+        97,
+        19,
+        19,
+        13
+      ],
+      "proposal_size_shape_bins": [
+        5,
+        38,
+        8,
+        8,
+        5
+      ],
+      "coverage": {
+        "train": {
+          "learned_anchors_only": {
+            "car/all/0.5m": {
+              "matched": 7691,
+              "total": 102240,
+              "recall": 0.07522496087636933
+            },
+            "car/0_20m/0.5m": {
+              "matched": 5968,
+              "total": 67464,
+              "recall": 0.08846199454523894
+            },
+            "car/20_35m/0.5m": {
+              "matched": 1621,
+              "total": 30603,
+              "recall": 0.05296866320295396
+            },
+            "car/35m_plus/0.5m": {
+              "matched": 102,
+              "total": 4173,
+              "recall": 0.024442846872753415
+            },
+            "pedestrian/all/0.5m": {
+              "matched": 188,
+              "total": 3572,
+              "recall": 0.05263157894736842
+            },
+            "pedestrian/0_20m/0.5m": {
+              "matched": 186,
+              "total": 3319,
+              "recall": 0.056040976197649896
+            },
+            "pedestrian/20_35m/0.5m": {
+              "matched": 2,
+              "total": 233,
+              "recall": 0.008583690987124463
+            },
+            "pedestrian/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 20,
+              "recall": 0.0
+            },
+            "cyclist/all/0.5m": {
+              "matched": 8,
+              "total": 122,
+              "recall": 0.06557377049180328
+            },
+            "cyclist/0_20m/0.5m": {
+              "matched": 4,
+              "total": 76,
+              "recall": 0.05263157894736842
+            },
+            "cyclist/20_35m/0.5m": {
+              "matched": 3,
+              "total": 26,
+              "recall": 0.11538461538461539
+            },
+            "cyclist/35m_plus/0.5m": {
+              "matched": 1,
+              "total": 20,
+              "recall": 0.05
+            },
+            "truck/all/0.5m": {
+              "matched": 297,
+              "total": 2007,
+              "recall": 0.14798206278026907
+            },
+            "truck/0_20m/0.5m": {
+              "matched": 181,
+              "total": 1425,
+              "recall": 0.1270175438596491
+            },
+            "truck/20_35m/0.5m": {
+              "matched": 20,
+              "total": 410,
+              "recall": 0.04878048780487805
+            },
+            "truck/35m_plus/0.5m": {
+              "matched": 96,
+              "total": 172,
+              "recall": 0.5581395348837209
+            },
+            "van/all/0.5m": {
+              "matched": 198,
+              "total": 1544,
+              "recall": 0.12823834196891193
+            },
+            "van/0_20m/0.5m": {
+              "matched": 66,
+              "total": 1192,
+              "recall": 0.05536912751677853
+            },
+            "van/20_35m/0.5m": {
+              "matched": 72,
+              "total": 253,
+              "recall": 0.2845849802371542
+            },
+            "van/35m_plus/0.5m": {
+              "matched": 60,
+              "total": 99,
+              "recall": 0.6060606060606061
+            },
+            "bus/all/0.5m": {
+              "matched": 40,
+              "total": 310,
+              "recall": 0.12903225806451613
+            },
+            "bus/0_20m/0.5m": {
+              "matched": 10,
+              "total": 125,
+              "recall": 0.08
+            },
+            "bus/20_35m/0.5m": {
+              "matched": 29,
+              "total": 140,
+              "recall": 0.20714285714285716
+            },
+            "bus/35m_plus/0.5m": {
+              "matched": 1,
+              "total": 45,
+              "recall": 0.022222222222222223
+            },
+            "car/all/1m": {
+              "matched": 26243,
+              "total": 102240,
+              "recall": 0.2566803599374022
+            },
+            "car/0_20m/1m": {
+              "matched": 20376,
+              "total": 67464,
+              "recall": 0.30202774813233724
+            },
+            "car/20_35m/1m": {
+              "matched": 5569,
+              "total": 30603,
+              "recall": 0.18197562330490474
+            },
+            "car/35m_plus/1m": {
+              "matched": 298,
+              "total": 4173,
+              "recall": 0.07141145458902469
+            },
+            "pedestrian/all/1m": {
+              "matched": 688,
+              "total": 3572,
+              "recall": 0.19260918253079506
+            },
+            "pedestrian/0_20m/1m": {
+              "matched": 661,
+              "total": 3319,
+              "recall": 0.1991563724013257
+            },
+            "pedestrian/20_35m/1m": {
+              "matched": 27,
+              "total": 233,
+              "recall": 0.11587982832618025
+            },
+            "pedestrian/35m_plus/1m": {
+              "matched": 0,
+              "total": 20,
+              "recall": 0.0
+            },
+            "cyclist/all/1m": {
+              "matched": 27,
+              "total": 122,
+              "recall": 0.22131147540983606
+            },
+            "cyclist/0_20m/1m": {
+              "matched": 21,
+              "total": 76,
+              "recall": 0.27631578947368424
+            },
+            "cyclist/20_35m/1m": {
+              "matched": 5,
+              "total": 26,
+              "recall": 0.19230769230769232
+            },
+            "cyclist/35m_plus/1m": {
+              "matched": 1,
+              "total": 20,
+              "recall": 0.05
+            },
+            "truck/all/1m": {
+              "matched": 617,
+              "total": 2007,
+              "recall": 0.30742401594419533
+            },
+            "truck/0_20m/1m": {
+              "matched": 443,
+              "total": 1425,
+              "recall": 0.31087719298245614
+            },
+            "truck/20_35m/1m": {
+              "matched": 75,
+              "total": 410,
+              "recall": 0.18292682926829268
+            },
+            "truck/35m_plus/1m": {
+              "matched": 99,
+              "total": 172,
+              "recall": 0.5755813953488372
+            },
+            "van/all/1m": {
+              "matched": 585,
+              "total": 1544,
+              "recall": 0.3788860103626943
+            },
+            "van/0_20m/1m": {
+              "matched": 425,
+              "total": 1192,
+              "recall": 0.3565436241610738
+            },
+            "van/20_35m/1m": {
+              "matched": 98,
+              "total": 253,
+              "recall": 0.38735177865612647
+            },
+            "van/35m_plus/1m": {
+              "matched": 62,
+              "total": 99,
+              "recall": 0.6262626262626263
+            },
+            "bus/all/1m": {
+              "matched": 76,
+              "total": 310,
+              "recall": 0.24516129032258063
+            },
+            "bus/0_20m/1m": {
+              "matched": 31,
+              "total": 125,
+              "recall": 0.248
+            },
+            "bus/20_35m/1m": {
+              "matched": 43,
+              "total": 140,
+              "recall": 0.30714285714285716
+            },
+            "bus/35m_plus/1m": {
+              "matched": 2,
+              "total": 45,
+              "recall": 0.044444444444444446
+            },
+            "car/all/2m": {
+              "matched": 66172,
+              "total": 102240,
+              "recall": 0.6472222222222223
+            },
+            "car/0_20m/2m": {
+              "matched": 49286,
+              "total": 67464,
+              "recall": 0.7305525910115024
+            },
+            "car/20_35m/2m": {
+              "matched": 15943,
+              "total": 30603,
+              "recall": 0.520961997189818
+            },
+            "car/35m_plus/2m": {
+              "matched": 943,
+              "total": 4173,
+              "recall": 0.22597651569614186
+            },
+            "pedestrian/all/2m": {
+              "matched": 2173,
+              "total": 3572,
+              "recall": 0.6083426651735723
+            },
+            "pedestrian/0_20m/2m": {
+              "matched": 2087,
+              "total": 3319,
+              "recall": 0.6288038565833082
+            },
+            "pedestrian/20_35m/2m": {
+              "matched": 84,
+              "total": 233,
+              "recall": 0.3605150214592275
+            },
+            "pedestrian/35m_plus/2m": {
+              "matched": 2,
+              "total": 20,
+              "recall": 0.1
+            },
+            "cyclist/all/2m": {
+              "matched": 65,
+              "total": 122,
+              "recall": 0.5327868852459017
+            },
+            "cyclist/0_20m/2m": {
+              "matched": 52,
+              "total": 76,
+              "recall": 0.6842105263157895
+            },
+            "cyclist/20_35m/2m": {
+              "matched": 10,
+              "total": 26,
+              "recall": 0.38461538461538464
+            },
+            "cyclist/35m_plus/2m": {
+              "matched": 3,
+              "total": 20,
+              "recall": 0.15
+            },
+            "truck/all/2m": {
+              "matched": 1311,
+              "total": 2007,
+              "recall": 0.6532137518684604
+            },
+            "truck/0_20m/2m": {
+              "matched": 981,
+              "total": 1425,
+              "recall": 0.6884210526315789
+            },
+            "truck/20_35m/2m": {
+              "matched": 219,
+              "total": 410,
+              "recall": 0.5341463414634147
+            },
+            "truck/35m_plus/2m": {
+              "matched": 111,
+              "total": 172,
+              "recall": 0.6453488372093024
+            },
+            "van/all/2m": {
+              "matched": 1075,
+              "total": 1544,
+              "recall": 0.6962435233160622
+            },
+            "van/0_20m/2m": {
+              "matched": 844,
+              "total": 1192,
+              "recall": 0.7080536912751678
+            },
+            "van/20_35m/2m": {
+              "matched": 168,
+              "total": 253,
+              "recall": 0.6640316205533597
+            },
+            "van/35m_plus/2m": {
+              "matched": 63,
+              "total": 99,
+              "recall": 0.6363636363636364
+            },
+            "bus/all/2m": {
+              "matched": 197,
+              "total": 310,
+              "recall": 0.635483870967742
+            },
+            "bus/0_20m/2m": {
+              "matched": 94,
+              "total": 125,
+              "recall": 0.752
+            },
+            "bus/20_35m/2m": {
+              "matched": 94,
+              "total": 140,
+              "recall": 0.6714285714285714
+            },
+            "bus/35m_plus/2m": {
+              "matched": 9,
+              "total": 45,
+              "recall": 0.2
+            },
+            "car/all/4m": {
+              "matched": 96565,
+              "total": 102240,
+              "recall": 0.9444933489827856
+            },
+            "car/0_20m/4m": {
+              "matched": 66911,
+              "total": 67464,
+              "recall": 0.9918030356931103
+            },
+            "car/20_35m/4m": {
+              "matched": 27356,
+              "total": 30603,
+              "recall": 0.893899290919191
+            },
+            "car/35m_plus/4m": {
+              "matched": 2298,
+              "total": 4173,
+              "recall": 0.5506829618979152
+            },
+            "pedestrian/all/4m": {
+              "matched": 3380,
+              "total": 3572,
+              "recall": 0.9462486002239642
+            },
+            "pedestrian/0_20m/4m": {
+              "matched": 3188,
+              "total": 3319,
+              "recall": 0.960530280204881
+            },
+            "pedestrian/20_35m/4m": {
+              "matched": 186,
+              "total": 233,
+              "recall": 0.7982832618025751
+            },
+            "pedestrian/35m_plus/4m": {
+              "matched": 6,
+              "total": 20,
+              "recall": 0.3
+            },
+            "cyclist/all/4m": {
+              "matched": 97,
+              "total": 122,
+              "recall": 0.7950819672131147
+            },
+            "cyclist/0_20m/4m": {
+              "matched": 75,
+              "total": 76,
+              "recall": 0.9868421052631579
+            },
+            "cyclist/20_35m/4m": {
+              "matched": 17,
+              "total": 26,
+              "recall": 0.6538461538461539
+            },
+            "cyclist/35m_plus/4m": {
+              "matched": 5,
+              "total": 20,
+              "recall": 0.25
+            },
+            "truck/all/4m": {
+              "matched": 1939,
+              "total": 2007,
+              "recall": 0.9661185849526657
+            },
+            "truck/0_20m/4m": {
+              "matched": 1422,
+              "total": 1425,
+              "recall": 0.9978947368421053
+            },
+            "truck/20_35m/4m": {
+              "matched": 384,
+              "total": 410,
+              "recall": 0.9365853658536586
+            },
+            "truck/35m_plus/4m": {
+              "matched": 133,
+              "total": 172,
+              "recall": 0.7732558139534884
+            },
+            "van/all/4m": {
+              "matched": 1494,
+              "total": 1544,
+              "recall": 0.9676165803108808
+            },
+            "van/0_20m/4m": {
+              "matched": 1177,
+              "total": 1192,
+              "recall": 0.9874161073825504
+            },
+            "van/20_35m/4m": {
+              "matched": 239,
+              "total": 253,
+              "recall": 0.9446640316205533
+            },
+            "van/35m_plus/4m": {
+              "matched": 78,
+              "total": 99,
+              "recall": 0.7878787878787878
+            },
+            "bus/all/4m": {
+              "matched": 286,
+              "total": 310,
+              "recall": 0.9225806451612903
+            },
+            "bus/0_20m/4m": {
+              "matched": 125,
+              "total": 125,
+              "recall": 1.0
+            },
+            "bus/20_35m/4m": {
+              "matched": 133,
+              "total": 140,
+              "recall": 0.95
+            },
+            "bus/35m_plus/4m": {
+              "matched": 28,
+              "total": 45,
+              "recall": 0.6222222222222222
+            }
+          }
+        },
+        "val": {
+          "learned_anchors_only": {
+            "car/all/0.5m": {
+              "matched": 363,
+              "total": 8637,
+              "recall": 0.042028482111844394
+            },
+            "car/0_20m/0.5m": {
+              "matched": 308,
+              "total": 6059,
+              "recall": 0.05083347086978049
+            },
+            "car/20_35m/0.5m": {
+              "matched": 55,
+              "total": 2411,
+              "recall": 0.022812111157196183
+            },
+            "car/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 167,
+              "recall": 0.0
+            },
+            "pedestrian/all/0.5m": {
+              "matched": 12,
+              "total": 342,
+              "recall": 0.03508771929824561
+            },
+            "pedestrian/0_20m/0.5m": {
+              "matched": 12,
+              "total": 333,
+              "recall": 0.036036036036036036
+            },
+            "pedestrian/20_35m/0.5m": {
+              "matched": 0,
+              "total": 9,
+              "recall": 0.0
+            },
+            "pedestrian/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/0.5m": {
+              "matched": 0,
+              "total": 2,
+              "recall": 0.0
+            },
+            "cyclist/0_20m/0.5m": {
+              "matched": 0,
+              "total": 2,
+              "recall": 0.0
+            },
+            "cyclist/20_35m/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/0.5m": {
+              "matched": 10,
+              "total": 114,
+              "recall": 0.08771929824561403
+            },
+            "truck/0_20m/0.5m": {
+              "matched": 9,
+              "total": 74,
+              "recall": 0.12162162162162163
+            },
+            "truck/20_35m/0.5m": {
+              "matched": 1,
+              "total": 35,
+              "recall": 0.02857142857142857
+            },
+            "truck/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 5,
+              "recall": 0.0
+            },
+            "van/all/0.5m": {
+              "matched": 8,
+              "total": 170,
+              "recall": 0.047058823529411764
+            },
+            "van/0_20m/0.5m": {
+              "matched": 7,
+              "total": 147,
+              "recall": 0.047619047619047616
+            },
+            "van/20_35m/0.5m": {
+              "matched": 1,
+              "total": 19,
+              "recall": 0.05263157894736842
+            },
+            "van/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/0.5m": {
+              "matched": 2,
+              "total": 23,
+              "recall": 0.08695652173913043
+            },
+            "bus/0_20m/0.5m": {
+              "matched": 1,
+              "total": 18,
+              "recall": 0.05555555555555555
+            },
+            "bus/20_35m/0.5m": {
+              "matched": 1,
+              "total": 5,
+              "recall": 0.2
+            },
+            "bus/35m_plus/0.5m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/1m": {
+              "matched": 1766,
+              "total": 8637,
+              "recall": 0.20446914437883523
+            },
+            "car/0_20m/1m": {
+              "matched": 1440,
+              "total": 6059,
+              "recall": 0.2376629806898828
+            },
+            "car/20_35m/1m": {
+              "matched": 321,
+              "total": 2411,
+              "recall": 0.133139776026545
+            },
+            "car/35m_plus/1m": {
+              "matched": 5,
+              "total": 167,
+              "recall": 0.029940119760479042
+            },
+            "pedestrian/all/1m": {
+              "matched": 77,
+              "total": 342,
+              "recall": 0.22514619883040934
+            },
+            "pedestrian/0_20m/1m": {
+              "matched": 77,
+              "total": 333,
+              "recall": 0.23123123123123124
+            },
+            "pedestrian/20_35m/1m": {
+              "matched": 0,
+              "total": 9,
+              "recall": 0.0
+            },
+            "pedestrian/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/1m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/0_20m/1m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/20_35m/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/1m": {
+              "matched": 32,
+              "total": 114,
+              "recall": 0.2807017543859649
+            },
+            "truck/0_20m/1m": {
+              "matched": 29,
+              "total": 74,
+              "recall": 0.3918918918918919
+            },
+            "truck/20_35m/1m": {
+              "matched": 3,
+              "total": 35,
+              "recall": 0.08571428571428572
+            },
+            "truck/35m_plus/1m": {
+              "matched": 0,
+              "total": 5,
+              "recall": 0.0
+            },
+            "van/all/1m": {
+              "matched": 48,
+              "total": 170,
+              "recall": 0.2823529411764706
+            },
+            "van/0_20m/1m": {
+              "matched": 46,
+              "total": 147,
+              "recall": 0.3129251700680272
+            },
+            "van/20_35m/1m": {
+              "matched": 2,
+              "total": 19,
+              "recall": 0.10526315789473684
+            },
+            "van/35m_plus/1m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/1m": {
+              "matched": 4,
+              "total": 23,
+              "recall": 0.17391304347826086
+            },
+            "bus/0_20m/1m": {
+              "matched": 2,
+              "total": 18,
+              "recall": 0.1111111111111111
+            },
+            "bus/20_35m/1m": {
+              "matched": 2,
+              "total": 5,
+              "recall": 0.4
+            },
+            "bus/35m_plus/1m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/2m": {
+              "matched": 5603,
+              "total": 8637,
+              "recall": 0.6487206205858516
+            },
+            "car/0_20m/2m": {
+              "matched": 4375,
+              "total": 6059,
+              "recall": 0.7220663475821093
+            },
+            "car/20_35m/2m": {
+              "matched": 1204,
+              "total": 2411,
+              "recall": 0.49937785151389463
+            },
+            "car/35m_plus/2m": {
+              "matched": 24,
+              "total": 167,
+              "recall": 0.1437125748502994
+            },
+            "pedestrian/all/2m": {
+              "matched": 241,
+              "total": 342,
+              "recall": 0.7046783625730995
+            },
+            "pedestrian/0_20m/2m": {
+              "matched": 238,
+              "total": 333,
+              "recall": 0.7147147147147147
+            },
+            "pedestrian/20_35m/2m": {
+              "matched": 3,
+              "total": 9,
+              "recall": 0.3333333333333333
+            },
+            "pedestrian/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/2m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/0_20m/2m": {
+              "matched": 1,
+              "total": 2,
+              "recall": 0.5
+            },
+            "cyclist/20_35m/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/2m": {
+              "matched": 80,
+              "total": 114,
+              "recall": 0.7017543859649122
+            },
+            "truck/0_20m/2m": {
+              "matched": 67,
+              "total": 74,
+              "recall": 0.9054054054054054
+            },
+            "truck/20_35m/2m": {
+              "matched": 12,
+              "total": 35,
+              "recall": 0.34285714285714286
+            },
+            "truck/35m_plus/2m": {
+              "matched": 1,
+              "total": 5,
+              "recall": 0.2
+            },
+            "van/all/2m": {
+              "matched": 111,
+              "total": 170,
+              "recall": 0.6529411764705882
+            },
+            "van/0_20m/2m": {
+              "matched": 102,
+              "total": 147,
+              "recall": 0.6938775510204082
+            },
+            "van/20_35m/2m": {
+              "matched": 9,
+              "total": 19,
+              "recall": 0.47368421052631576
+            },
+            "van/35m_plus/2m": {
+              "matched": 0,
+              "total": 4,
+              "recall": 0.0
+            },
+            "bus/all/2m": {
+              "matched": 7,
+              "total": 23,
+              "recall": 0.30434782608695654
+            },
+            "bus/0_20m/2m": {
+              "matched": 4,
+              "total": 18,
+              "recall": 0.2222222222222222
+            },
+            "bus/20_35m/2m": {
+              "matched": 3,
+              "total": 5,
+              "recall": 0.6
+            },
+            "bus/35m_plus/2m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "car/all/4m": {
+              "matched": 8187,
+              "total": 8637,
+              "recall": 0.9478985758944077
+            },
+            "car/0_20m/4m": {
+              "matched": 5951,
+              "total": 6059,
+              "recall": 0.9821752764482587
+            },
+            "car/20_35m/4m": {
+              "matched": 2153,
+              "total": 2411,
+              "recall": 0.8929904603898797
+            },
+            "car/35m_plus/4m": {
+              "matched": 83,
+              "total": 167,
+              "recall": 0.49700598802395207
+            },
+            "pedestrian/all/4m": {
+              "matched": 341,
+              "total": 342,
+              "recall": 0.9970760233918129
+            },
+            "pedestrian/0_20m/4m": {
+              "matched": 332,
+              "total": 333,
+              "recall": 0.996996996996997
+            },
+            "pedestrian/20_35m/4m": {
+              "matched": 9,
+              "total": 9,
+              "recall": 1.0
+            },
+            "pedestrian/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/all/4m": {
+              "matched": 2,
+              "total": 2,
+              "recall": 1.0
+            },
+            "cyclist/0_20m/4m": {
+              "matched": 2,
+              "total": 2,
+              "recall": 1.0
+            },
+            "cyclist/20_35m/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "cyclist/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            },
+            "truck/all/4m": {
+              "matched": 110,
+              "total": 114,
+              "recall": 0.9649122807017544
+            },
+            "truck/0_20m/4m": {
+              "matched": 74,
+              "total": 74,
+              "recall": 1.0
+            },
+            "truck/20_35m/4m": {
+              "matched": 31,
+              "total": 35,
+              "recall": 0.8857142857142857
+            },
+            "truck/35m_plus/4m": {
+              "matched": 5,
+              "total": 5,
+              "recall": 1.0
+            },
+            "van/all/4m": {
+              "matched": 160,
+              "total": 170,
+              "recall": 0.9411764705882353
+            },
+            "van/0_20m/4m": {
+              "matched": 144,
+              "total": 147,
+              "recall": 0.9795918367346939
+            },
+            "van/20_35m/4m": {
+              "matched": 13,
+              "total": 19,
+              "recall": 0.6842105263157895
+            },
+            "van/35m_plus/4m": {
+              "matched": 3,
+              "total": 4,
+              "recall": 0.75
+            },
+            "bus/all/4m": {
+              "matched": 23,
+              "total": 23,
+              "recall": 1.0
+            },
+            "bus/0_20m/4m": {
+              "matched": 18,
+              "total": 18,
+              "recall": 1.0
+            },
+            "bus/20_35m/4m": {
+              "matched": 5,
+              "total": 5,
+              "recall": 1.0
+            },
+            "bus/35m_plus/4m": {
+              "matched": 0,
+              "total": 0,
+              "recall": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "limitation": "Static learned-anchor XY coverage only; image-scored proposal and refinement coverage is logged during training."
+}
