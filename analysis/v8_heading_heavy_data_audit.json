@@ -1,0 +1,263 @@
+{
+  "train": {
+    "frames": 9959,
+    "boxes": {
+      "car": 102012,
+      "bus": 522,
+      "truck": 2178,
+      "pedestrian": 3567,
+      "van": 1465,
+      "cyclist": 122
+    },
+    "unique_tracks": {
+      "car": 5027,
+      "pedestrian": 487,
+      "cyclist": 61,
+      "truck": 270,
+      "van": 103,
+      "bus": 81
+    },
+    "semantic_annotation_sha256": "cf71211c782bb2683da3117d40bfaca7da18c802b6f31427c2503c3617eb7d83",
+    "tracks_with_multiple_class_labels": [],
+    "world_heading_flip_pairs": [
+      {
+        "sequence": "08_27_10_12_18",
+        "track_id": "5493",
+        "class_name": "car",
+        "tokens": [
+          "1787825854035217223",
+          "1787825854632132358"
+        ],
+        "dt_seconds": 0.600223232,
+        "world_heading_change_deg": 171.6566323073917
+      },
+      {
+        "sequence": "09_16_09_58_56",
+        "track_id": "2080",
+        "class_name": "truck",
+        "tokens": [
+          "1789553253031378973",
+          "1789553253581120859"
+        ],
+        "dt_seconds": 0.549907968,
+        "world_heading_change_deg": 177.00515561511935
+      },
+      {
+        "sequence": "09_16_09_58_56",
+        "track_id": "2080",
+        "class_name": "truck",
+        "tokens": [
+          "1789553253581120859",
+          "1789553254082097136"
+        ],
+        "dt_seconds": 0.500048128,
+        "world_heading_change_deg": 176.97430087387335
+      },
+      {
+        "sequence": "09_16_09_58_56",
+        "track_id": "2080",
+        "class_name": "truck",
+        "tokens": [
+          "1789553254082097136",
+          "1789553254578959934"
+        ],
+        "dt_seconds": 0.500159232,
+        "world_heading_change_deg": 176.8128603113203
+      },
+      {
+        "sequence": "09_17_08_33_47",
+        "track_id": "3033",
+        "class_name": "car",
+        "tokens": [
+          "1789634122582347758",
+          "1789634123179044967"
+        ],
+        "dt_seconds": 0.599914496,
+        "world_heading_change_deg": 177.4720927042634
+      },
+      {
+        "sequence": "09_17_08_33_47",
+        "track_id": "3033",
+        "class_name": "car",
+        "tokens": [
+          "1789634123179044967",
+          "1789634124782412293"
+        ],
+        "dt_seconds": 1.600040192,
+        "world_heading_change_deg": 178.37905627608458
+      },
+      {
+        "sequence": "09_17_08_33_47",
+        "track_id": "3033",
+        "class_name": "car",
+        "tokens": [
+          "1789634125277039120",
+          "1789634125881405237"
+        ],
+        "dt_seconds": 0.599905024,
+        "world_heading_change_deg": 177.19503433821595
+      },
+      {
+        "sequence": "09_24_08_52_50",
+        "track_id": "6407",
+        "class_name": "truck",
+        "tokens": [
+          "1790240184338720411",
+          "1790240181479908329"
+        ],
+        "dt_seconds": 0.500129125,
+        "world_heading_change_deg": 177.2912865068842
+      },
+      {
+        "sequence": "09_24_08_52_50",
+        "track_id": "6407",
+        "class_name": "truck",
+        "tokens": [
+          "1790240186154825614",
+          "1790240186719572939"
+        ],
+        "dt_seconds": 0.599897838,
+        "world_heading_change_deg": 177.28829700303584
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4294",
+        "class_name": "car",
+        "tokens": [
+          "1790763119433383945",
+          "1790763119983066176"
+        ],
+        "dt_seconds": 0.50006808,
+        "world_heading_change_deg": 178.47744361597455
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4586",
+        "class_name": "car",
+        "tokens": [
+          "1790763598535145625",
+          "1790763599074271498"
+        ],
+        "dt_seconds": 0.550048792,
+        "world_heading_change_deg": 179.1007239464146
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4586",
+        "class_name": "car",
+        "tokens": [
+          "1790763599074271498",
+          "1790763599560077135"
+        ],
+        "dt_seconds": 0.500063034,
+        "world_heading_change_deg": 179.11838920783313
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4593",
+        "class_name": "car",
+        "tokens": [
+          "1790763597399994154",
+          "1790763598003474375"
+        ],
+        "dt_seconds": 0.599974706,
+        "world_heading_change_deg": 176.8490185264894
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4641",
+        "class_name": "car",
+        "tokens": [
+          "1790763611549511176",
+          "1790763612117906417"
+        ],
+        "dt_seconds": 0.550000769,
+        "world_heading_change_deg": 177.87673579535996
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4641",
+        "class_name": "car",
+        "tokens": [
+          "1790763612117906417",
+          "1790763613264453046"
+        ],
+        "dt_seconds": 1.150043091,
+        "world_heading_change_deg": 177.82235470606568
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4641",
+        "class_name": "car",
+        "tokens": [
+          "1790763613264453046",
+          "1790763614969831631"
+        ],
+        "dt_seconds": 1.699846252,
+        "world_heading_change_deg": 178.32350887290104
+      },
+      {
+        "sequence": "09_30_10_10_54",
+        "track_id": "4704",
+        "class_name": "car",
+        "tokens": [
+          "1790763631587424070",
+          "1790763632115011271"
+        ],
+        "dt_seconds": 0.500046578,
+        "world_heading_change_deg": 178.99174650776766
+      },
+      {
+        "sequence": "11_09_08_01_03",
+        "track_id": "702",
+        "class_name": "car",
+        "tokens": [
+          "1794211818467033856",
+          "1794211819532802474"
+        ],
+        "dt_seconds": 1.099973007,
+        "world_heading_change_deg": 177.30674445386472
+      }
+    ],
+    "note": "Flip/class-change candidates require review; track switches and real motion can also cause them. No annotations changed."
+  },
+  "val": {
+    "frames": 1034,
+    "boxes": {
+      "car": 8583,
+      "truck": 118,
+      "pedestrian": 342,
+      "bus": 23,
+      "cyclist": 2,
+      "van": 234
+    },
+    "unique_tracks": {
+      "car": 504,
+      "pedestrian": 50,
+      "cyclist": 1,
+      "truck": 18,
+      "van": 12,
+      "bus": 3
+    },
+    "semantic_annotation_sha256": "d2155524a3279a82b867f109b182765525b4c2ffcb781962f7de9e636f7a0498",
+    "tracks_with_multiple_class_labels": [],
+    "world_heading_flip_pairs": [],
+    "note": "Flip/class-change candidates require review; track switches and real motion can also cause them. No annotations changed."
+  },
+  "train_seen_validation_tracks": {
+    "car": 81,
+    "pedestrian": 0,
+    "cyclist": 0,
+    "truck": 0,
+    "van": 2,
+    "bus": 0
+  },
+  "train_seen_validation_boxes": {
+    "car": 4842,
+    "pedestrian": 0,
+    "cyclist": 0,
+    "truck": 0,
+    "van": 138,
+    "bus": 0
+  }
+}

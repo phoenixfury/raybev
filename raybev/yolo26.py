@@ -1,4 +1,4 @@
-"""Official YOLO26n convolutional backbone, without C2PSA or the 2D head.
+"""Official YOLO26 nano/medium convolutional backbones, without C2PSA/2D heads.
 
 Ultralytics is an optional dependency. Only trusted official/local Ultralytics
 pickles may be supplied as pretrained weights; RayBEV checkpoints remain plain
@@ -18,6 +18,17 @@ SUPPORTED_ULTRALYTICS_VERSIONS = (ULTRALYTICS_VERSION,'8.4.208')
 WEIGHTS_URL = 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt'
 WEIGHTS_SHA256 = '9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef'
 DEFAULT_WEIGHTS = Path(__file__).resolve().parents[1]/'weights/yolo26n.pt'
+VARIANTS = {
+    'yolo26n': dict(scale='n', scaling=[.5,.25,1024], channels=(64,128,128,256)),
+    'yolo26m': dict(scale='m', scaling=[.5,1.,512], channels=(256,512,512,512)),
+}
+
+
+def backbone_profile(name='yolo26n'):
+    if name not in VARIANTS:raise ValueError('Unsupported YOLO backbone: '+name)
+    variant=VARIANTS[name]
+    return dict(PROFILE,name=name+'_conv_sppf',feature_channels=list(variant['channels'][1:]),
+                pretrained_source=WEIGHTS_URL.replace('yolo26n',name))
 
 # Exact official YOLO26 definition through SPPF. Retain convolutional /8,/16,/32
 # features; do not construct/register unused attention/PAN/Detect parameters.
@@ -70,7 +81,7 @@ def ensure_official_weights(path=DEFAULT_WEIGHTS):
     return path
 
 
-def build_backbone(pretrained=False,backbone_weights=None):
+def build_backbone(pretrained=False,backbone_weights=None,backbone_name='yolo26n'):
     """Build the same offline architecture for fresh training and strict reloads."""
     try:
         import ultralytics
@@ -78,12 +89,14 @@ def build_backbone(pretrained=False,backbone_weights=None):
         from ultralytics.nn.modules.block import C2f
         from ultralytics.utils.torch_utils import initialize_weights
     except ImportError as error:
-        raise ImportError('YOLO26n requires requirements-yolo26.txt; legacy backbones do not.') from error
+        raise ImportError('YOLO26 requires requirements-yolo26.txt; legacy backbones do not.') from error
     runtime_version=ultralytics.__version__
     if runtime_version not in SUPPORTED_ULTRALYTICS_VERSIONS:
-        raise RuntimeError(f'YOLO26n supports tested Ultralytics versions {SUPPORTED_ULTRALYTICS_VERSIONS}; '
+        raise RuntimeError(f'YOLO26 supports tested Ultralytics versions {SUPPORTED_ULTRALYTICS_VERSIONS}; '
                            f'found {runtime_version}. Install requirements-yolo26.txt.')
-    definition=dict(nc=80,scale='n',scales={'n':[.5,.25,1024]},
+    if backbone_name not in VARIANTS:raise ValueError('Unsupported YOLO backbone: '+backbone_name)
+    variant=VARIANTS[backbone_name];scale=variant['scale']
+    definition=dict(nc=80,scale=scale,scales={scale:variant['scaling']},
                     backbone=deepcopy(BACKBONE),head=[])
     backbone,_=parse_model(definition,ch=3,verbose=False)
     backbone.ultralytics_version=runtime_version
@@ -93,25 +106,28 @@ def build_backbone(pretrained=False,backbone_weights=None):
     # Numerically identical, but avoids dynamic Shape/Gather/Div slicing in ONNX.
     for module in backbone.modules():
         if isinstance(module,C2f):module.forward=module.forward_split
-    initialization='YOLO26N_random_explicit'
+    initialization=backbone_name.upper()+'_random_explicit'
     if pretrained or backbone_weights:
+        if backbone_name!='yolo26n' and not backbone_weights:
+            raise ValueError('Supply --backbone-weights with trusted COCO '+backbone_name+'.pt')
         path=Path(backbone_weights) if backbone_weights else ensure_official_weights()
-        if not path.is_file():raise FileNotFoundError(f'YOLO26n weights not found: {path}')
+        if not path.is_file():raise FileNotFoundError(f'{backbone_name} weights not found: {path}')
         checkpoint=torch.load(path,map_location='cpu',weights_only=False)
         network=(checkpoint.get('ema') or checkpoint.get('model')) if isinstance(checkpoint,dict) else None
         yaml=getattr(network,'yaml',{})
         head=yaml.get('head',[])
-        if (not isinstance(network,nn.Module) or yaml.get('scale')!='n' or
+        if (not isinstance(network,nn.Module) or yaml.get('scale')!=scale or
+                yaml.get('scales',{}).get(scale)!=variant['scaling'] or
                 yaml.get('backbone',[])[:10]!=BACKBONE or yaml.get('reg_max')!=1 or
                 yaml.get('end2end') is not True or yaml.get('nc')!=80 or
                 not head or head[-1][2]!='Detect'):
-            raise ValueError('Expected unfused official COCO YOLO26n detection weights (not YOLO11n, s, cls, seg or RayBEV)')
+            raise ValueError(f'Expected unfused official COCO YOLO26{scale} detection weights (matching scale; not cls, seg or RayBEV)')
         # Strictly load EVERY retained parameter and running statistic. Shape/key
         # mismatches or fused checkpoints are errors, never partial success.
         retained=nn.Sequential(*list(network.float().model.children())[:10])
         backbone.load_state_dict(retained.state_dict(),strict=True)
         digest=sha256(path)
-        source='official_COCO' if digest==WEIGHTS_SHA256 else 'trusted_local_architecture_verified'
-        initialization=(f'YOLO26N_{source}_conv_sppf; path={path}; sha256={digest}; '
+        source='official_COCO' if backbone_name=='yolo26n' and digest==WEIGHTS_SHA256 else 'trusted_local_architecture_verified'
+        initialization=(f'{backbone_name.upper()}_{source}_conv_sppf; path={path}; sha256={digest}; '
                         f'ultralytics={runtime_version}; layers=0..9; taps=4,6,9; no_C2PSA_no_2D_head')
     return backbone,initialization

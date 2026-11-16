@@ -33,6 +33,32 @@ def ignored_queries(boxes,ignored):
     return ((x.abs()<=ignored[None,:,3]/2+.25)&(y.abs()<=ignored[None,:,4]/2+.25)).any(1)
 
 
+def matched_class_loss(logits,labels,cfg,denominator):
+    """Foreground competition, supplementing sigmoid foreground/background focal.
+
+    Mild square-root weighting avoids multiplying rare-class oversampling by
+    the full positive focal weights again. No inference score formula changes.
+    """
+    if not len(labels):return logits.sum()*0
+    weights=logits.new_tensor(cfg.class_positive_weights)[labels].sqrt()
+    return (F.cross_entropy(logits.float(),labels,reduction='none')*weights).sum()/denominator
+
+
+def background_quality_loss(single,known,matched,keep):
+    """Teach low quality on unmatched background, preserving ignored regions.
+
+    Unmatched queries within 2m of any known object are excluded: their quality
+    can be high even when Hungarian matching picked a different duplicate.
+    """
+    mask=keep.clone();mask[matched]=False
+    if len(known):
+        distance=torch.cdist(single['boxes'][:len(keep),:2].detach().float(),known[:,:2].float())
+        mask &= distance.amin(-1)>=2.
+    logits=single['quality_logits'][:len(keep)].float()
+    loss=F.binary_cross_entropy_with_logits(logits,torch.zeros_like(logits),reduction='none')
+    return (loss*mask).sum()/mask.sum().clamp_min(1)
+
+
 @torch.no_grad()
 def match_queries(stage,gt,cfg):
     if not len(gt):return torch.empty(0,dtype=torch.long),torch.empty(0,dtype=torch.long)
@@ -110,7 +136,20 @@ class SparseCriterion(nn.Module):
             logits=stage['facing'][pi].float()
             hemisphere_logit=torch.logsumexp(logits.masked_fill(~same,-1e4),-1)-torch.logsumexp(logits.masked_fill(same,-1e4),-1)
             target=(torch.cos(gt[:,6]-axis)>=0).float()
-            result['facing_binary']=average(F.binary_cross_entropy_with_logits(hemisphere_logit,target,reduction='none'))
+            smoothing=self.cfg.facing_label_smoothing
+            correct_probability=torch.sigmoid(hemisphere_logit*(2*target-1)).detach()
+            hard=1+self.cfg.heading_hard_weight*(1-correct_probability)
+            if self.cfg.heading_hard_weight or smoothing:
+                facing=facing_vector_loss(logits,direction,self.cfg)
+                # Uniform mixing preserves circular target continuity at +/-pi.
+                facing=(1-smoothing)*facing+smoothing*(-logits.log_softmax(-1).mean(-1))
+                result['facing']=average(facing*hard)
+            if self.cfg.heading_hard_weight:
+                axis_hard=1+self.cfg.heading_hard_weight*(1-torch.cos(2*(yaw-gt[:,6])))/2
+                result['axis']=average(F.smooth_l1_loss(stage['axis'][pi].float(),axis_target,
+                                                       reduction='none').sum(-1)*axis_hard)
+            soft_target=target*(1-smoothing)+smoothing/2
+            result['facing_binary']=average(F.binary_cross_entropy_with_logits(hemisphere_logit,soft_target,reduction='none')*hard)
         if self.cfg.extent_weight:
             result['extent']=self.extents.loss(pred,gt,token,self.projector)
         distance=(pred[:,:2]-gt[:,:2]).norm(dim=-1)
@@ -130,7 +169,7 @@ class SparseCriterion(nn.Module):
         if not b:raise ValueError('Empty sparse minibatch')
         for gt in targets:validate_targets(gt,cfg)
         denominator=b*cfg.mean_training_objects
-        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal')}
+        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background')}
         matches=0
         for stage in output['stages']:
             zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
@@ -146,6 +185,10 @@ class SparseCriterion(nn.Module):
                 weights=torch.where(truth.bool(),logits.new_tensor(cfg.class_positive_weights)[None]*.25,.75)
                 focal=F.binary_cross_entropy_with_logits(logits,truth,reduction='none')*(1-pt).square()*weights
                 current['classification']+=focal.mul(keep[:,None]).sum()/denominator
+                if cfg.matched_class_weight:
+                    current['matched_class']+=matched_class_loss(logits[pi],known[ti,7].long(),cfg,denominator)
+                if cfg.quality_background_weight:
+                    current['quality_background']+=background_quality_loss(single,known,pi,keep)/b
                 reg=self._regression(single,pi,known[ti],denominator,None if tokens is None else tokens[bi])
                 for key,value in reg.items():current[key]+=value/b if key=='extent' else value
                 if len(output['dn_indices']):
@@ -153,8 +196,10 @@ class SparseCriterion(nn.Module):
                     dn_truth=torch.zeros_like(single['class_logits'][dn].float())
                     dn_truth[torch.arange(len(ids),device=target.device),target[ids,7].long()]=1
                     dn_class=F.binary_cross_entropy_with_logits(single['class_logits'][dn].float(),dn_truth,reduction='none').sum()/denominator
+                    if cfg.matched_class_weight:
+                        dn_class+=cfg.matched_class_weight*matched_class_loss(single['class_logits'][dn],target[ids,7].long(),cfg,denominator)
                     dn_reg=self._regression(single,dn,target[ids],denominator)
-                    current['denoising']+=dn_class+2*dn_reg['center']+dn_reg['size']+dn_reg['axis']+dn_reg['facing']+.5*dn_reg['quality']+.5*dn_reg['facing_binary']
+                    current['denoising']+=dn_class+2*dn_reg['center']+dn_reg['size']+dn_reg['axis']+dn_reg['facing']+.5*dn_reg['quality']+cfg.facing_binary_weight*dn_reg['facing_binary']
                 matches+=len(pi)
             for key in totals:totals[key]+=current[key]/len(output['stages'])
         if output.get('proposal') is not None:
@@ -162,5 +207,6 @@ class SparseCriterion(nn.Module):
             totals['proposal']=proposal_loss(output['proposal'],targets)
         loss=(totals['classification']+2*totals['center']+totals['size']+totals['axis']+
               totals['facing']+.5*totals['quality']+cfg.teacher_weight*totals['teacher']+cfg.dn_weight*totals['denoising'])
-        loss=loss+.5*totals['facing_binary']+cfg.extent_weight*totals['extent']+cfg.proposal_weight*totals['proposal']
+        loss=loss+cfg.facing_binary_weight*totals['facing_binary']+cfg.extent_weight*totals['extent']+cfg.proposal_weight*totals['proposal']
+        loss=loss+cfg.matched_class_weight*totals['matched_class']+cfg.quality_background_weight*totals['quality_background']
         return loss,{**{k:v.detach() for k,v in totals.items()},'matches':matches//len(output['stages'])}

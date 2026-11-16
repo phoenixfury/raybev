@@ -13,26 +13,27 @@ from .geometry import load_cameras,letterbox_params,resized_camera_intrinsics
 from .detection import decode_heading,rotated_bev_nms,in_bev_range
 from .model import conv_bn_relu
 from .sparse_config import SparseConfig
-from .yolo26 import build_backbone,PROFILE
+from .yolo26 import build_backbone,backbone_profile,VARIANTS
 
 
 class YOLOPyramid(nn.Module):
     def __init__(self,cfg,pretrained=False,backbone_weights=None):
         super().__init__()
-        network,self.initialization=build_backbone(pretrained,backbone_weights)
-        self.backbone_profile=dict(PROFILE,ultralytics_version=network.ultralytics_version)
+        network,self.initialization=build_backbone(pretrained,backbone_weights,cfg.backbone)
+        feature_channels=VARIANTS[cfg.backbone]['channels']
+        self.backbone_profile=dict(backbone_profile(cfg.backbone),ultralytics_version=network.ultralytics_version)
         self.stage8=network[:5]
         self.stage16=nn.Sequential(*list(network.children())[5:7])
         self.stage32=nn.Sequential(*list(network.children())[7:10])
         self.stride4=cfg.stride4
         if cfg.stride4:
-            self.adapter4=conv_bn_relu(64,cfg.channels,1)
+            self.adapter4=conv_bn_relu(feature_channels[0],cfg.channels,1)
             self.top_down4=nn.Conv2d(cfg.channels,cfg.channels,1,bias=False)
             nn.init.zeros_(self.top_down4.weight)
-            self.backbone_profile.update(feature_layers=[2,4,6,9],feature_strides=[4,8,16,32],feature_channels=[64,128,128,256])
+            self.backbone_profile.update(feature_layers=[2,4,6,9],feature_strides=[4,8,16,32],feature_channels=list(feature_channels))
         self.adapters=nn.ModuleList(nn.Sequential(conv_bn_relu(n,cfg.channels,1),
             nn.Conv2d(cfg.channels,cfg.channels,3,padding=1,groups=cfg.channels,bias=False),
-            nn.BatchNorm2d(cfg.channels),nn.ReLU6()) for n in (128,128,256))
+            nn.BatchNorm2d(cfg.channels),nn.ReLU6()) for n in feature_channels[1:])
         if cfg.is_refined:
             # ROSA uses an FPN: retain semantic top-down fusion without its
             # wide neck. Zero-gamma residuals preserve the input function.

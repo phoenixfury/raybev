@@ -4,6 +4,34 @@ from scipy.optimize import linear_sum_assignment
 from .config import CLASSES
 
 
+def heavy_confusion_diagnostics(predictions,truths,score_threshold=.1):
+    """Class-agnostic greedy XY<2m audit; never changes evaluator matching.
+
+    Match all classes before retaining heavy GT, so a prediction cannot also
+    claim a nearby car. Ratios are predicted/GT L,W,H; report match counts.
+    """
+    from collections import defaultdict
+    counts={name:{p:0 for p in (*CLASSES,'missed')} for name in ('truck','van','bus')}
+    ratios=defaultdict(list)
+    for prediction,truth in zip(predictions,truths):
+        prediction=np.asarray(prediction);truth=np.asarray(truth);used=set()
+        for pred in sorted((p for p in prediction if p[8]>=score_threshold),key=lambda p:-p[8]):
+            candidates=[(float(np.linalg.norm(pred[:2]-gt[:2])),i) for i,gt in enumerate(truth) if i not in used]
+            if not candidates:continue
+            distance,index=min(candidates)
+            if distance>=2:continue
+            used.add(index);gt=truth[index];name=CLASSES[int(gt[7])]
+            if name not in counts:continue
+            predicted_name=CLASSES[int(pred[7])];counts[name][predicted_name]+=1
+            ratios[name+'->'+predicted_name].append((pred[3:6]/gt[3:6]).tolist())
+        for index,gt in enumerate(truth):
+            name=CLASSES[int(gt[7])]
+            if index not in used and name in counts:counts[name]['missed']+=1
+    return dict(score_threshold=score_threshold,matching='class-agnostic score-greedy XY<2m',
+                confusion=counts,dimensions={key:dict(matches=len(values),median_predicted_over_gt_LWH=np.median(values,axis=0).tolist())
+                                            for key,values in ratios.items()})
+
+
 def raw_query_counts(candidates,truth):
     """Each query can cover at most one GT, regardless of class or confidence."""
     truth=np.asarray(truth);truth=truth[truth[:,7]>=0]

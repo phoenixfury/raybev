@@ -47,6 +47,12 @@ class SparseConfig:
     facing_temperature: float = 1.
     multi_camera_facing: bool = True
     extent_weight: float = 0.
+    # Opt-in experiment objectives; zeros reproduce existing checkpoints.
+    matched_class_weight: float = 0.
+    quality_background_weight: float = 0.
+    heading_hard_weight: float = 0.
+    facing_binary_weight: float = .5
+    facing_label_smoothing: float = 0.
 
     @property
     def is_refined(self):return self.architecture_version>=4
@@ -64,7 +70,7 @@ class SparseConfig:
     def center_loss_beta(self):return .1 if self.is_refined else 1.
 
     def validate(self):
-        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version not in (3,4,5) or self.backbone!='yolo26n':
+        if self.architecture!='yolo_rosa_lite_v1' or self.architecture_version not in (3,4,5) or self.backbone not in ('yolo26n','yolo26m'):
             raise ValueError('Sparse architecture contract mismatch; dense/ROSA checkpoints cannot be resumed')
         if min(self.image_width,self.image_height)<=0 or self.image_width%32 or self.image_height%32:
             raise ValueError('Sparse image size must be divisible by 32')
@@ -96,6 +102,12 @@ class SparseConfig:
                 not all(math.isfinite(x) and x>=0 for x in (self.proposal_weight,self.extent_weight,self.facing_cosine_prior)) or
                 not math.isfinite(self.facing_temperature) or self.facing_temperature<=0):
             raise ValueError('Invalid proposal/extent/facing settings')
+        if (not all(math.isfinite(x) and x>=0 for x in (self.matched_class_weight,
+                self.quality_background_weight,self.heading_hard_weight,self.facing_binary_weight)) or
+                not math.isfinite(self.facing_label_smoothing) or not 0<=self.facing_label_smoothing<1):
+            raise ValueError('Invalid experiment loss settings')
+        if self.architecture_version<5 and (self.heading_hard_weight or self.facing_label_smoothing or self.facing_binary_weight!=.5):
+            raise ValueError('New heading objectives require architecture 5')
         return self
 
     def to_dict(self):return asdict(self)

@@ -32,7 +32,7 @@ from raybev.metrics import evaluate_detections,heading_diagnostics
 from train_combined_rosa_ddp import ExactEvalSampler,combine_exact_predictions,sync_bn_running_buffers,create_grad_scaler,cuda_autocast,save_checkpoint,Progress
 
 PROJECT=Path(__file__).resolve().parents[1]
-COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal')
+COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background')
 
 
 def build_parser():
@@ -79,6 +79,12 @@ def build_parser():
     p.add_argument('--sampling',choices=['track','uniform'],default='track')
     p.add_argument('--no-pretrained',action='store_true',help='Explicit random-backbone ablation only')
     p.add_argument('--backbone-weights')
+    p.add_argument('--backbone',choices=['yolo26n','yolo26m'],default='yolo26n')
+    p.add_argument('--matched-class-weight',type=float,default=0.,help='Auxiliary matched-foreground softmax CE')
+    p.add_argument('--quality-background-weight',type=float,default=0.,help='Quality=0 supervision on distant unmatched background')
+    p.add_argument('--heading-hard-weight',type=float,default=0.,help='Detached error-based heading reweighting')
+    p.add_argument('--facing-binary-weight',type=float,default=.5)
+    p.add_argument('--facing-label-smoothing',type=float,default=0.)
     initialization=p.add_mutually_exclusive_group()
     initialization.add_argument('--resume',help='Only the same sparse run/architecture/recipe')
     initialization.add_argument('--init-from',help='Audited sparse weights only; starts a NEW optimizer and schedule')
@@ -298,13 +304,16 @@ def main():
     try:
         torch.multiprocessing.set_sharing_strategy('file_system')
         random.seed(args.seed);np.random.seed(args.seed);torch.manual_seed(args.seed)
-        cfg=SparseConfig(architecture_version=args.architecture_version,image_width=args.image_width,image_height=args.image_height,queries=args.queries,
+        cfg=SparseConfig(architecture_version=args.architecture_version,backbone=args.backbone,image_width=args.image_width,image_height=args.image_height,queries=args.queries,
             stages=args.stages,channels=args.channels,ffn_channels=2*args.channels,max_detections=args.queries,
             stride4=args.stride4,observation_conditioning=args.observation_conditioning,
             proposal_queries=args.proposal_queries,proposal_grid=args.proposal_grid,ground_z=args.ground_z,
             proposal_weight=args.proposal_weight,facing_cosine_prior=args.facing_cosine_prior,
             facing_temperature=args.facing_temperature,multi_camera_facing=not args.no_multi_camera_facing,extent_weight=args.extent_weight,
-            dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=0.).validate()
+            dn_queries=args.dn_queries,dn_weight=args.dn_weight,teacher_weight=0.,
+            matched_class_weight=args.matched_class_weight,quality_background_weight=args.quality_background_weight,
+            heading_hard_weight=args.heading_hard_weight,facing_binary_weight=args.facing_binary_weight,
+            facing_label_smoothing=args.facing_label_smoothing).validate()
         options=dict(root=args.root,cfg=cfg,box_frame=args.box_frame,z_reference=args.z_reference,
                      strict_size=not args.resize_native_images,
                      native_image_sizes={c.name:(c.width,c.height) for c in load_cameras(args.calibration)} if args.resize_native_images else None,
@@ -471,6 +480,8 @@ def main():
                     world_size=world,global_batch_size=world*args.batch_size*args.accum_steps,
                     train_samples_seen=int(count),val_samples_seen=int(val_sums[1]),
                     seconds=time.monotonic()-started,lr=optimizer.param_groups[0]['lr'])
+                from raybev.sparse_diagnostics import heavy_confusion_diagnostics
+                row['heavy_confusion']=heavy_confusion_diagnostics(predictions,truths)
                 with (out/'history.jsonl').open('a') as stream:stream.write(json.dumps(row,allow_nan=False)+'\n')
                 csv_path=append_metrics_csv(out,flat_metrics(row))
                 if csv_path.name!='epochs.csv':print('Extended metric CSV:',csv_path,flush=True)
