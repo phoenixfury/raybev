@@ -82,19 +82,19 @@ conda activate openmmlab
 EXPERIMENT=medium_fixes bash scripts/launch_v8_heading_heavy.sh
 ```
 
-Defaults: two GPUs, six four-camera samples per GPU, 2 accumulation steps,
-effective global batch 24, 64 epochs, LR 2e-4, backbone LR multiplier .1,
+Defaults: two GPUs, four four-camera samples per GPU, 2 accumulation steps,
+effective global batch 16, 64 epochs, LR 2e-4, backbone LR multiplier .1,
 seed 3407. Output: `work_dirs/raybev_v8_medium_fixes`.
-Batch 8 was reported to exceed GPU memory; batch 6 is the requested next setting.
-This reduces the effective batch from 32 to 24 relative to batch 8/accumulation 2.
-BatchNorm also sees six samples per GPU instead of eight. Use the same
+Batch sizes 8 and 6 were reported to exceed GPU memory; batch 4 is the requested next setting.
+This reduces the effective batch from 32 to 16 relative to batch 8/accumulation 2.
+BatchNorm also sees four samples per GPU instead of eight. Use the same
 microbatch and effective global batch across all new controls. LR stays 2e-4.
 
 ```bash
 # Show the exact command without training:
 DRY_RUN=1 EXPERIMENT=medium_fixes bash scripts/launch_v8_heading_heavy.sh
 
-# Change GPU count; accumulation automatically preserves global batch 24:
+# Change GPU count; accumulation automatically preserves global batch 16:
 NPROC_PER_NODE=1 CUDA_VISIBLE_DEVICES=0 EXPERIMENT=medium_fixes \
   bash scripts/launch_v8_heading_heavy.sh
 
