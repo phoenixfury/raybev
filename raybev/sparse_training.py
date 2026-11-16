@@ -38,6 +38,8 @@ def fit_sparse_anchors(dataset,cfg,seed=3407,iterations=25):
     values=boxes[valid];labels=values[:,7].astype(int)
     if not len(values):raise ValueError('No TRAIN anchor centers beyond minimum range')
     weights=1/np.sqrt(np.maximum(counts[labels],1));weights/=weights.sum()
+    # Keep the same TRAIN-only spatial fitting in all arms. The opt-in
+    # hypotheses below change geometry, not XY coverage or semantic lookup.
     rng=np.random.RandomState(seed);xy=values[:,:2].astype(np.float64)
     selected=[rng.choice(len(xy),p=weights)];distance=((xy-xy[selected[0]])**2).sum(1)
     for _ in range(1,cfg.queries):
@@ -55,6 +57,13 @@ def fit_sparse_anchors(dataset,cfg,seed=3407,iterations=25):
         # Choose a real TRAIN box nearest this class-balanced spatial cluster;
         # don't average opposite headings or impose a predicted-class size prior.
         index=((xy-center)**2).sum(1).argmin();anchors.append(values[index,:7])
+    if cfg.shape_balanced_anchors or cfg.shape_balanced_proposals:
+        from .sparse_v10 import shape_hypotheses
+        anchors=np.asarray(anchors).copy();split=cfg.queries-cfg.proposal_queries
+        for start,end,enabled in ((0,split,cfg.shape_balanced_anchors),(split,cfg.queries,cfg.shape_balanced_proposals)):
+            if enabled and end>start:
+                anchors[start:end,3:6]=shape_hypotheses(values,end-start)
+                anchors[start:end,2]=cfg.ground_z+anchors[start:end,5]/2
     fitted=replace(cfg,mean_training_objects=float(counts.sum()/len(dataset)),training_class_counts=tuple(counts.tolist())).validate()
     return fitted,torch.tensor(np.asarray(anchors),dtype=torch.float32)
 

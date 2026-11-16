@@ -1,0 +1,125 @@
+{
+  "type": "raybev_track_identity_revision_v1",
+  "edits": [
+    {
+      "id": "train:1787825703554504499:0",
+      "sequence": "08_27_10_12_18",
+      "old_track_id": "5051",
+      "new_track_id": 5646,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 08_27_10_12_18_5051.jpg"
+    },
+    {
+      "id": "train:1787825704119092888:0",
+      "sequence": "08_27_10_12_18",
+      "old_track_id": "5051",
+      "new_track_id": 5646,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 08_27_10_12_18_5051.jpg"
+    },
+    {
+      "id": "train:1787825621272274982:1",
+      "sequence": "08_27_10_12_18",
+      "old_track_id": "5158",
+      "new_track_id": 5647,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 08_27_10_12_18_5158.jpg"
+    },
+    {
+      "id": "val:1787825892392863463:14",
+      "sequence": "08_27_10_12_18",
+      "old_track_id": "5566",
+      "new_track_id": 5648,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 08_27_10_12_18_5566.jpg"
+    },
+    {
+      "id": "train:1789553110660026905:1",
+      "sequence": "09_16_09_58_56",
+      "old_track_id": "2350",
+      "new_track_id": 2882,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_16_09_58_56_2350.jpg"
+    },
+    {
+      "id": "train:1789553113844617347:4",
+      "sequence": "09_16_09_58_56",
+      "old_track_id": "2376",
+      "new_track_id": 2883,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_16_09_58_56_2376.jpg"
+    },
+    {
+      "id": "train:1790240215344837895:0",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5794",
+      "new_track_id": 6558,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5794.jpg"
+    },
+    {
+      "id": "train:1790240199938140940:11",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5806",
+      "new_track_id": 6559,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5806.jpg"
+    },
+    {
+      "id": "train:1790240206520196218:10",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5809",
+      "new_track_id": 6560,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5809.jpg"
+    },
+    {
+      "id": "train:1790240215536602410:8",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5813",
+      "new_track_id": 6561,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5813.jpg"
+    },
+    {
+      "id": "train:1790240269625367992:15",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5920",
+      "new_track_id": 6562,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5920.jpg"
+    },
+    {
+      "id": "train:1790240288591660966:5",
+      "sequence": "09_24_08_52_50",
+      "old_track_id": "5928",
+      "new_track_id": 6563,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_24_08_52_50_5928.jpg"
+    },
+    {
+      "id": "val:1790763789028259921:5",
+      "sequence": "09_30_10_10_54",
+      "old_track_id": "4909",
+      "new_track_id": 5040,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 09_30_10_10_54_4909.jpg"
+    },
+    {
+      "id": "train:1794211651780171000:21",
+      "sequence": "11_09_08_01_03",
+      "old_track_id": "1114",
+      "new_track_id": 1254,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 11_09_08_01_03_1114.jpg"
+    },
+    {
+      "id": "train:1794211737710965422:11",
+      "sequence": "11_09_08_01_03",
+      "old_track_id": "634",
+      "new_track_id": 1255,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 11_09_08_01_03_634.jpg"
+    },
+    {
+      "id": "train:1794211739482593184:7",
+      "sequence": "11_09_08_01_03",
+      "old_track_id": "634",
+      "new_track_id": 1255,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 11_09_08_01_03_634.jpg"
+    },
+    {
+      "id": "train:1794211739043084647:8",
+      "sequence": "11_09_08_01_03",
+      "old_track_id": "634",
+      "new_track_id": 1255,
+      "evidence": "Four-camera review: different vehicle classes/ambiguous association share this ID. Conservative class-consistent review segment; not a certified physical track. Contact sheet: 11_09_08_01_03_634.jpg"
+    }
+  ],
+  "limitation": "Review segmentation only. Seen/unseen metrics must use this frozen release consistently."
+}

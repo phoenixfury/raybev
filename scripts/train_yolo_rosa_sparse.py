@@ -32,7 +32,7 @@ from raybev.metrics import evaluate_detections,heading_diagnostics
 from train_combined_rosa_ddp import ExactEvalSampler,combine_exact_predictions,sync_bn_running_buffers,create_grad_scaler,cuda_autocast,save_checkpoint,Progress
 
 PROJECT=Path(__file__).resolve().parents[1]
-COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative')
+COMPONENTS=('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative','objectness','foreground_semantic')
 
 
 def build_parser():
@@ -95,6 +95,17 @@ def build_parser():
     p.add_argument('--heavy-endpoint-weight',type=float,default=0.)
     p.add_argument('--quality-distance-target',action='store_true')
     p.add_argument('--quality-hard-negative-weight',type=float,default=0.)
+    p.add_argument('--shape-balanced-anchors',action='store_true')
+    p.add_argument('--shape-balanced-proposals',action='store_true')
+    p.add_argument('--foreground-balance',action='store_true')
+    p.add_argument('--semantic-objectness',action='store_true')
+    p.add_argument('--object-aligned-context',action='store_true')
+    p.add_argument('--early-stage-weight',type=float,default=1.)
+    p.add_argument('--stage-diagnostics',action='store_true')
+    p.add_argument('--train-audit-every',type=int,default=50)
+    p.add_argument('--unit-class-weights',action='store_true')
+    p.add_argument('--geometry-approvals')
+    p.add_argument('--tram-tracks',help='Explicit JSON tram track registry for separate directed-heading diagnostics')
     initialization=p.add_mutually_exclusive_group()
     initialization.add_argument('--resume',help='Only the same sparse run/architecture/recipe')
     initialization.add_argument('--init-from',help='Audited sparse weights only; starts a NEW optimizer and schedule')
@@ -307,7 +318,7 @@ def print_epoch_metrics(row):
               f'{str(values.get("TP","NA")):>6} {str(values.get("FP","NA")):>6} {str(values.get("FN","NA")):>6} '
               f'{count:7d} {number(ate):>7} {number(ase):>6} {number(aoe,1):>9}',flush=True)
     print('  TP/FP/FN use score >= 0.1 and 2m; geom_n uses retained score >= 0.01 and 2m. '
-          'Teacher disabled; VAL excludes denoising/extent losses; TRAIN/VAL total objectives differ.',flush=True)
+          'Teacher disabled; VAL excludes denoising/extent losses and any approved-TRAIN endpoint loss; TRAIN/VAL total objectives differ.',flush=True)
     coverage=row.get('raw_query_coverage',{})
     if coverage:
         stages=[key for key in coverage if key.startswith('stage_')]
@@ -347,7 +358,15 @@ def main():
             match_ramp_epochs=args.match_ramp_epochs,fresh_box_classification=args.fresh_box_classification,
             independent_facing_views=args.independent_facing_views,heavy_endpoint_weight=args.heavy_endpoint_weight,
             quality_distance_target=args.quality_distance_target,
-            quality_hard_negative_weight=args.quality_hard_negative_weight).validate()
+            quality_hard_negative_weight=args.quality_hard_negative_weight,
+            shape_balanced_anchors=args.shape_balanced_anchors,shape_balanced_proposals=args.shape_balanced_proposals,
+            foreground_balance=args.foreground_balance,semantic_objectness=args.semantic_objectness,
+            object_aligned_context=args.object_aligned_context,early_stage_weight=args.early_stage_weight,
+            stage_diagnostics=args.stage_diagnostics,geometry_approval_required=bool(args.geometry_approvals),
+            class_positive_weights=(1.,)*len(CLASSES) if args.unit_class_weights else SparseConfig().class_positive_weights).validate()
+        if args.train_audit_every<1:raise ValueError('Train audit interval must be positive')
+        if args.heavy_endpoint_weight and not args.geometry_approvals:
+            raise ValueError('Endpoint experiment requires --geometry-approvals; class review alone is insufficient')
         options=dict(root=args.root,cfg=cfg,box_frame=args.box_frame,z_reference=args.z_reference,
                      strict_size=not args.resize_native_images,
                      native_image_sizes={c.name:(c.width,c.height) for c in load_cameras(args.calibration)} if args.resize_native_images else None,
@@ -369,11 +388,16 @@ def main():
         teacher_sha=None  # Preserve checkpoint provenance schema; no teacher is loaded.
         from raybev.sparse_extent import VerifiedExtents
         extents=VerifiedExtents(args.extent_annotations,train,args.calibration) if args.extent_annotations else None
+        from raybev.sparse_v10 import (GeometryApprovals,summarize_supervision,geometry_stage_confusion,summarize_stage_confusion)
+        geometry_approvals=GeometryApprovals(args.geometry_approvals,train,args.calibration) if args.geometry_approvals else None
+        tram_tracks=json.loads(Path(args.tram_tracks).read_text())['tracks'] if args.tram_tracks else []
         if bool(extents)!=bool(cfg.extent_weight):raise ValueError('Set both --extent-annotations and positive --extent-weight')
         checkpoint=torch.load(args.resume,map_location='cpu',weights_only=False) if args.resume else None
         if checkpoint:check_resume(checkpoint,cfg,args,contract,teacher_sha,world)
         if checkpoint and checkpoint.get('extent_annotations_sha256')!=(extents.sha256 if extents else None):
             raise ValueError('Resume extent annotations changed')
+        if checkpoint and checkpoint.get('geometry_approvals_sha256')!=(geometry_approvals.sha256 if geometry_approvals else None):
+            raise ValueError('Resume credible geometry approvals changed')
         initializer=torch.load(args.init_from,map_location='cpu',weights_only=False) if args.init_from else None
         if initializer:check_warm_start(initializer,cfg,contract,teacher_sha)
         out=Path(args.out)
@@ -397,7 +421,7 @@ def main():
                             optimizer='fresh',scheduler='fresh',source_cfg=initializer['cfg'])
         configure_image_training(model,args.freeze_image_stages)
         optimizer=build_optimizer(model,args.lr,args.weight_decay,args.backbone_lr_mult)
-        criterion=SparseCriterion(cfg,teacher=None,projector=model.projector,extents=extents)
+        criterion=SparseCriterion(cfg,teacher=None,projector=model.projector,extents=extents,geometry_approvals=geometry_approvals)
         if args.sampling=='track':sampler=TrackBalancedSampler(train,args.seed,rank,world)
         else:sampler=DistributedSampler(train,num_replicas=world,rank=rank,seed=args.seed,drop_last=False)
         eval_sampler=ExactEvalSampler(val,rank,world)
@@ -434,6 +458,9 @@ def main():
             sampler.set_epoch(epoch);wrapped.train();criterion.train();criterion.match_epoch=epoch
             configure_image_training(model,args.freeze_image_stages)
             match_gap=torch.zeros(3,device=device,dtype=torch.float64)
+            train_supervision=torch.zeros(cfg.stages,cfg.num_classes,8,device=device,dtype=torch.float64)
+            train_raw_records=[]
+            train_geometry_confusion=torch.zeros(cfg.stages,cfg.num_classes,cfg.num_classes+1,device=device,dtype=torch.float64)
             sums=torch.zeros(1+len(components)+1+len(CLASSES),device=device,dtype=torch.float64)
             optimizer.zero_grad(set_to_none=True);started=time.monotonic()
             progress=Progress('sparse train',epoch+1,args.epochs,len(loader),args.progress,args.log_every) if primary else None
@@ -455,6 +482,12 @@ def main():
                     if scaler.get_scale()>=scale:scheduler.step()
                     optimizer.zero_grad(set_to_none=True)
                 match_gap+=parts['match_gap_stats']
+                if cfg.stage_diagnostics:
+                    train_supervision+=parts['supervision_stats']
+                    if i%args.train_audit_every==0:
+                        from raybev.sparse_diagnostics import output_raw_counts
+                        train_raw_records.extend(output_raw_counts(output,boxes,cfg))
+                        train_geometry_confusion+=torch.as_tensor(geometry_stage_confusion(output,boxes,cfg),device=device)
                 n=len(images);sums[0]+=float(loss.detach())*n
                 for j,k in enumerate(components,1):sums[j]+=float(parts[k])*n
                 sums[1+len(components)]+=n
@@ -464,7 +497,11 @@ def main():
                 if progress:progress.update(n,dict(loss=f'{float(loss.detach()):.3f}',
                     **{key:f'{float(parts[key]):.3f}' for key in ('classification','center','size','axis','facing')}))
             if progress:progress.close()
-            if distributed:dist.all_reduce(sums);dist.all_reduce(match_gap);sync_bn_running_buffers(model)
+            if distributed:
+                dist.all_reduce(sums);dist.all_reduce(match_gap);dist.all_reduce(train_supervision);sync_bn_running_buffers(model)
+                dist.all_reduce(train_geometry_confusion)
+            val_supervision=torch.zeros_like(train_supervision)
+            val_geometry_confusion=torch.zeros_like(train_geometry_confusion)
             criterion.eval();model.eval();val_sums=torch.zeros(2+len(components),device=device,dtype=torch.float64);records=[];raw_records=[];position=0;ids=list(eval_sampler)
             from raybev.sparse_diagnostics import output_raw_counts,merge_raw_counts,facing_samples,summarize_facing
             facing_records=[];query_records=[]
@@ -476,6 +513,9 @@ def main():
                     with cuda_autocast(args.amp and device.type=='cuda'):
                         output=model(images.to(device));loss,parts=criterion(output,targets)
                     if not torch.isfinite(loss):raise FloatingPointError('Nonfinite sparse VAL loss')
+                    if cfg.stage_diagnostics:
+                        val_supervision+=parts['supervision_stats']
+                        val_geometry_confusion+=torch.as_tensor(geometry_stage_confusion(output,boxes,cfg),device=device)
                     decoded=decode_sparse(output,cfg,.01,return_indices=args.heavy_query_audit)
                     predictions=[p for p,_ in decoded] if args.heavy_query_audit else decoded
                     if args.heavy_query_audit:query_records.extend(audit_queries(output,cfg,boxes,decoded))
@@ -501,6 +541,11 @@ def main():
             if args.heavy_query_audit and distributed:
                 gathered_queries=[None]*world;dist.all_gather_object(gathered_queries,query_records)
             else:gathered_queries=[query_records]
+            if cfg.stage_diagnostics and distributed:
+                dist.all_reduce(val_supervision);gathered_train_raw=[None]*world
+                dist.all_reduce(val_geometry_confusion)
+                dist.all_gather_object(gathered_train_raw,train_raw_records)
+            else:gathered_train_raw=[train_raw_records]
             if primary:
                 predictions,truths=combine_exact_predictions(gathered,len(val))
                 print(f'[Epoch {epoch+1}/{args.epochs}] Evaluating {len(val)} distinct validation frames globally...',flush=True)
@@ -525,6 +570,15 @@ def main():
                     seconds=time.monotonic()-started,lr=optimizer.param_groups[0]['lr'])
                 from raybev.sparse_diagnostics import heavy_confusion_diagnostics
                 row['heavy_confusion']=heavy_confusion_diagnostics(predictions,truths)
+                if cfg.stage_diagnostics:
+                    row['stage_supervision']=dict(train=summarize_supervision(train_supervision),val=summarize_supervision(val_supervision))
+                    row['geometry_matched_stage_classification']=dict(
+                        protocol='Score/class-agnostic maximum-cardinality XY<2m, supported normal queries only; TRAIN sampled, VAL complete.',
+                        train_sampled=summarize_stage_confusion(train_geometry_confusion),val=summarize_stage_confusion(val_geometry_confusion))
+                    row['train_raw_query_coverage_sampled']=dict(every_batches=args.train_audit_every,
+                        coverage=merge_raw_counts([r for shard in gathered_train_raw for r in shard]))
+                    from raybev.sparse_v10 import evaluation_slices
+                    row['controlled_evaluation']=evaluation_slices(predictions,truths,train,val,tram_tracks)
                 if args.heavy_query_audit:
                     row['query_audit']=summarize_query_audit([r for shard in gathered_queries for r in shard])
                     row['false_positive_audit']=false_positive_audit(predictions,truths)[0]
@@ -542,6 +596,7 @@ def main():
                     epoch=epoch+1,best_map=best,best_heading_aoe=best_heading,metrics=metrics,heading_diagnostics=heading,
                     world_size=world,recipe=vars(args),heading_teacher_sha256=teacher_sha,
                     extent_annotations_sha256=extents.sha256 if extents else None,
+                    geometry_approvals_sha256=geometry_approvals.sha256 if geometry_approvals else None,
                     backbone_initialization=model.image_encoder.initialization,backbone_profile=model.image_encoder.backbone_profile,
                     warm_start=warm_start,**contract)
                 save_checkpoint(out/'last.pt',state)

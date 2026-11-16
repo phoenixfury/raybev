@@ -109,10 +109,14 @@ class OpenCVProjector(nn.Module):
         return net,valid,cues
 
 
-def box_points(boxes,learned_offsets=None):
+def box_points(boxes,learned_offsets=None,object_context=False):
     offsets=boxes.new_tensor([[0,0,0],[.45,0,0],[-.45,0,0],[0,.45,0],[0,-.45,0],[0,0,.45],[0,0,-.45]])
     if learned_offsets is not None:
         offsets=torch.cat((offsets[None,None].expand(*boxes.shape[:2],-1,-1),learned_offsets.float()),-2)
+    if object_context:
+        context=boxes.new_tensor([[x,y,z] for x in (-.55,0,.55) for y in (-.55,0,.55) for z in (-.3,.3)])
+        if offsets.ndim==2:offsets=offsets[None,None].expand(*boxes.shape[:2],-1,-1)
+        offsets=torch.cat((offsets,context[None,None].expand(*boxes.shape[:2],-1,-1)),-2)
     local=boxes[...,None,3:6]*offsets
     x,y,z=local.unbind(-1);angle=boxes[...,6,None]
     rotated=torch.stack((x*angle.cos()-y*angle.sin(),x*angle.sin()+y*angle.cos(),z),-1)
@@ -180,7 +184,7 @@ class SparseEvidence(nn.Module):
         offsets=None
         if self.cfg.num_learned_points:
             offsets=self.offsets(query).float().reshape(*query.shape[:2],self.cfg.num_learned_points,3).sigmoid()-.5
-        uv,visible,cues=projector(box_points(boxes,offsets))
+        uv,visible,cues=projector(box_points(boxes,offsets,self.cfg.object_aligned_context))
         b,q,p,n,_=uv.shape;h=self.cfg.heads;c=self.cfg.channels
         sampled=[]
         levels=len(self.cfg.feature_strides)
@@ -281,6 +285,9 @@ class SparseStage(nn.Module):
         self.ffn=nn.Sequential(nn.Linear(cfg.channels,cfg.ffn_channels),nn.ReLU(),nn.Linear(cfg.ffn_channels,cfg.channels))
         self.norm3=nn.LayerNorm(cfg.channels)
         self.classifier=nn.Linear(cfg.channels,cfg.num_classes)
+        if cfg.semantic_objectness:
+            self.objectness=nn.Linear(cfg.channels,1)
+            nn.init.constant_(self.objectness.bias,math.log(.01/.99))
         self.center=nn.Linear(cfg.channels,3);self.size=nn.Linear(cfg.channels,3)
         self.axis=nn.Linear(cfg.channels,2);self.quality=nn.Linear(cfg.channels,1)
         self.facing=nn.Sequential(nn.Linear(3*cfg.channels,cfg.channels//2),nn.ReLU(),nn.Linear(cfg.channels//2,8))
@@ -356,6 +363,7 @@ class SparseStage(nn.Module):
             class_query=class_query+self.refined_box_classifier(updated,features[self.cfg.feature_strides.index(8)],projector)
         output=dict(boxes=updated,axis=axis,facing=facing,class_logits=self.classifier(class_query),
                     quality_logits=self.quality(query)[...,0],supported=supported)
+        if self.cfg.semantic_objectness:output['objectness_logits']=self.objectness(query)[...,0]
         if self.cfg.architecture_version>=5:output['facing_confidence']=confidence
         return query,output
 
@@ -463,15 +471,20 @@ def sparse_candidates(final,cfg,quality_power=None,class_bias=None):
             raise ValueError('Expected one finite logit bias per class')
         logits=logits+bias
     quality=final['quality_logits'][:,:q].float()
-    prob=logits.sigmoid()
+    semantic=logits.softmax(-1) if cfg.semantic_objectness else logits.sigmoid()
+    prob=semantic
     if power>0:prob=prob*quality.sigmoid().pow(power)[...,None]
     # Retain legacy sigmoid-max behavior (including equal saturated logits).
-    score,classes=logits.sigmoid().max(-1)
+    score,classes=semantic.max(-1)
+    if cfg.semantic_objectness:
+        foreground=final['objectness_logits'][:,:q].float().sigmoid()
+        score=score*foreground;prob=prob*foreground[...,None]
     if power>0:score=score*quality.sigmoid().pow(power)
     boxes=final['boxes'][:,:q].float()
     finite=torch.isfinite(logits).all(-1)&torch.isfinite(boxes).all(-1)
     finite=finite&torch.isfinite(final['axis'][:,:q]).all(-1)&torch.isfinite(final['facing'][:,:q]).all(-1)
     if power>0:finite=finite&torch.isfinite(quality)
+    if cfg.semantic_objectness:finite=finite&torch.isfinite(final['objectness_logits'][:,:q])
     in_range=in_bev_range(boxes.flatten(0,1),cfg).reshape_as(score)
     return boxes,classes,score,final['supported'][:,:q].bool(),finite,in_range,prob
 

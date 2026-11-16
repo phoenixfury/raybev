@@ -74,9 +74,9 @@ def facing_samples(output,targets,cfg):
     import torch
     from .detection import decode_heading,in_bev_range
     final=output['stages'][-1];q=cfg.queries
-    probability=final['class_logits'][:,:q].detach().float().sigmoid()
-    score,labels=probability.max(-1)
-    score*=final['quality_logits'][:,:q].detach().float().sigmoid().pow(cfg.quality_score_power)
+    from .sparse_model import sparse_candidates
+    _,labels,score,_,_,_,_=sparse_candidates(final,cfg)
+    labels=labels.detach();score=score.detach()
     if 'facing_confidence' in final:confidence=final['facing_confidence'][:,:q].detach()
     else:_,confidence=decode_heading(final['axis'][:,:q].detach(),final['facing'][:,:q].detach(),cfg)
     result=[]

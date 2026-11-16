@@ -1,0 +1,553 @@
+{
+  "identity": {
+    "version": 1,
+    "annotations": {
+      "train": "bcef94aff1fe07f2474e6aadefca30b4200ff3a4b1ba968c046e6540764c12b9",
+      "val": "43a5fe279c64afb82cd52a0a338f4ed20c935ace751ad85339c81f9e0d845763"
+    },
+    "extents": "4d2a08ba66e5a888ad8bd43456399a0a9e6ae74eedb01a7b81f40b0042f69f46",
+    "calibration": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+    "classes": [
+      "bus",
+      "car",
+      "cyclist",
+      "pedestrian",
+      "truck",
+      "van"
+    ],
+    "box_frame": "CLIDAR",
+    "z_reference": "center"
+  },
+  "decisions": {
+    "train:1787825621272274982:1": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5158.jpg. Integrated high-roof panel-van body, not a passenger Car. Apply the TRAIN-derived Van default; center/yaw not certified.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1787825696957639174:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825697556040686:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825698059492465:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825698608246458:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825699155138008:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825699808745951:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825700373459428:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825701006697270:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825702703993112:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825703554504499:0": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825704119092888:0": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825706427323690:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825707758164994:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825708409712510:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825709111230363:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825709908859525:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825710458009040:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825711016359792:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825711553886232:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825713209650761:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825714004669795:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825714637770804:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825715160356678:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825715858417455:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825716411473616:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825717008895091:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825717511887379:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825718058849809:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825718613248026:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825719159846231:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825719861212851:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825720561921771:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825721562531276:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825722370675058:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1787825724808933877:0": {
+      "label": "bus",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5051.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1789552838494384265:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_1837.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552896469462913:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2069.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552896945766231:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2069.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552897443548653:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2069.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552897992681504:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2069.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552899091843598:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2069.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552917889048458:1": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2075.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789552918433271511:1": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2075.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1789553110660026905:1": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2350.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1789553113844617347:4": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_16_09_58_56_2376.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1790240194797370933:10": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5794.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790240196174029662:17": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5794.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790240196564527903:13": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5794.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790240198191199475:11": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240198535640286:12": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240199938140940:11": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240200389751557:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240204430606490:5": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5809.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240204955167577:6": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5809.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240205086655883:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240205935064646:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240206520196218:10": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5809.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240206520196218:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5806.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240213653850448:7": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5809.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240215344837895:0": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5794.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1790240215536602410:8": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5813.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1790240269625367992:15": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5920.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1790240288591660966:5": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_5928.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1790240383493262827:13": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790240384674492384:11": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790240386808599779:13": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240387845503983:10": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240387880654290:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240390863982074:12": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240391609778954:9": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240392303686507:11": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1790240393834864904:5": {
+      "label": "truck",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_24_08_52_50_6118.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "train:1790763153822877240:2": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4946.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1790763154408142225:2": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4946.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "train:1790763612117906417:12": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_5010.jpg. Passenger SUV. Replace prescribed 3 m height with a conservative SUV size prior; not metric geometry certification.",
+      "dimensions_lwh": [
+        4.8,
+        1.9,
+        1.75
+      ]
+    },
+    "train:1794211651564026065:19": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 11_09_08_01_03_1114.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1794211651780171000:21": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 11_09_08_01_03_1114.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "train:1794211736019416890:10": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 11_09_08_01_03_634.jpg. Visible separate cab and cargo/box/tow body identify a Truck, not a passenger Car. Retain source LWH; no guessed truck geometry."
+    },
+    "train:1794211749251588424:0": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 11_09_08_01_03_216.jpg. Panel van retained. User-authorized default LWH: rounded median of 1,517 plausible TRAIN Vans; prescribed prior, not a fitted cuboid.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "val:1787825892392863463:14": {
+      "label": "van",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5566.jpg. Integrated high-roof panel-van body, not a passenger Car. Apply the TRAIN-derived Van default; center/yaw not certified.",
+      "dimensions_lwh": [
+        5.46,
+        2.14,
+        2.26
+      ]
+    },
+    "val:1787825893246948695:12": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5566.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "val:1787825894500342959:11": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 08_27_10_12_18_5566.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "val:1790763780382908014:10": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1790763780382908014:5": {
+      "label": "car",
+      "status": "removed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4903.jpg. Exclude: projected target overlaps different foreground/background vehicles; association/metric cuboid is not credible enough to relabel or resize."
+    },
+    "val:1790763782847197016:5": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1790763783517486600:5": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1790763785656106936:4": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1790763787049713977:5": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1790763789028259921:5": {
+      "label": "truck",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 09_30_10_10_54_4909.jpg. Retain existing per-frame class; no majority-vote propagation."
+    },
+    "val:1793960340405033986:8": {
+      "label": "car",
+      "status": "reviewed",
+      "note": "Four-camera contact sheet 11_06_10_07_06_202.jpg. Passenger SUV. Replace prescribed 3 m height with an SUV size prior; center/yaw not certified.",
+      "dimensions_lwh": [
+        4.8,
+        1.9,
+        1.85
+      ]
+    }
+  }
+}

@@ -63,6 +63,14 @@ class SparseConfig:
     heavy_endpoint_weight: float = 0.
     quality_distance_target: bool = False
     quality_hard_negative_weight: float = 0.
+    shape_balanced_anchors: bool = False
+    shape_balanced_proposals: bool = False
+    foreground_balance: bool = False
+    semantic_objectness: bool = False
+    object_aligned_context: bool = False
+    early_stage_weight: float = 1.
+    stage_diagnostics: bool = False
+    geometry_approval_required: bool = False
 
     @property
     def is_refined(self):return self.architecture_version>=4
@@ -74,7 +82,7 @@ class SparseConfig:
     def num_learned_points(self):return 6 if self.is_refined else 0
 
     @property
-    def num_support_points(self):return 7+self.num_learned_points
+    def num_support_points(self):return 7+self.num_learned_points+(18 if self.object_aligned_context else 0)
 
     @property
     def center_loss_beta(self):return .1 if self.is_refined else 1.
@@ -128,6 +136,14 @@ class SparseConfig:
                 self.quality_hard_negative_weight or self.match_class_start!=1 or
                 self.match_warmup_epochs or self.match_ramp_epochs):
             raise ValueError('V9 improvements require architecture 5')
+        if not math.isfinite(self.early_stage_weight) or self.early_stage_weight<=0:
+            raise ValueError('Early stage weight must be positive')
+        if self.architecture_version<5 and (self.shape_balanced_anchors or self.shape_balanced_proposals or
+                self.foreground_balance or self.semantic_objectness or self.object_aligned_context or
+                self.early_stage_weight!=1 or self.geometry_approval_required):
+            raise ValueError('Controlled V10 experiments require architecture 5')
+        if self.foreground_balance and not (self.matched_class_weight or self.semantic_objectness):
+            raise ValueError('Foreground balance requires a matched semantic objective')
         return self
 
     def to_dict(self):return asdict(self)

@@ -10,6 +10,7 @@ from .config import CLASSES
 from .detection import facing_vector_loss
 from .rosa_dataset import training_boxes_sha256
 from .training import calibration_sha256
+from .sparse_v10 import foreground_weights,semantic_loss,objectness_loss
 
 
 def validate_targets(targets,cfg):
@@ -40,6 +41,8 @@ def matched_class_loss(logits,labels,cfg,denominator):
     the full positive focal weights again. No inference score formula changes.
     """
     if not len(labels):return logits.sum()*0
+    if cfg.foreground_balance:
+        return (F.cross_entropy(logits.float(),labels,reduction='none')*foreground_weights(labels,cfg)).sum()/denominator
     weights=logits.new_tensor(cfg.class_positive_weights)[labels].sqrt()
     return (F.cross_entropy(logits.float(),labels,reduction='none')*weights).sum()/denominator
 
@@ -131,7 +134,11 @@ def match_geometry_gap(single,known,pi,ti,q):
 def match_queries(stage,gt,cfg,class_weight=1.):
     if not len(gt):return torch.empty(0,dtype=torch.long),torch.empty(0,dtype=torch.long)
     boxes=stage['boxes'][:cfg.queries].float()
-    p=stage['class_logits'][:cfg.queries].float().sigmoid().clamp(1e-6,1-1e-6)
+    logits=stage['class_logits'][:cfg.queries].float()
+    if cfg.semantic_objectness:
+        p=logits.softmax(-1)*stage['objectness_logits'][:cfg.queries].float().sigmoid()[:,None]
+    else:p=logits.sigmoid()
+    p=p.clamp(1e-6,1-1e-6)
     # Focal classification cost, meter-space centre cost and relative size.
     neg=.75*p.square()*(-(1-p).log());pos=.25*(1-p).square()*(-p.log())
     cls=(pos-neg)[:,gt[:,7].long()]
@@ -173,9 +180,12 @@ class SparseYawTeacher:
 
 
 class SparseCriterion(nn.Module):
-    def __init__(self,cfg,teacher=None,projector=None,extents=None):
+    def __init__(self,cfg,teacher=None,projector=None,extents=None,geometry_approvals=None):
         super().__init__();self.cfg=cfg;self.teacher=teacher;self.projector=projector;self.extents=extents
         self.match_epoch=0
+        self.geometry_approvals=geometry_approvals
+        if cfg.heavy_endpoint_weight and cfg.geometry_approval_required and geometry_approvals is None:
+            raise ValueError('Endpoint loss requires explicitly approved credible cuboids')
         if cfg.extent_weight and (extents is None or projector is None):
             raise ValueError('Extent loss requires verified image annotations and calibration')
 
@@ -190,6 +200,7 @@ class SparseCriterion(nn.Module):
         result['center']=average(F.smooth_l1_loss(pred[:,:3],gt[:,:3],beta=self.cfg.center_loss_beta,reduction='none').sum(-1))
         if self.cfg.heavy_endpoint_weight and token is not None:
             heavy=(gt[:,7]==3)|(gt[:,7]==4)|(gt[:,7]==5)
+            if self.cfg.geometry_approval_required:heavy &= self.geometry_approvals.mask(token,gt)
             result['heavy_endpoint']=(endpoint_error(pred[heavy],gt[heavy])*weights[heavy].sqrt()).sum()/denominator
         size_error=(pred[:,3:6].clamp_min(.05).log()-gt[:,3:6].log())
         size_loss=size_error.abs() if self.cfg.is_refined else F.smooth_l1_loss(size_error,torch.zeros_like(size_error),reduction='none')
@@ -242,11 +253,13 @@ class SparseCriterion(nn.Module):
         if not b:raise ValueError('Empty sparse minibatch')
         for gt in targets:validate_targets(gt,cfg)
         denominator=b*cfg.mean_training_objects
-        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative')}
+        totals={name:output['stages'][0]['boxes'].sum()*0 for name in ('classification','center','size','axis','facing','quality','teacher','denoising','facing_binary','extent','proposal','matched_class','quality_background','heavy_endpoint','quality_hard_negative','objectness','foreground_semantic')}
         matches=0
         match_weight=class_match_weight(cfg,self.match_epoch) if self.training else 1.
         gap_stats=output['stages'][0]['boxes'].new_zeros(3,dtype=torch.float32)
-        for stage in output['stages']:
+        supervision=gap_stats.new_zeros(len(output['stages']),cfg.num_classes,8)
+        stage_weights=[cfg.early_stage_weight]*(len(output['stages'])-1)+[1.]
+        for si,stage in enumerate(output['stages']):
             zero=sum(stage[k].float().sum()*0 for k in ('boxes','axis','facing','class_logits','quality_logits'))
             current={k:zero.clone() for k in totals}
             for bi,target in enumerate(targets):
@@ -259,14 +272,32 @@ class SparseCriterion(nn.Module):
                 p=logits.sigmoid();pt=torch.where(truth.bool(),p,1-p)
                 weights=torch.where(truth.bool(),logits.new_tensor(cfg.class_positive_weights)[None]*.25,.75)
                 focal=F.binary_cross_entropy_with_logits(logits,truth,reduction='none')*(1-pt).square()*weights
-                current['classification']+=focal.mul(keep[:,None]).sum()/denominator
-                if cfg.matched_class_weight:
+                if cfg.semantic_objectness:
+                    obj=objectness_loss(single['objectness_logits'][:q],pi,keep)/b
+                    sem=semantic_loss(logits[pi],known[ti,7].long(),cfg)/b
+                    current['classification']+=obj+sem
+                    current['objectness']+=obj;current['foreground_semantic']+=sem
+                else:current['classification']+=focal.mul(keep[:,None]).sum()/denominator
+                if cfg.matched_class_weight and not cfg.semantic_objectness:
                     current['matched_class']+=matched_class_loss(logits[pi],known[ti,7].long(),cfg,denominator)
+                if cfg.stage_diagnostics:
+                    with torch.no_grad():
+                        labels=known[ti,7].long();predicted=logits[pi].argmax(-1)
+                        near=(single['boxes'][pi,:2]-known[ti,:2]).norm(dim=-1)<2
+                        semantic_weights=foreground_weights(labels,cfg)
+                        nll=F.cross_entropy(logits[pi],labels,reduction='none') if len(labels) else logits.new_empty(0)
+                        correct=predicted==labels
+                        for ci in range(cfg.num_classes):
+                            mask=labels==ci
+                            supervision[si,ci]+=torch.stack(((known[:,7]==ci).sum(),mask.sum(),
+                                (single['supported'][pi]&mask).sum(),(correct&mask).sum(),
+                                (near&mask).sum(),(near&correct&mask).sum(),
+                                semantic_weights[mask].sum(),nll[mask].sum())).float()
                 if cfg.quality_background_weight:
                     current['quality_background']+=background_quality_loss(single,known,pi,keep)/b
                 if cfg.quality_hard_negative_weight:
                     current['quality_hard_negative']+=hard_quality_negatives(single,known,pi,ti,keep,cfg.quality_score_power)/b
-                if stage is output['stages'][-1] and len(ti) and (cfg.match_warmup_epochs or cfg.match_ramp_epochs):
+                if stage is output['stages'][-1] and len(ti) and (cfg.match_warmup_epochs or cfg.match_ramp_epochs or cfg.stage_diagnostics):
                     gap_stats+=torch.stack(match_geometry_gap(single,known,pi,ti,q))
                 reg=self._regression(single,pi,known[ti],denominator,None if tokens is None else tokens[bi])
                 for key,value in reg.items():current[key]+=value/b if key=='extent' else value
@@ -275,12 +306,15 @@ class SparseCriterion(nn.Module):
                     dn_truth=torch.zeros_like(single['class_logits'][dn].float())
                     dn_truth[torch.arange(len(ids),device=target.device),target[ids,7].long()]=1
                     dn_class=F.binary_cross_entropy_with_logits(single['class_logits'][dn].float(),dn_truth,reduction='none').sum()/denominator
-                    if cfg.matched_class_weight:
+                    if cfg.semantic_objectness:
+                        dn_class=(semantic_loss(single['class_logits'][dn],target[ids,7].long(),cfg)+
+                                  F.softplus(-single['objectness_logits'][dn].float()).sum()/max(len(dn),1))/b
+                    if cfg.matched_class_weight and not cfg.semantic_objectness:
                         dn_class+=cfg.matched_class_weight*matched_class_loss(single['class_logits'][dn],target[ids,7].long(),cfg,denominator)
                     dn_reg=self._regression(single,dn,target[ids],denominator)
                     current['denoising']+=dn_class+2*dn_reg['center']+dn_reg['size']+dn_reg['axis']+dn_reg['facing']+.5*dn_reg['quality']+cfg.facing_binary_weight*dn_reg['facing_binary']
                 matches+=len(pi)
-            for key in totals:totals[key]+=current[key]/len(output['stages'])
+            for key in totals:totals[key]+=current[key]*stage_weights[si]/sum(stage_weights)
         if output.get('proposal') is not None:
             from .sparse_observation import proposal_loss
             totals['proposal']=proposal_loss(output['proposal'],targets,cfg.proposal_cell_targets)
@@ -290,4 +324,4 @@ class SparseCriterion(nn.Module):
         loss=loss+cfg.matched_class_weight*totals['matched_class']+cfg.quality_background_weight*totals['quality_background']
         loss=loss+cfg.heavy_endpoint_weight*totals['heavy_endpoint']+cfg.quality_hard_negative_weight*totals['quality_hard_negative']
         return loss,{**{k:v.detach() for k,v in totals.items()},'matches':matches//len(output['stages']),
-                     'match_gap_stats':gap_stats}
+                     'match_gap_stats':gap_stats,'supervision_stats':supervision}

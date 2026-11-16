@@ -9,6 +9,7 @@ HEAVY=(3,4,5)
 def raw_snapshot(output,cfg):
     final=output['stages'][-1]
     keys=('boxes','class_logits','quality_logits','supported','axis','facing')
+    if 'objectness_logits' in final:keys+=('objectness_logits',)
     return {k:final[k][:,:cfg.queries].detach().cpu() if k=='supported' else
             final[k][:,:cfg.queries].detach().float().cpu() for k in keys}
 
