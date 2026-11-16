@@ -1,0 +1,7 @@
+{
+  "type": "raybev_geometry_approvals_v1",
+  "training_boxes_sha256": "674f6e76bab607976b2f59178351145043a07e33ad4c08c7953d0adb752270d8",
+  "calibration_sha256": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+  "instructions": "Only add independently geometry-reviewed TRAIN boxes as token, gt=[x,y,z,L,W,H,yaw,class_id], geometry_reviewed=true, evidence. Class review is insufficient.",
+  "approvals": []
+}

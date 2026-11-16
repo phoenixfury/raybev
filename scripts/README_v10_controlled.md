@@ -127,6 +127,39 @@ their own temporal/LiDAR/image review; do not globally flip Bus headings.
 
 ## Prepare and launch
 
+### V7 release
+
+The annotation export does not itself create `input_contract.json`. Before the
+first V7 launch, run the following from the project directory (replace the data
+root if the server stores the images elsewhere):
+
+```bash
+python scripts/prepare_v10_experiment.py \
+  --root ../../data/Custom/combined_bags_camera_ray_dedup_v2 \
+  --release datasets/combined_bags_camera_ray_manual_review_v7 \
+  --source datasets/combined_bags_camera_ray_manual_review_v6 \
+  --output analysis/v10_manual_review_v7 \
+  --tram-tracks analysis/v10_manual_review_v5/tram_tracks.json
+DRY_RUN=1 bash scripts/launch_v10_v7.sh
+bash scripts/launch_v10_v7.sh
+```
+
+The first command runs on CPU, independently rechecks V7 against V6, fits
+TRAIN-only initialization hypotheses, preserves the seven previously identified
+physical tram IDs, and writes the V7 input contract. Both releases and their
+review metadata must be available. Alternatively copy the complete prepared
+`analysis/v10_manual_review_v7/` directory from the laptop with the exact same
+V7 files/calibration. Absolute paths in the contract are informational; hashes
+are portable. Never copy/rename the old V5 contract as V7.
+
+Use the updated preparation/audit/reviewer scripts (track-ID revision support).
+The V7 wrapper defaults to `control`, batch 4, accumulation 2, two GPUs, and
+`work_dirs/raybev_v10_medium_v7_control`. Set `V10_ARM=shapes` for the separate
+shape-hypothesis comparison. `ROOT`, `YOLO26_WEIGHTS`, and the usual environment
+overrides are honored. No geometry approvals or endpoint loss are enabled.
+
+### Original V5 preparation
+
 Assets are already generated locally. Re-prepare on a server with the same files:
 
 ```bash

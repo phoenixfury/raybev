@@ -52,6 +52,7 @@ def main():
     p.add_argument('--output',type=Path,default=PROJECT/'analysis/v10_manual_review_v5')
     p.add_argument('--calibration',type=Path,default=Path(DEFAULT_CALIBRATION))
     p.add_argument('--seed',type=int,default=3407)
+    p.add_argument('--tram-tracks',type=Path,help='Inherit an explicit physical-tram registry when the immediate source has no original review ledger')
     a=p.parse_args();a.release=a.release.resolve();a.root=a.root.resolve();a.output.mkdir(parents=True,exist_ok=True)
     report=audit(a.root,a.release,a.source,a.calibration)
     (a.output/'annotation_audit.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -77,7 +78,12 @@ def main():
         shape_bin_length_edges_m=[2.5,5.5,8.5,14.],arms=initialization,
         limitation='Static learned-anchor XY coverage only; image-scored proposal and refinement coverage is logged during training.'),indent=2)+'\n')
     ledger=a.source/'annotation_review.jsonl';tracks=set()
-    if ledger.exists():
+    if a.tram_tracks is not None:
+        registry=json.loads(a.tram_tracks.read_text())
+        if registry.get('type')!='raybev_tram_tracks_v1':raise ValueError('Invalid inherited tram registry')
+        tracks={(str(row['sequence']),str(row['track_id'])) for row in registry['tracks']}
+        ledger=a.tram_tracks
+    elif ledger.exists():
         for line in ledger.read_text().splitlines():
             entry=json.loads(line)
             if entry.get('physical_class')=='tram':tracks.add((str(entry['sequence']),str(entry['track_id'])))

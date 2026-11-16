@@ -1,0 +1,18 @@
+{
+  "release": "/home/mostafa/mmdetection3d/projects/raybev_lite/datasets/combined_bags_camera_ray_manual_review_v7",
+  "files": {
+    "fisheye3dod_infos_train.pkl": "4fc1cac224ba5bc5e663f3a2cfe072c29c9be1a548d94ea8bdc31851288da3c6",
+    "fisheye3dod_infos_val.pkl": "2b7593f804550516c86fd4262a49a90159379a11cf83e886aa20ffbde27732e8",
+    "train_yolo_extents_v1.json": "4babfe5164ab526dae7ac94bf13bf1c9bb7537c0ef0f41b474306fe76ea9bb36",
+    "review_decisions.json": "3192713837ef2faeec1c929cf4913120f17a43b589d61b87ae7a979da18387b9",
+    "review_manifest.json": "761b86fbedae735dae69fa9445c180d3e73b28300969a5234e38511bbae257f9",
+    "review_queue.jsonl": "73418e61ded8acf53e208266e9430980def146f2f8bdf3652a48b222db384a9d",
+    "track_id_revisions.json": "700acac4d1b022479adda8f205e023f1cb29bb7b93bb6e4551e1587de411a4ad"
+  },
+  "calibration_sha256": "3c26fe85192a37eb982f6911e7a768da039f04f7c161d0b6c08f3508c6acd9e3",
+  "seed": 3407,
+  "track_class_conflicts": 0,
+  "geometry_flags": 0,
+  "endpoint_ready": false,
+  "geometry_flags_by_class": {}
+}

@@ -1,0 +1,34 @@
+{
+  "type": "raybev_tram_tracks_v1",
+  "source": "analysis/v10_manual_review_v5/tram_tracks.json",
+  "tracks": [
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2883"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2884"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2886"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2887"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2891"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "2894"
+    },
+    {
+      "sequence": "09_17_08_33_47",
+      "track_id": "3968"
+    }
+  ]
+}
